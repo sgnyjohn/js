@@ -1,0 +1,65 @@
+<html>
+<head><title>Calculadora</title>
+</head>
+<style>
+body.calc {
+ margin: 0;
+ background: black;
+ vertical-align: center;
+}
+table.calc {
+ width: 100%;
+ height: 100%;
+}
+TD.calcPap {
+	border: 0px;
+	padding: 0px;
+}
+.calc td {
+ text-align: center;
+ border: 2pt outset #dddddd;
+ font-size: 150%;
+ font-weight: bold;
+ background: #dddddd;
+ cursor: pointer;
+ cursor: hand;
+ padding: 0px 0px;
+ margin: 0px;
+ Apadding: 3px;
+ Amargin: 4px;
+}
+td.calcDisp {
+ cursor: text;
+ background: white;
+ font-size: 100%;
+ text-align: right;
+ padding: 5px;
+}
+td.calcCn {
+ color: blue;
+}
+td.calcCc {
+ color: darkgreen;
+}
+td.calcCs,td.calcCe {
+ color: red;
+}
+td.calcCt {
+ padding: 0px;
+ font-size: 60%;
+}
+</style>
+<script language="JavaScript" src="funcoes.js"></script>
+<script language="JavaScript" src="calc.js"></script>
+<script>
+var cccc;
+function init() {
+	//alert('init calc');
+	cccc = new calc('cccc');
+	//cccc.calc();
+}
+setTimeout(init,100);
+</script>
+<body onkeydown=cccc.teclaP(event) class=calc>
+</body>
+</html>

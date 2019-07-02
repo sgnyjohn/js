@@ -1,0 +1,28 @@
+<html>
+<head><title>Calendário</title>
+<script language="JavaScript" src="/js/funcoes.js"></script>
+<script language="JavaScript" src="/js/funcoes1.js"></script>
+<script language="JavaScript" src="/js/jan.js"></script>
+<script language="JavaScript" src="/jsCSSEditor/jsCSSEditor.js"></script>
+<LINK REL="StyleSheet" HREF="/estilos/acessorios.css">
+
+<script>
+var cale;
+function mCale() {
+ cale = new calendMes('cale','cale','nada');
+ cale.fSize1 = 3;
+ cale.fSize2 = 4;
+ cale.monta();
+ resize('calet',300,230);
+}
+setTimeout('mCale()',200);
+</script>
+
+</head>
+
+<body onClick=jsCSSEditor(this,event) class=cale>
+<table id=calet><tr><td id=cale>
+</table>
+</body>
+
+</html>

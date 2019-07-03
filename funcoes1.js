@@ -15,7 +15,50 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+//****************************************************
+// matriz [[rotulo,valor],...]
+function graphBar(mat) {
+	var v1 = mat;
+	//calcula mx,mi;
+	var mx = -9999,mi=9999;aeval(v1,function(v,i) {
+		mx=Math.max(mx,v[1]);
+		mi=Math.min(mi,v[1]);
+	});
+	//dif 
+	var df = mx-mi;
+	mx = Math.ceil(mx+df*0.1);
+	mi = Math.floor(mi-df*0.1);
+	df = mx-mi;
+	//*******************************
+	this.getHtml = function() {
+		var r = '<table xborder=1 style="width:80%;"><tr style="height:260px;">';
+		//linha
+		for(var i=0;i<v1.length;i++) {
+			var rs = Math.floor((v1[i][1]-mi)/df*100+0.5);
+			r += '<td style="width:'+(100/v1.length*0.1)+'%;">'
+				+'<td title="'+v1[i][1]+'"'
+				+' style="width:'+(100/v1.length*0.9)+'%;'
+				+'background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABHNCSVQICAgIfAhkiAAAAA1JREFUCFtj+MLA8B8ABNQB9EPwtFAAAAAASUVORK5CYII=);'
+				+'background-size:100% '+rs+'%;'
+				+'background-position:bottom;'
+				+'background-repeat: repeat-x;'
+				+'">'
+			;
+		}
+		//label
+		r += '<tr>';
+		for(var i=0;i<v1.length;i++) {
+			r += '<td style="width:'+(100/v1.length*0.1)+'%;">'
+				+'<td '
+				+' style="width:'+(100/v1.length*0.9)+'%;text-align:center;'
+				+'" >'
+				+v1[i][0]
+			;
+		}
 
+		return r+'</table>';
+	}
+}
 //**************************//
 // objeto calendMes
 //**************************//
@@ -1378,33 +1421,13 @@ function estat(Nome) {
 		v1.sort(function(a,b){return fSort(b[0],a[0])});
 		//calcula total
 		var t = 0; aeval(v1,function(v,i) { t+=v[1]; });
-		//calcula mx,mi;
-		var mx = -9999,mi=9999;aeval(v1,function(v,i) {
-			mx=Math.max(mx,v[1]/t*100);
-			mi=Math.min(mi,v[1]/t*100);
-		});
-		//dif 
-		var df = mx-mi;
-		mx = Math.ceil(mx+df*0.1);
-		mi = Math.floor(mi-df*0.1);
-		df = mx-mi;
-		var r = '<table xborder=1 style="width:80%;"><tr style="height:260px;">';
-		//linha
+		//calcula
 		for(var i=0;i<v1.length;i++) {
-			var rs = Math.floor((v1[i][1]/t*100)/df*1000+0.5)/10;
-			r += '<td style="width:'+(100/v1.length*0.1)+'%;">'
-				+'<td title="'+v1[i][1]+' '+rs+'%" '
-				+' style="width:'+(100/v1.length*0.9)+'%;'
-				+'background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABHNCSVQICAgIfAhkiAAAAA1JREFUCFtj+MLA8B8ABNQB9EPwtFAAAAAASUVORK5CYII=);'
-				+'background-size:100% '+rs+'%;'
-				+'background-position:bottom;'
-				+'background-repeat: repeat-x;'
-				+'text-align:center;'
-				+'">'
-				+v1[i][0]+':<br><b>'+v1[i][1]+'</b><br>'+rs+'%'
-			;
-		}
-		return r+'</table>';
+			var rs = Math.floor(v1[i][1]/t*1000+0.5)/10;
+			v1[i][0] = v1[i][0]+':<br><b>'+v1[i][1]+'</b><br>'+format(rs,1)+'%'
+		}		
+		//grafico
+		return (new graphBar(v1)).getHtml();
 	}	
 	//****************************************************
 	this.getVetor = function() {

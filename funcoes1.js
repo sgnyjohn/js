@@ -1372,6 +1372,41 @@ function estat(Nome) {
 	this.getMatriz = getMatriz;
 	var vt = 0; //total geral
 	//****************************************************
+	this.toGraphBar = function() {
+		var v1 = getMatriz();
+		//ordena chave
+		v1.sort(function(a,b){return fSort(b[0],a[0])});
+		//calcula total
+		var t = 0; aeval(v1,function(v,i) { t+=v[1]; });
+		//calcula mx,mi;
+		var mx = -9999,mi=9999;aeval(v1,function(v,i) {
+			mx=Math.max(mx,v[1]/t*100);
+			mi=Math.min(mi,v[1]/t*100);
+		});
+		//dif 
+		var df = mx-mi;
+		mx = Math.ceil(mx+df*0.1);
+		mi = Math.floor(mi-df*0.1);
+		df = mx-mi;
+		var r = '<table xborder=1 style="width:80%;"><tr style="height:260px;">';
+		//linha
+		for(var i=0;i<v1.length;i++) {
+			var rs = Math.floor((v1[i][1]/t*100)/df*1000+0.5)/10;
+			r += '<td style="width:'+(100/v1.length*0.1)+'%;">'
+				+'<td title="'+v1[i][1]+' '+rs+'%" '
+				+' style="width:'+(100/v1.length*0.9)+'%;'
+				+'background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABHNCSVQICAgIfAhkiAAAAA1JREFUCFtj+MLA8B8ABNQB9EPwtFAAAAAASUVORK5CYII=);'
+				+'background-size:100% '+rs+'%;'
+				+'background-position:bottom;'
+				+'background-repeat: repeat-x;'
+				+'text-align:center;'
+				+'">'
+				+v1[i][0]+':<br><b>'+v1[i][1]+'</b><br>'+rs+'%'
+			;
+		}
+		return r+'</table>';
+	}	
+	//****************************************************
 	this.getVetor = function() {
 		return v;
 	}	

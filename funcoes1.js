@@ -26,9 +26,7 @@ function graphBar(mat) {
 	});
 	//dif 
 	var df = mx-mi;
-	mx = Math.ceil(mx+df*0.1);
-	mi = Math.floor(mi-df*0.1);
-	df = mx-mi;
+	df = Math.ceil(mx+df*0.1)-Math.floor(mi-df*0.1);
 	//*******************************
 	this.getHtml = function() {
 		var r = '<table xborder=1 style="width:80%;"><tr style="height:260px;">';

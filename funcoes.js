@@ -1054,6 +1054,12 @@ function strPesq(o) {
 		//lert('vr='+vr[i]);
 	}
 	//###################################
+	this.valid = function() {
+		var r=false;
+		aeval(this.v,function(x) {if (x.length>2) r=true;});
+		return r?NaN:"consulta inválida '"+a+"'";
+	}
+	//###################################
 	function rExpr(t) {
 		//áàâãéêíóôõúüñç
 		var r = '';
@@ -1080,8 +1086,8 @@ function strPesq(o) {
 				var pn = m?p+m.index:-1;
 				if (m && pn != -1) {
 					tx = tx.substring(0,pn)
-						+'<span class="ngr">'
-						+tx.substring(pn,pn+v[i].length)+'</span>'
+						+'<b class="negr">'
+						+tx.substring(pn,pn+v[i].length)+'</b>'
 						+tx.substring(pn+v[i].length)
 					;
 					p = pn+25+v[i].length;

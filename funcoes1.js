@@ -16,6 +16,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 //****************************************************
+// words
+function word() {
+	var v = {};
+	//acumula palavra 
+	this.inc = function(tx) {
+	}
+}
+
+
+//****************************************************
 // matriz [[rotulo,valor],...]
 function graphBar(mat) {
 	var v1 = mat;
@@ -29,12 +39,13 @@ function graphBar(mat) {
 	df = Math.ceil(mx+df*0.1)-Math.floor(mi-df*0.1);
 	//*******************************
 	this.getHtml = function() {
-		var r = '<table xborder=1 style="width:80%;"><tr style="height:260px;">';
+		var r = '<table class="graphBar" xborder=1 style="width:100%;"><tr style="height:320px;">';
 		//linha
 		for(var i=0;i<v1.length;i++) {
-			var rs = Math.floor((v1[i][1]-mi)/df*100+0.5);
-			r += '<td style="width:'+(100/v1.length*0.1)+'%;">'
-				+'<td title="'+v1[i][1]+'"'
+			var rs = (v1[i][1]-mi)/df*100;
+			var rs = (v1[i][1])/mx*100;
+			r += '<td class="br" style="width:'+(100/v1.length*0.1)+'%;">'
+				+'<td class="bar" title="'+v1[i][1]+' rs='+rs+'"'
 				+' style="width:'+(100/v1.length*0.9)+'%;'
 				+'background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABHNCSVQICAgIfAhkiAAAAA1JREFUCFtj+MLA8B8ABNQB9EPwtFAAAAAASUVORK5CYII=);'
 				+'background-size:100% '+rs+'%;'

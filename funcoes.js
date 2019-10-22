@@ -22,8 +22,37 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * a parte superior para +longe está muito estreita, 
  * a parte inferior da tela do computador fica borrada.
  * 
+ * " possível irrelevância das massas
+ * ...
+ * É muito mais difícil lutar contra a irrelevância do que contra a exploração. " Harari
+ * 
+ * https://www.youtube.com/watch?v=zNoLeZi5gpk&t=41m18s
+ * 
  */
 
+//***********************************************
+function pedidoRevisto(strGet) {
+	pedidoRenew(strGet);
+}
+//***********************************************
+function pedidoRenew(strGet) {
+	var p = new pedido();
+	var v = palavraA(strGet,'&');
+	for (var i=0;i<v.length;i++) {
+		if (v[i].indexOf('=')==-1) {
+			continue;
+		}
+		var n = leftAt(v[i],'=');
+		var v = substrAt(v[i],'=');
+		if (p.get(n)==v) {
+			p.set(n,'');
+		} else {
+			p.set(n,v);
+		}
+		
+	}
+	window.location = p.atalho();
+}
 //***********************************************
 function domDoc(obj) {
 	return document;
@@ -181,7 +210,7 @@ function domObj(p) {
 	//		permite campo others cujo conteúdo será v[nomeCampo]=valor
 	// pode preencher a partir de: 
 	//		1 - objeto dom table - setTable
-	//		2 - txt csv - setMatriz
+	//		2 - txt csv - setMatriz ou vetor 1a linha cab
 	//		3 - vcard - addVCard
 	function bancoDados(Nome) {
 		var eu = this;
@@ -199,6 +228,34 @@ function domObj(p) {
 		//o q colocar em campo indefinido
 		var Nulo = '';
 		this.dev = false;
+		this.dlRow = '\n';
+		this.dlCol = '\t';
+		//*********************************************
+		// gera objetos html
+		this.toDom = function(dst) {
+			var doc = dst?domDoc(dst):document;
+			var tb = doc.createElement('table');tb.className = 'bdToDom';
+			tb.border=1;
+			//cabecalho
+			var l = doc.createElement('tr');l.className='head';tb.appendChild(l);
+			for (var i=0;i<camposN.length;i++) {
+				var c = doc.createElement('th');
+				c.innerHTML = camposN[i];
+				l.appendChild(c);
+			}
+			//dados
+			for (var r=0;r<valores.length;r++) {
+				l = doc.createElement('tr');tb.appendChild(l);
+				for (var i=0;i<valores[r].length;i++) {
+					var c = doc.createElement('td');
+					c.innerHTML = troca(valores[r][i],'\n','<br>');
+					l.appendChild(c);
+				}
+			}
+			//adiciona ao dst
+			if (dst) dst.appendChild(tb);
+			return tb;
+		}		
 		//*********************************************
 		function ver(vlr) {
 			if (vazio(vlr)) {
@@ -523,6 +580,10 @@ function domObj(p) {
 		//*********************************************
 		// recebe csv com 1a linha nome campos
 		this.setMatriz = function(vet) {
+			if (typeof(vet)=='string') {
+				vet = palavraA(vet,this.dlRow,this.dlCol);
+			}
+			//nome campos
 			for (var i=0;i<vet[0].length;i++) {
 				var n = trimm(vet[0][i]);
 				campos[n] = i;
@@ -530,8 +591,9 @@ function domObj(p) {
 			}
 			//lert('v='+vet[0]+'='+camposN);
 			//lert(campos+' '+camposN);
+			//dados
 			for (var i=1;i<vet.length;i++) {
-				valores[valores.length] = vet[i];
+				valores[valores.length] = troca(vet[i],'\\n','\n');
 			}
 			nr = valores.length;
 		}
@@ -1944,17 +2006,6 @@ function pedido(doc) {
 	var param = new Array();
 	var paramJ = new Array();;
 	this.url = url;
-	//tem parametros JS ? // sj 09/2015
-	if (url.indexOf('#')!=-1) {
-		urlJ = substrAt(url,'#');
-		url = leftAt(url,'#');
-		//lert(urlJ);
-		var vj=palavraA(urlJ,'#');
-		for (var i=0;i<vj.length;i++) {
-			paramJ[leftAt(vj[i],'=')] = decodeURIComponent(substrAt(vj[i],'='));
-		}
-		//lert(vj+' p='+paramJ);
-	}
 	this.protocolo = leftAt(url,':');
 	this.host = substrAtAt(url+'/','://','/'); 
 	var p = url.indexOf('?');
@@ -1968,32 +2019,70 @@ function pedido(doc) {
 	} else {
 		url = url.substring(p+1);
 	}
-	var v = new Array();
-	v = palavraA(url,'&');
-	var c;
-	for (var i=0;i<v.length;i++) {
-		c = palavraA(v[i]+'=','=');
-		var np = c[0];
-		if (vazio(np)) {
-			//ignora
-		} else if (!param[np] || vazio(param[np])) {
-			param[np] = decodeURIComponent(troca(c[1],'+',' '));
-		} else {
-			if (typeof(param[np])=='string') {
-				param[np] = new Array(param[np]);
+	setParam();
+	//******************************	
+	this.addParams =  function(strGet) {
+		var uk = url;
+		url = strGet;
+		setParam();
+		url = uk;
+	}	
+	//******************************	
+	function setParam() {
+		//tem parametros JS ? // sj 09/2015
+		if (url.indexOf('#')!=-1) {
+			urlJ = substrAt(url,'#');
+			url = leftAt(url,'#');
+			//lert(urlJ);
+			var vj=palavraA(urlJ,'#');
+			for (var i=0;i<vj.length;i++) {
+				paramJ[leftAt(vj[i],'=')] = decodeURIComponent(substrAt(vj[i],'='));
 			}
-			param[np][param[np].length] = decodeURIComponent(troca(c[1],'+',' '));
-			//lert(param[np]);
+			//lert(vj+' p='+paramJ);
 		}
-	}
-	//lert('v='+v);
-	//ultimo parametro tem # atalho interno <a name=>
-	if (c && param[c[0]] && param[c[0]].indexOf('#')!=-1) {
-		param[c[0]] = leftRat(param[c[0]],'#');
+		var v = palavraA(url,'&');
+		var c;
+		for (var i=0;i<v.length;i++) {
+			c = palavraA(v[i]+'=','=');
+			var np = c[0];
+			if (vazio(np)) {
+				//ignora
+			} else if (!param[np] || vazio(param[np])) {
+				param[np] = decodeURIComponent(troca(c[1],'+',' '));
+			} else {
+				if (typeof(param[np])=='string') {
+					param[np] = new Array(param[np]);
+				}
+				param[np][param[np].length] = decodeURIComponent(troca(c[1],'+',' '));
+				//lert(param[np]);
+			}
+		}
 	}
 	//******************************
 	function getV() {
 		return param;
+	}
+	//******************************
+	this.formToParam = function(ob,strParam) {
+		var alvo = getParentByTagName(ob,'form');
+		//if (!alvo) return;
+		for (var i=0;i<alvo.elements.length;i++) {
+			if (alvo.elements[i].name) {
+				//lert('i='+i+' ='+alvo.elements[i].name+"= v="+alvo.elements[i].value);
+				put(alvo.elements[i].name,alvo.elements[i].value);
+			}
+		}
+		if (strParam) {
+			var v = strParam.split('&');
+			for (var i=0;i<v.length;i++) {
+				var v1 = v[i].split('=');
+				if (v1.length==1) {
+					param[v1[0]] = null;
+				} else {
+					param[v1[0]] = v1[1];
+				}
+			}
+		}
 	}
 	//******************************
 	function paramToForm(frm,duplica) {

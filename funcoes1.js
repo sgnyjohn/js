@@ -45,7 +45,13 @@ function graphBarH(mat,Op) {
 	}
 	//*******************************
 	this.getHtml = function() {
-		var r = '<table class="graphBarH" xborder=1 style="width:'+op['width']+';">';
+		var r = '<table class="graphBarH"'
+			+(op.title?' title="'+op.title+'"':'')
+			+' xborder=1 style="width:'+op['width']+';">'
+		;
+		if (op.title) {
+			r += '<tr><th colspan=2>'+op.title;
+		}
 		//linha
 		for(var i=0;i<v1.length;i++) {
 			var rs = (v1[i][1]-mi)/df*100;
@@ -1500,6 +1506,7 @@ function estat(Nome) {
 			}
 		}		
 		//grafico
+		Op.title = nome;
 		if (Horiz) {
 			Op['label'] = lb;
 			return (new graphBarH(v1,Op)).getHtml();

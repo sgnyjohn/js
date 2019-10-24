@@ -236,7 +236,7 @@ function domObj(p) {
 		this.dlCol = '\t';
 		//*********************************************
 		// gera objetos html
-		this.toDom = function(dst) {
+		this.toDom = function(dst,limit) {
 			var doc = dst?domDoc(dst):document;
 			var tb = doc.createElement('table');tb.className = 'bdToDom';
 			tb.border=1;
@@ -248,13 +248,21 @@ function domObj(p) {
 				l.appendChild(c);
 			}
 			//dados
-			for (var r=0;r<valores.length;r++) {
+			var r;
+			for (r=0;r<valores.length && (!limit||r<limit);r++) {
 				l = doc.createElement('tr');tb.appendChild(l);
 				for (var i=0;i<valores[r].length;i++) {
 					var c = doc.createElement('td');
 					c.innerHTML = troca(valores[r][i],'\n','<br>');
 					l.appendChild(c);
 				}
+			}
+			if (r<valores.length) {
+				l = doc.createElement('tr');tb.appendChild(l);
+				var c = doc.createElement('td');
+				c.setAttribute('colspan',''+valores[r].length);
+				c.innerHTML = '<h1>stop limit '+limit+'</h1>';
+				l.appendChild(c);
 			}
 			//adiciona ao dst
 			if (dst) dst.appendChild(tb);
@@ -2328,8 +2336,8 @@ function pedido(doc) {
 	}
 	//***************************************************
 	// retorna o parent que possui o attributo setado
-	function getParentAttr(O,nomeAtr,pos) {
-		var o = getParentNodeAttr(O,nomeAtr);
+	function getParentAttr(O,nomeAtr,limit) {
+		var o = getParentNodeAttr(O,nomeAtr,limit);
 		if ( !o ) {
 		} else if (o.getAttribute && o.getAttribute(nomeAtr) && o.getAttribute(nomeAtr)!=null ) {
 			return o.getAttribute(nomeAtr);
@@ -2342,7 +2350,7 @@ function pedido(doc) {
 	//***************************************************
 	// retorna o parent que possui o attributo setado
 	var getParentByAttr = getParentNodeAttr;
-	function getParentNodeAttr(o,nomeAtr) {
+	function getParentNodeAttr(o,nomeAtr,limit) {
 		//obj é evento?
 		if (o && o.target && o.type) {
 			o = targetEvent(o);
@@ -2353,6 +2361,8 @@ function pedido(doc) {
 				return o;
 			} else if (o[nomeAtr]) {
 				return o;
+			} else if (limit && o==limit) {
+				return null;
 			}
 			o = o.parentNode;
 		}
@@ -2563,12 +2573,14 @@ function pedido(doc) {
 		return o;
 	}
 	//***************************************************
-	function getParentByTagName(o,nome) {
+	function getParentByTagName(o,nome,limit) {
 		nome = nome.toUpperCase();
 		//while ((o=o.parentNode) && o.tagName.toUpperCase()!=nome);
 		while (o) {
 			if (o.tagName && o.tagName.toUpperCase()==nome) {
 				return o;
+			} else if (limit && limit==o) {
+				return null;
 			}
 			o = o.parentNode;
 		}

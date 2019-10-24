@@ -26,8 +26,9 @@ function word() {
 
 
 //****************************************************
+// grafico barras horizontais
 // matriz [[rotulo,valor],...]
-function graphBar(mat) {
+function graphBarH(mat,Op) {
 	var v1 = mat;
 	//calcula mx,mi;
 	var mx = -9999,mi=9999;aeval(v1,function(v,i) {
@@ -37,15 +38,68 @@ function graphBar(mat) {
 	//dif 
 	var df = mx-mi;
 	df = Math.ceil(mx+df*0.1)-Math.floor(mi-df*0.1);
+	// opcões padrão
+	var op={height:'320px',width:'100px'};
+	for (var i in Op) {
+		op[i] = Op[i];
+	}
 	//*******************************
 	this.getHtml = function() {
-		var r = '<table class="graphBar" xborder=1 style="width:100%;"><tr style="height:320px;">';
+		var r = '<table class="graphBarH" xborder=1 style="width:'+op['width']+';">';
+		//linha
+		for(var i=0;i<v1.length;i++) {
+			var rs = (v1[i][1]-mi)/df*100;
+			var rs = (v1[i][1])/mx*100;
+			//label
+			var lb = op['label']?op['label'][i]:v1[i][1];
+			//linha
+			r += (i!=0?'<tr class="space"><td><td style="font-size:5%;">':'')+'<tr>';
+			//label
+			r += '<td style="xtext-align:right;">'+v1[i][0];
+			//barra h
+			r += '<td class="barH" title="'+htmlToTxt(lb)+'"'
+				+' style="text-align:center;width:100%;'
+				+'background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABHNCSVQICAgIfAhkiAAAAA1JREFUCFtj+MLA8B8ABNQB9EPwtFAAAAAASUVORK5CYII=);'
+				+'background-size:'+rs+'% 100%;'
+				+'background-position:left;'
+				+'background-repeat: repeat-y;'
+				+'">'+lb
+			;
+		}
+
+		return r+'</table>';
+	}
+}
+
+//****************************************************
+// objeto grafico barra vertical
+// matriz [[rotulo,valor],...]
+function graphBar(mat,Op) {
+	var v1 = mat;
+	//calcula mx,mi;
+	var mx = -9999,mi=9999;aeval(v1,function(v,i) {
+		mx=Math.max(mx,v[1]);
+		mi=Math.min(mi,v[1]);
+	});
+	//dif 
+	var df = mx-mi;
+	df = Math.ceil(mx+df*0.1)-Math.floor(mi-df*0.1);
+	// opcões padrão
+	var op={height:'320px',width:'100px'};
+	for (var i in Op) {
+		op[i] = Op[i];
+	}
+	//*******************************
+	this.getHtml = function() {
+		var r = '<table class="graphBar" xborder=1 style="width:'+op['width']+';">'
+			+'<tr style="height:'+op['height']+';">'
+		;
 		//linha
 		for(var i=0;i<v1.length;i++) {
 			var rs = (v1[i][1]-mi)/df*100;
 			var rs = (v1[i][1])/mx*100;
 			r += '<td class="br" style="width:'+(100/v1.length*0.1)+'%;">'
-				+'<td class="bar" title="'+v1[i][1]+' rs='+rs+'"'
+				+'<td class="bar" title="'+htmlToTxt(v1[i][0])+'\n'+v1[i][1]+' rs='+rs+'"'
 				+' style="width:'+(100/v1.length*0.9)+'%;'
 				+'background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABHNCSVQICAgIfAhkiAAAAA1JREFUCFtj+MLA8B8ABNQB9EPwtFAAAAAASUVORK5CYII=);'
 				+'background-size:100% '+rs+'%;'
@@ -1424,19 +1478,33 @@ function estat(Nome) {
 	this.getMatriz = getMatriz;
 	var vt = 0; //total geral
 	//****************************************************
-	this.toGraphBar = function() {
+	this.toGraphBar = function(Op,Horiz) {
 		var v1 = getMatriz();
 		//ordena chave
 		v1.sort(function(a,b){return fSort(b[0],a[0])});
 		//calcula total
 		var t = 0; aeval(v1,function(v,i) { t+=v[1]; });
+		//label
+		var lb = [];
 		//calcula
 		for(var i=0;i<v1.length;i++) {
 			var rs = Math.floor(v1[i][1]/t*1000+0.5)/10;
-			v1[i][0] = v1[i][0]+':<br><b>'+v1[i][1]+'</b><br>'+format(rs,1)+'%'
+			if (Horiz) {
+				lb[i] = '<b>'+v1[i][1]+'</b>&nbsp;'
+					+format(rs,1)+'%'
+				;
+			} else {
+				v1[i][0] += '<br><b>'+v1[i][1]+'</b>'
+					+'<br>'+format(rs,1)+'%'
+				;
+			}
 		}		
 		//grafico
-		return (new graphBar(v1)).getHtml();
+		if (Horiz) {
+			Op['label'] = lb;
+			return (new graphBarH(v1,Op)).getHtml();
+		}
+		return (new graphBar(v1,Op)).getHtml();
 	}	
 	//****************************************************
 	this.getVetor = function() {

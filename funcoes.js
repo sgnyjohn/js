@@ -31,6 +31,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 //***********************************************
+function htmlToTxt(str) {
+	return troca(str.replace(/<\/?[^>]+(>|$)/g, ' '),'  ',' ');
+}
+//***********************************************
 function pedidoRevisto(strGet) {
 	pedidoRenew(strGet);
 }
@@ -538,19 +542,19 @@ function domObj(p) {
 		}
 		//*********************************************
 		// GET valor de um campo pelo nome
-		this.get = function(Nome,Valor) {
+		this.get = function(Nome,pdr) {
 			if (ur >= valores.length) {
 				alert('erro..'+ur);
 			}
 			if (typeof(campos[Nome])=='undefined') {
-				return Valor;
+				return pdr;
 			}
 			var pc = campos[Nome];
-			if ( typeof(Valor)!='undefined' && typeof(valores[ur][pc])=='undefined' ) {
-				return Valor;
+			if ( typeof(pdr)!='undefined' && typeof(valores[ur][pc])=='undefined' ) {
+				return pdr;
 			}
 			try {
-			return valores[ur][pc];
+				return valores[ur][pc];
 			}  catch (e) {
 				alert('ur='+ur+' pc='+pc+' nome='+Nome+' '+erro(e));
 			}
@@ -1483,7 +1487,30 @@ function strPesq(o) {
 			elem.attachEvent('on'+eve, fun);
 		}
 	}
-
+	//**************************//
+	function strToData(str) {
+		if (!str) {
+			//lert('erro strToData(), data invalida '+str);
+			return new Date(); 
+		}
+		try {
+			//falta hora?
+			if (str.indexOf(' ')==-1) {
+				var h = [0,0,0,0];
+			} else {
+				var h = palavraA(substrAt(str,' '),':');
+			}
+			if (str.indexOf('/')!=-1) {
+				var d = palavraA(leftAt(str,' '),'/');
+				return new Date(1*d[2],1*d[1],1*d[0],1*h[0],1*h[1],1*h[2],0);
+			}
+			var d = palavraA(leftAt(str,' '),'-');
+			return new Date(1*d[0],1*d[1],1*d[2],1*h[0],1*h[1],1*h[2],0);
+		} catch (e) {
+			alert('erro strToData '+erro(e));
+			return new Date();
+		}
+	}
 	//**************************//
 	function dataSql(a) {
 		//getDay = dia semana.

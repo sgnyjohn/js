@@ -31,6 +31,59 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 //***********************************************
+// dom
+function txtPdfJpgTexto(tx) {
+		tx = trocaTudo(tx,' \n','\n');
+		tx = trocaTudo(tx,'\t ',' ');
+		tx = trocaTudo(tx,' \t',' ');
+		tx = trocaTudo(tx,'\n\t','\n ');
+		tx = trocaTudo(tx,'\n  ','\n ');
+		tx = trocaTudo(tx,'\n ','@@@');
+		tx = trocaTudo(tx,'\n\n','@@@');
+		tx = trocaTudo(tx,'.\n','.@@@');
+		tx = trocaTudo(tx,'-\n','');
+		tx = trocaTudo(tx,'\n',' ');
+		tx = trocaTudo(tx,'  ',' ');
+		tx = trocaTudo(tx,'@@@','\n');
+		return tx;
+}
+
+//***********************************************
+// dom
+function dom(doc) {
+	doc = doc?doc:document;
+	this.query = function(str) {
+		var r;
+		str = trimm(str);
+		var tg,cl;
+		var p = str.indexOf('.');
+		if (p!=-1) {
+			v=palavraA(str,'.');
+			tg = vazio(v[0])?tg:v[0];
+			cl = vazio(v[1])?cl:v[1];
+		}
+		var v;
+		if (cl) {
+			v = doc.getElementsByClassName(cl);
+			if (tg) {
+				for (var i=0;i<v.length;i++) {
+					if (v[i].tagName == tg) {
+						return v[i];
+					}
+				}
+				return r;
+			} else {
+				return v.length>0?v[0]:r;
+			}
+		} else if (tg) {
+			v = doc.getElementsByClassName(tg);
+			return v.length>0?v[0]:r;
+		}
+		return r;
+	}
+}
+
+//***********************************************
 function htmlToTxt(str) {
 	return troca(str.replace(/<\/?[^>]+(>|$)/g, ' '),'  ',' ');
 }
@@ -234,6 +287,34 @@ function domObj(p) {
 		this.dev = false;
 		this.dlRow = '\n';
 		this.dlCol = '\t';
+		//*********************************************
+		// cria objeto hash do registro
+		this.getReg = function() {
+			var r = {};
+			for (var i=0;i<camposN.length;i++) {
+				var v = this.get(camposN[i]);
+				if (v) {
+					r[camposN[i]] = v;
+				}
+			}
+			return r;
+		}		
+		//*********************************************
+		// cria objeto index por campo
+		this.index = function(nomeCampo) {
+			var r = {};
+			var bur = ur;
+			this.reg(0);
+			while (this.next()) {
+				var vc = this.get(nomeCampo);
+				if (!r[vc]) {
+					r[vc] = [];
+				}
+				r[vc][r[vc].length] = this.reg();
+			}
+			ur = bur;
+			return r;
+		}
 		//*********************************************
 		// gera objetos html
 		this.toDom = function(dst,limit) {
@@ -590,20 +671,18 @@ function domObj(p) {
 			nr = valores.length;
 		}
 		//*********************************************
-		// recebe csv com 1a linha nome campos
+		// recebe matriz ou csv com 1a linha nome campos
 		this.setMatriz = function(vet) {
 			if (typeof(vet)=='string') {
-				vet = palavraA(vet,this.dlRow,this.dlCol);
+				vet = palavraA(trimm(vet),this.dlRow,this.dlCol);
 			}
-			//nome campos
+			//nome campos na linha 0
 			for (var i=0;i<vet[0].length;i++) {
 				var n = trimm(vet[0][i]);
 				campos[n] = i;
 				camposN[i] = n;
 			}
-			//lert('v='+vet[0]+'='+camposN);
-			//lert(campos+' '+camposN);
-			//dados
+			//dados na um em diante
 			for (var i=1;i<vet.length;i++) {
 				valores[valores.length] = troca(vet[i],'\\n','\n');
 			}

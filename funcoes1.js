@@ -1484,10 +1484,19 @@ function estat(Nome) {
 	this.getMatriz = getMatriz;
 	var vt = 0; //total geral
 	//****************************************************
-	this.toGraphBar = function(Op,Horiz) {
+	this.toGraphBar = function(Op) {
+		var Horiz = (''+Op.type).indexOf('co')==-1; //if not column is bar
+		var ord = (''+Op.sort).indexOf('va')!=-1; //if not value is label
+		var desc = (''+Op.sort).indexOf('asc')==-1; //if not asc is desc
 		var v1 = getMatriz();
-		//ordena chave
-		v1.sort(function(a,b){return fSort(b[0],a[0])});
+		//ordena descendente
+		if (ord) {
+			//ordena valor
+			v1.sort(function(a,b){return fSort(a[1],b[1],desc)});
+		} else {
+			//ordena chave
+			v1.sort(function(a,b){return fSort(a[0],b[0],desc)});
+		}
 		//calcula total
 		var t = 0; aeval(v1,function(v,i) { t+=v[1]; });
 		//label

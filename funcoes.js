@@ -30,8 +30,23 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
 
+
 //***********************************************
-// dom
+// pagination
+function pages(pgA,tm,fim) {
+	var r = '';
+	var f = Math.floor(fim/tm+0.9999);
+	for (var i=1;i<=f;i++) {
+		r += ' <span class="pages'+(pgA==i?' pagesCurrent':'')+'" page="'+i+'">'+i+'</span>'
+	}
+	return r;
+}
+
+
+
+//***********************************************
+// line txt 'pdftotext -layout' 
+//		or ocr tesseract -> text paragraph
 function txtPdfJpgTexto(tx) {
 		tx = trocaTudo(tx,' \n','\n');
 		tx = trocaTudo(tx,'\t ',' ');
@@ -287,6 +302,7 @@ function domObj(p) {
 		this.dev = false;
 		this.dlRow = '\n';
 		this.dlCol = '\t';
+		
 		//*********************************************
 		// cria objeto hash do registro
 		this.getReg = function() {
@@ -586,6 +602,7 @@ function domObj(p) {
 		this.init = function() {
 			ur = -1;
 		}
+		this.top = this.init;
 		//*********************************************
 		this.next = function() {
 			ur++;
@@ -1581,18 +1598,29 @@ function strPesq(o) {
 			return new Date(); 
 		}
 		try {
+			//lert('strToData: '+str);
 			//falta hora?
 			if (str.indexOf(' ')==-1) {
 				var h = [0,0,0,0];
 			} else {
 				var h = palavraA(substrAt(str,' '),':');
+				if (h[2].indexOf('.')!=-1) {
+					h[3] = substrAt(h[2],'.');
+					h[2] = leftAt(h[2],'.');
+				} else {
+					h[3] = '0';
+				}
 			}
+			// delimit /
 			if (str.indexOf('/')!=-1) {
 				var d = palavraA(leftAt(str,' '),'/');
-				return new Date(1*d[2],1*d[1],1*d[0],1*h[0],1*h[1],1*h[2],0);
+				return new Date(1*d[2],1*d[1],1*d[0],1*h[0],1*h[1],1*h[2],1*h[3]);
 			}
+			// delimit - 
 			var d = palavraA(leftAt(str,' '),'-');
-			return new Date(1*d[0],1*d[1],1*d[2],1*h[0],1*h[1],1*h[2],0);
+			var r = new Date(1*d[0],1*d[1],1*d[2],1*h[0],1*h[1],1*h[2],1*h[3]);
+			//lert('d='+d+' h='+h+' '+r);
+			return r;
 		} catch (e) {
 			alert('erro strToData '+erro(e));
 			return new Date();
@@ -2041,8 +2069,12 @@ function strPesq(o) {
 		return s;
 	}
 	//***********************************************
-	function fSort(a,b) {
-		return (a>b?1:(a<b?-1:0));
+	function fSort(a,b,desc) {
+		if (desc) {
+			return (b>a?1:(b<a?-1:0));
+		} else {
+			return (a>b?1:(a<b?-1:0));
+		}
 	}
 
 //*******************************//

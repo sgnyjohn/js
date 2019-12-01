@@ -276,7 +276,8 @@ if (true) {
 	//		1 - objeto dom table - setTable
 	//		2 - txt csv - setMatriz ou vetor 1a linha cab
 	//		3 - vcard - addVCard
-	function bancoDados(Nome) {
+	function bancoDados(Nome,Doc) {
+		var doc = Doc?Doc:document;
 		var eu = this;
 		var nome = Nome;
 		var nr = 0; //nro regs
@@ -296,33 +297,68 @@ if (true) {
 		this.dlCol = '\t';
 		//*********************************************
 		// pivot calc like
-		this.pivot = function(ds) {
-			var t = doc.createElement('table');ds.appendChild(t);
-			var c = doc.createElement('td');t.appendChild(c);
-			c.innerHTML = 'filtro';
-			var s = selectCampo();c.appendChild(s);
-			var l = doc.createElement('tr');t.appendChild(l);
-			var c = doc.createElement('td');t.appendChild(c);
-			var s = selectCampo();c.appendChild(s);
-			var c = doc.createElement('td');t.appendChild(c);
-			var s = selectCampo();c.appendChild(s);
-			
-			
-			
-			
-			
-			
-			
-			
-			
+		this.pivot = function(Ds) {
+			var ds = Ds;
+			var t;
+			init();
+			//************************************
+			function mostra() {
+			}
+			//************************************
+			function selectChange(ev) {
+				var c = targetEvent(ev);
+				//lert((1*c.value)+' '+ds);
+				var d = getParentByTagName(c,'td');
+				var v = d.getElementsByTagName('p');
+				var t = camposN[c.value];
+				c.firstChild.selected = true;
+				for (var i=0;i<v.length;i++) {
+					if (v[i].innerHTML==t) {
+						domRemove(v[i]);
+						return;
+					}
+				}
+				//add
+				v = doc.createElement('p');v.innerHTML = t;
+				v.addEventListener('click',function(ev) {domRemove(targetEvent(ev));});
+				d.appendChild(v);
+			}
+			//************************************
+			function init() {
+				t = doc.createElement('table');ds.appendChild(t);
+
+				var l = doc.createElement('tr');t.appendChild(l);
+				//filtro
+				var c = doc.createElement('td');t.appendChild(c);
+				c.setAttribute('colspan','2');c.style.cssText = 'background-color:red;';
+				var s = selectCampo('<option selected>filtro');c.appendChild(s);
+
+				var l = doc.createElement('tr');t.appendChild(l);
+				//vazia
+				var c = doc.createElement('td');t.appendChild(c);
+				//coluna
+				var c = doc.createElement('td');t.appendChild(c);
+				var s = selectCampo('<option selected>coluna');c.appendChild(s);
+				
+				var l = doc.createElement('tr');t.appendChild(l);
+				//linha
+				var c = doc.createElement('td');t.appendChild(c);
+				var s = selectCampo('<option selected>linha');c.appendChild(s);
+				//dados
+				var c = doc.createElement('td');t.appendChild(c);
+				var s = selectCampo('<option selected>dados');c.appendChild(s);
+			}
+			//************************************
 			//retorna select dos campos
 			function selectCampo(opi,opf) {
 				var r = doc.createElement('select');
+				r.addEventListener('change',selectChange);
 				var t = opi?opi:'';
 				for (var i=0;i<camposN.length;i++) {
-					t += '<select value='+i+'>'+camposN[i];
+					t += '<option value='+i+'>'+camposN[i];
 				}
 				r.innerHTML = t+(opf?opf:'');
+				//lert(t);
 				return r;
 			}
 		}		

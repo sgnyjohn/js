@@ -298,11 +298,51 @@ if (true) {
 		//*********************************************
 		// pivot calc like
 		this.pivot = function(Ds) {
-			var ds = Ds;
-			var t;
+			var bd = this;
+			alert('regs='+bd.count()+' '+[1,2,3,4]);
+			var ds = Ds; //destino
+			var rs; //resultado
+			var sf,sc,sl,sd; //selects
 			init();
 			//************************************
 			function mostra() {
+				var vd = getParentByTagName(sd,'td').getElementsByTagName('p');
+				if (vd.length==0) return;
+				var vl = getParentByTagName(sl,'td').getElementsByTagName('p');
+				var vc = getParentByTagName(sc,'td').getElementsByTagName('p');
+				//acumula
+				var e = {};
+				bd.top();
+				while (bd.next()) {
+					var ch = [];
+					//linha
+					for (var l = 0;l<vl.length;l++) {
+						ch[ch.length] = bd.get(vl[l].innerHTML);
+					}
+					//coluna
+					for (var c = 0;c<vc.length;c++) {
+						ch[ch.length] = bd.get(vc[c].innerHTML);
+					}
+					//valores
+					if (e=={}) {
+						alert('ch='+ch+' v='+v);
+					}
+					var v = e[ch];
+					if (!v) {
+						v = new Array(vd.length).fill(0);
+						e[ch] = v;
+					}
+					for (var d = 0;d<vd.length;d++) {
+						v[d] += 1*bd.get(vd[d].innerHTML);
+					}
+					
+				}
+				//mostra
+				var t = ms()+'<table><tr><th>ch<th>res';
+				for (ch in e) {
+					t += '<tr><td>'+ch+'<td>'+e[ch];
+				}
+				rs.innerHTML = t;
 			}
 			//************************************
 			function selectChange(ev) {
@@ -315,6 +355,7 @@ if (true) {
 				for (var i=0;i<v.length;i++) {
 					if (v[i].innerHTML==t) {
 						domRemove(v[i]);
+						mostra();
 						return;
 					}
 				}
@@ -322,6 +363,7 @@ if (true) {
 				v = doc.createElement('p');v.innerHTML = t;
 				v.addEventListener('click',function(ev) {domRemove(targetEvent(ev));});
 				d.appendChild(v);
+				mostra();
 			}
 			//************************************
 			function init() {
@@ -331,22 +373,26 @@ if (true) {
 				//filtro
 				var c = doc.createElement('td');t.appendChild(c);
 				c.setAttribute('colspan','2');c.style.cssText = 'background-color:red;';
-				var s = selectCampo('<option selected>filtro');c.appendChild(s);
+				sf = selectCampo('<option selected>filtro');c.appendChild(sf);
 
 				var l = doc.createElement('tr');t.appendChild(l);
 				//vazia
 				var c = doc.createElement('td');t.appendChild(c);
 				//coluna
 				var c = doc.createElement('td');t.appendChild(c);
-				var s = selectCampo('<option selected>coluna');c.appendChild(s);
+				sc = selectCampo('<option selected>coluna');c.appendChild(sc);
 				
 				var l = doc.createElement('tr');t.appendChild(l);
 				//linha
 				var c = doc.createElement('td');t.appendChild(c);
-				var s = selectCampo('<option selected>linha');c.appendChild(s);
+				sl = selectCampo('<option selected>linha');c.appendChild(sl);
 				//dados
 				var c = doc.createElement('td');t.appendChild(c);
-				var s = selectCampo('<option selected>dados');c.appendChild(s);
+				sd = selectCampo('<option selected>dados');c.appendChild(sd);
+
+				//dest result
+				rs = doc.createElement('div');
+				ds.appendChild(rs);
 			}
 			//************************************
 			//retorna select dos campos

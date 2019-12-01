@@ -314,33 +314,40 @@ if (true) {
 				var e = {};
 				bd.top();
 				while (bd.next()) {
-					var ch = [];
+
 					//linha
+					var chl = [];
 					for (var l = 0;l<vl.length;l++) {
-						ch[ch.length] = bd.get(vl[l].innerHTML);
+						chl[chl.length] = bd.get(vl[l].innerHTML);
 					}
+					var ln = e[chl];
+					if (!ln) {
+						ln = {};
+						e[chl] = ln;
+					}
+					
 					//coluna
+					var chc = [];
 					for (var c = 0;c<vc.length;c++) {
-						ch[ch.length] = bd.get(vc[c].innerHTML);
+						chc[chc.length] = bd.get(vc[c].innerHTML);
 					}
-					//valores
-					if (e=={}) {
-						alert('ch='+ch+' v='+v);
-					}
-					var v = e[ch];
+					//valor
+					var v = ln[chc];
 					if (!v) {
 						v = new Array(vd.length).fill(0);
-						e[ch] = v;
+						ln[chc] = v;
 					}
 					for (var d = 0;d<vd.length;d++) {
 						v[d] += 1*bd.get(vd[d].innerHTML);
 					}
-					
 				}
 				//mostra
-				var t = ms()+'<table><tr><th>ch<th>res';
-				for (ch in e) {
-					t += '<tr><td>'+ch+'<td>'+e[ch];
+				var t = '<table><tr><th>ch<th>res';
+				for (chl in e) {
+					t += '<tr><td>'+chl;
+					for (chc in e[chl]) {
+						t += '<td>'+chc+'<td>'+e[chl][chc];
+					}
 				}
 				rs.innerHTML = t;
 			}

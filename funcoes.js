@@ -341,12 +341,49 @@ if (true) {
 						v[d] += 1*bd.get(vd[d].innerHTML);
 					}
 				}
-				//mostra
-				var t = '<table><tr><th>ch<th>res';
+				//tot linha e coluna
+				var tl = {};
+				var tc = {};
 				for (chl in e) {
-					t += '<tr><td>'+chl;
+					var l = tl[chl];
+					if (!l) {
+						l = new Array(vd.length).fill(0);
+						tl[chl] = l;
+					}
 					for (chc in e[chl]) {
-						t += '<td>'+chc+'<td>'+e[chl][chc];
+						var c = tc[chc];
+						if (!c) {
+							c = new Array(vd.length).fill(0);
+							tc[chc] = c;
+						}
+						//soma ln
+						aeval(l,function(v,i){l[i]+=e[chl][chc][i]});
+						//soma c
+						aeval(c,function(v,i){c[i]+=e[chl][chc][i]});
+					}
+				}
+				//sort lin d[0]
+				var lo = [];
+				aeval(tl,function(v,i){lo[lo.length]=[i,v];});
+				lo.sort(function(a,b){return fSort(b[1][0],a[1][0])});
+				//sort lin d[0]
+				var co = [];
+				aeval(tc,function(v,i){co[co.length]=[i,v];});
+				co.sort(function(a,b){return fSort(b[1][0],a[1][0])});
+				
+				//mostra
+				var zero = new Array(vd.length).fill('-');
+				var t = '<table border=1><tr><th>ch<th>res';
+				for (var l=0;l<lo.length;l++) {
+					t += '<tr><td>'+lo[l][0];
+					var vl = e[lo[l][0]];
+					for (var c=0;c<co.length;c++) {
+						var vc = vl[co[c][0]];
+						if (vc) {
+							aeval(vc,function(v,i){t+='<td class=num>'+format(v,0)});
+						} else {
+							aeval(zero,function(v,i){t+='<td>'+v});
+						}
 					}
 				}
 				rs.innerHTML = t;

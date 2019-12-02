@@ -366,14 +366,36 @@ if (true) {
 				var lo = [];
 				aeval(tl,function(v,i){lo[lo.length]=[i,v];});
 				lo.sort(function(a,b){return fSort(b[1][0],a[1][0])});
-				//sort lin d[0]
+				//sort col d[0]
 				var co = [];
 				aeval(tc,function(v,i){co[co.length]=[i,v];});
 				co.sort(function(a,b){return fSort(b[1][0],a[1][0])});
+				//col tm h
 				
 				//mostra
+				var t = '<table border=1><tr>';
+				if (false) {
+					//cab 1
+					feval(0,vc.length-1,function(i) {
+						t += '<th colspan='+vl.length+'>';
+						//quantos dif
+						
+						aeval(vc,function(v,i){t+='<th colspan='+sp+' title='+v.innerHTML+'>'; });
+					});
+				}
+				//cab 2
+				if (vd.length==1) {
+					aeval(vl,function(v,i){t+='<th>'+v.innerHTML});
+					aeval(co,function(v,i){t+='<th>'+v[0]});
+				} else {
+					t += '<th colspan='+vl.length+'>';
+					aeval(co,function(v,i){t+='<th colspan='+vd.length+'>'+v[0]});
+					t += '<tr>';
+					aeval(vl,function(v,i){t+='<th>'+v.innerHTML});
+					aeval(co,function(){aeval(vd,function(v,i){t+='<th>'+v.innerHTML})});
+				}
+				//dados
 				var zero = new Array(vd.length).fill('-');
-				var t = '<table border=1><tr><th>ch<th>res';
 				for (var l=0;l<lo.length;l++) {
 					t += '<tr><td>'+lo[l][0];
 					var vl = e[lo[l][0]];

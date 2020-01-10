@@ -24,6 +24,89 @@ function word() {
 	}
 }
 
+//****************************************************
+// contador sonegometro,incentivometro
+function contador(idDs) {
+	var eu = this;
+	var id = idDs;
+	var ds;
+	var doc = domDoc(ds);
+	this.vin = 0; //valor inicio
+	this.din = new Date(2020,0,1,0,0,0); //data valor inicio
+	this.vfi = 000031491940070.0; //valor fim
+	this.dfi = new Date(2020,0,10,17,4,0); //data valor fim
+	var incr;
+	var vla,vlaa; //str valor atual
+	this.ti = 2000; //incrementa a cada ms
+	var tmo;
+	this.nd = 15; //numero digitos
+	this.br = '               ';
+	//this.br = '000000000000000';
+	var aa = 0;
+	this.css = 'DIV#conta TD {font-size: 2em;}'
+		+' DIV#conta TD.dig {background-color: #ffffff; font-weight: bold; padding: 8px 9px 0px;}'
+		+' DIV#conta TABLE {border-collapse: separate;border-spacing: 7px;margin: 30px auto;}'
+		+' DIV#conta TD.digp {color: #ffffff;}'
+	;
+	var vd = [];//digitos td
+	//setTimeout(init,10);
+	//************************************************
+	function str() {
+		vlaa = vla;
+		vla = right(eu.br+Math.floor(
+			((new Date()).getTime()-eu.din)*incr
+		),15);
+	}
+	//************************************************
+	function inc() {
+		aa--;
+		if (aa<0) {
+			aa = eu.nd-1;
+			str();
+		}
+		c = vla.substring(aa,aa+1);
+		classOff(vd[aa],'digp');
+		vd[aa].innerHTML = c==' '?'&nbsp;':c;
+		if (aa>0 && vla.substring(0,aa)!=vlaa.substring(0,aa) ) {
+			classOn(vd[aa-1],'digp');
+		}
+		setTimeout(inc,tmo);
+	}
+	//************************************************
+	this.start = function() {
+		ds = typeof(id)=='string'?browse.getId(idDs):id;
+		incr = (eu.vfi-eu.vin)/(eu.dfi-eu.din);
+		tmo = eu.ti/eu.nd;
+		var irmao = getIrmao(ds,true);
+		if (irmao && irmao.tagName=='STYLE') {
+			//objNav(irmao);alert('irmao='+irmao);
+			irmao.innerText = troca(eu.css,'#conta ','#'+ds.id+' ');
+		}
+		setTimeout(init,10);
+	}
+	//************************************************
+	function init() {
+		var tr = domObj({tag:'tr',className:'contador'
+			,targ:domObj({tag:'table',targ:ds})
+		});
+		str();
+		for (var i=0;i<eu.nd;i++) {
+			var c =  vla.substring(i,i+1);
+			vd[i] = domObj({tag:'td'
+				,innerHTML:c==' '?'&nbsp;':c
+				,class:'dig'
+				,targ:tr}
+			);
+			//lert(vd[i].className);
+			if (i%3==0) {
+				domObj({tag:'td',innerHTML:(eu.nd-i<4?',':'.'),targ:tr});
+			}
+		}
+		setTimeout(inc,tmo);
+	}
+}
+
+
 
 //****************************************************
 // grafico barras horizontais

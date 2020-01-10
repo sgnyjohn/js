@@ -33,6 +33,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 if (true) {
 
 	//***********************************************
+	function getElementIndex(o) {
+		var op = o.parentNode;
+		for (var i=0;i<op.childNodes.length;i++) {
+			if (op.childNodes[i]==o) {
+				return i;
+			}
+		}
+		return -1;
+	}
+	//***********************************************
 	// pagination
 	function pages(pgA,tm,fim) {
 		var r = '';
@@ -374,7 +384,7 @@ if (true) {
 				
 				//mostra
 				var t = '<table border=1><tr>';
-				if (false) {
+				/*if (false) {
 					//cab 1
 					feval(0,vc.length-1,function(i) {
 						t += '<th colspan='+vl.length+'>';
@@ -382,7 +392,7 @@ if (true) {
 						
 						aeval(vc,function(v,i){t+='<th colspan='+sp+' title='+v.innerHTML+'>'; });
 					});
-				}
+				} */
 				//cab 2
 				if (vd.length==1) {
 					aeval(vl,function(v,i){t+='<th>'+v.innerHTML});
@@ -397,7 +407,9 @@ if (true) {
 				//dados
 				var zero = new Array(vd.length).fill('-');
 				for (var l=0;l<lo.length;l++) {
-					t += '<tr><td>'+lo[l][0];
+					//t += '<tr><td>'+lo[l][0];
+					t += '<tr>';
+					aeval(lo[l][0].split(','),function(v,i){t+='<th>'+v});
 					var vl = e[lo[l][0]];
 					for (var c=0;c<co.length;c++) {
 						var vc = vl[co[c][0]];
@@ -2344,13 +2356,23 @@ if (true) {
 		//******************************	
 		function setParam() {
 			//tem parametros JS ? // sj 09/2015
+			urlJ = '';
 			if (url.indexOf('#')!=-1) {
 				urlJ = substrAt(url,'#');
 				url = leftAt(url,'#');
+			} else if (eu.url.indexOf('#')!=-1) {
+				urlJ = substrAt(eu.url,'#');
+				eu.url = leftAt(eu.url,'#');
+			}
+			if (!vazio(urlJ)) {
 				//lert(urlJ);
 				var vj=palavraA(urlJ,'#');
 				for (var i=0;i<vj.length;i++) {
-					paramJ[leftAt(vj[i],'=')] = decodeURIComponent(substrAt(vj[i],'='));
+					try {
+						paramJ[leftAt(vj[i],'=')] = decodeURIComponent(substrAt(vj[i],'='));
+					} catch (e) {
+						paramJ[leftAt(vj[i],'=')] = (substrAt(vj[i],'='));
+					}
 				}
 				//lert(vj+' p='+paramJ);
 			}
@@ -2497,6 +2519,12 @@ if (true) {
 			return classAddDel(ob,estilo,ligar1);
 		}
 		//***********************************************************
+		function classOff(ob,estilo) {
+			classAddDel(ob,estilo,false);
+		}
+		function classOn(ob,estilo) {
+			classAddDel(ob,estilo,true);
+		}
 		function classAddDel(ob,estilo,ligar1) {
 			var d = ' '+ob.className+' ';
 			var ligar = ligar1;

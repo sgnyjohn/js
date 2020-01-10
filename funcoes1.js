@@ -26,11 +26,11 @@ function word() {
 
 //****************************************************
 // contador sonegometro,incentivometro
-function contador(idDs) {
+function contador(className) {
 	var eu = this;
-	var id = idDs;
+	var cl = className;
 	var ds;
-	var doc = domDoc(ds);
+	var doc;
 	this.vin = 0; //valor inicio
 	this.din = new Date(2020,0,1,0,0,0); //data valor inicio
 	this.vfi = 000031491940070.0; //valor fim
@@ -43,10 +43,13 @@ function contador(idDs) {
 	this.br = '               ';
 	//this.br = '000000000000000';
 	var aa = 0;
-	this.css = 'DIV#conta TD {font-size: 2em;}'
-		+' DIV#conta TD.dig {background-color: #ffffff; font-weight: bold; padding: 8px 9px 0px;}'
-		+' DIV#conta TABLE {border-collapse: separate;border-spacing: 7px;margin: 30px auto;}'
-		+' DIV#conta TD.digp {color: #ffffff;}'
+	this.css = ''
+		+'DIV.conta TD {font-size: 2em;}'
+		+' DIV.conta TD.dig {background-color: #ffffff; font-weight: bold; padding: 8px 9px 0px;}'
+		+' DIV.conta TABLE {border-collapse: separate;border-spacing: 7px;margin: 30px auto;}'
+		//+' DIV.conta TD.digp {color: #ffffff;}'
+		+' DIV.conta TD.digp {animation: .5s shake infinite alternate;}'
+		+' @keyframes shake {0% { transform: skewX(-15deg); } 5% { transform: skewX(15deg); } 10% { transform: skewX(-15deg); } 15% { transform: skewX(15deg); } 20% { transform: skewX(0deg); } 100% { transform: skewX(0deg); } }'
 	;
 	var vd = [];//digitos td
 	//setTimeout(init,10);
@@ -74,13 +77,24 @@ function contador(idDs) {
 	}
 	//************************************************
 	this.start = function() {
-		ds = typeof(id)=='string'?browse.getId(idDs):id;
+		if (typeof(cl)=='string') {
+			doc = document;
+			ds = doc.getElementsByClassName(cl)[0];
+		} else {
+			ds = cl;
+			cl = leftAt(ds.className+' ',' ');
+			doc = domDoc(ds);
+		}
+		if (!ds) {
+			alert('error class '+cl+' not found');
+			return;
+		}
 		incr = (eu.vfi-eu.vin)/(eu.dfi-eu.din);
 		tmo = eu.ti/eu.nd;
 		var irmao = getIrmao(ds,true);
 		if (irmao && irmao.tagName=='STYLE') {
 			//objNav(irmao);alert('irmao='+irmao);
-			irmao.innerText = troca(eu.css,'#conta ','#'+ds.id+' ');
+			irmao.innerText = troca(eu.css,'.conta ','.'+cl+' ');
 		}
 		setTimeout(init,10);
 	}

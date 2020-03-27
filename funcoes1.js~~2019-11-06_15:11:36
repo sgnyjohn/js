@@ -24,103 +24,6 @@ function word() {
 	}
 }
 
-//****************************************************
-// contador sonegometro,incentivometro
-function contador(className) {
-	var eu = this;
-	var cl = className;
-	var ds;
-	var doc;
-	this.vin = 0; //valor inicio
-	this.din = new Date(2020,0,1,0,0,0); //data valor inicio
-	this.vfi = 000031491940070.0; //valor fim
-	this.dfi = new Date(2020,0,10,17,4,0); //data valor fim
-	var incr;
-	var vla,vlaa; //str valor atual
-	this.ti = 2000; //incrementa a cada ms
-	var tmo;
-	this.nd = 15; //numero digitos
-	this.br = '               ';
-	//this.br = '000000000000000';
-	var aa = 0;
-	this.css = ''
-		+'DIV.conta TD {font-size: 2em;}'
-		+' DIV.conta TD.dig {background-color: #ffffff; font-weight: bold; padding: 8px 9px 0px;}'
-		+' DIV.conta TABLE {border-collapse: separate;border-spacing: 7px;margin: 30px auto;}'
-		//+' DIV.conta TD.digp {color: #ffffff;}'
-		+' DIV.conta TD.digp {animation: .5s shake infinite alternate;}'
-		+' @keyframes shake {0% { transform: skewX(-15deg); } 5% { transform: skewX(15deg); } 10% { transform: skewX(-15deg); } 15% { transform: skewX(15deg); } 20% { transform: skewX(0deg); } 100% { transform: skewX(0deg); } }'
-	;
-	var vd = [];//digitos td
-	//setTimeout(init,10);
-	//************************************************
-	function str() {
-		vlaa = vla;
-		vla = right(eu.br+Math.floor(
-			((new Date()).getTime()-eu.din)*incr
-		),15);
-	}
-	//************************************************
-	function inc() {
-		aa--;
-		if (aa<0) {
-			aa = eu.nd-1;
-			str();
-		}
-		c = vla.substring(aa,aa+1);
-		classOff(vd[aa],'digp');
-		vd[aa].innerHTML = c==' '?'&nbsp;':c;
-		if (aa>0 && vla.substring(0,aa)!=vlaa.substring(0,aa) ) {
-			classOn(vd[aa-1],'digp');
-		}
-		setTimeout(inc,tmo);
-	}
-	//************************************************
-	this.start = function() {
-		if (typeof(cl)=='string') {
-			doc = document;
-			ds = doc.getElementsByClassName(cl)[0];
-		} else {
-			ds = cl;
-			cl = leftAt(ds.className+' ',' ');
-			doc = domDoc(ds);
-		}
-		if (!ds) {
-			alert('error class '+cl+' not found');
-			return;
-		}
-		incr = (eu.vfi-eu.vin)/(eu.dfi-eu.din);
-		tmo = eu.ti/eu.nd;
-		var irmao = getIrmao(ds,true);
-		if (irmao && irmao.tagName=='STYLE') {
-			//objNav(irmao);alert('irmao='+irmao);
-			irmao.innerText = troca(eu.css,'.conta ','.'+cl+' ');
-		}
-		setTimeout(init,10);
-	}
-	//************************************************
-	function init() {
-		var tr = domObj({tag:'tr',className:'contador'
-			,targ:domObj({tag:'table',targ:ds})
-		});
-		str();
-		for (var i=0;i<eu.nd;i++) {
-			var c =  vla.substring(i,i+1);
-			vd[i] = domObj({tag:'td'
-				,innerHTML:c==' '?'&nbsp;':c
-				,class:'dig'
-				,targ:tr}
-			);
-			//lert(vd[i].className);
-			if (i%3==0) {
-				domObj({tag:'td',innerHTML:(eu.nd-i<4?',':'.'),targ:tr});
-			}
-		}
-		setTimeout(inc,tmo);
-	}
-}
-
-
 
 //****************************************************
 // grafico barras horizontais
@@ -1581,19 +1484,10 @@ function estat(Nome) {
 	this.getMatriz = getMatriz;
 	var vt = 0; //total geral
 	//****************************************************
-	this.toGraphBar = function(Op) {
-		var Horiz = (''+Op.type).indexOf('co')==-1; //if not column is bar
-		var ord = (''+Op.sort).indexOf('va')!=-1; //if not value is label
-		var desc = (''+Op.sort).indexOf('asc')==-1; //if not asc is desc
+	this.toGraphBar = function(Op,Horiz) {
 		var v1 = getMatriz();
-		//ordena descendente
-		if (ord) {
-			//ordena valor
-			v1.sort(function(a,b){return fSort(a[1],b[1],desc)});
-		} else {
-			//ordena chave
-			v1.sort(function(a,b){return fSort(a[0],b[0],desc)});
-		}
+		//ordena chave
+		v1.sort(function(a,b){return fSort(b[0],a[0])});
 		//calcula total
 		var t = 0; aeval(v1,function(v,i) { t+=v[1]; });
 		//label
@@ -1629,7 +1523,6 @@ function estat(Nome) {
 		for(var prop in v) {
 			v1[i++] = new Array(prop,v[prop]);
 		}
-		v1.sort(function(a,b){return fSort(a[0],b[0])});
 		return v1;
 	}
 	//****************************************************

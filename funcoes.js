@@ -157,6 +157,10 @@ if (true) {
 		for (var i in p) {
 			if (i=='innerHTML'||i=='') {
 				ret.innerHTML = p[i];
+			} else if (equals(i,'ev_')) {
+				var ev = substrAt(i,'_');
+				//lert('domObj.evento '+ev+'\n'+p[i]);
+				ret.addEventListener(ev,p[i]);
 			} else if ('-doc-tag-targ-'.indexOf('-'+i+'-')==-1) {
 				ret.setAttribute(i,p[i]);
 			}
@@ -487,6 +491,11 @@ if (true) {
 			}
 		}		
 		//*********************************************
+		// retorna vetor registro
+		this.getVetor = function() {
+			return valores[ur];
+		}
+		//*********************************************
 		// cria objeto hash do registro
 		this.getReg = function() {
 			var r = {};
@@ -515,10 +524,14 @@ if (true) {
 			return r;
 		}
 		//*********************************************
-		// gera objetos html
-		this.toDom = function(dst,limit) {
+		// gera objetos html 
+		// 	dst = obm dom destino
+		//	limit = limita nro regs
+		//	Valores = substitui dados originais por este vetor compatível
+		this.toDom = function(dst,limit,Valores) {
+			var vlr = Valores?Valores:valores;
 			var doc = dst?domDoc(dst):document;
-			var tb = doc.createElement('table');tb.className = 'bdToDom';
+			var tb = doc.createElement('table');tb.className = this.className?this.className:'bdToDom';
 			tb.border=1;
 			//cabecalho
 			var l = doc.createElement('tr');l.className='head';tb.appendChild(l);
@@ -529,18 +542,18 @@ if (true) {
 			}
 			//dados
 			var r;
-			for (r=0;r<valores.length && (!limit||r<limit);r++) {
+			for (r=0;r<vlr.length && (!limit||r<limit);r++) {
 				l = doc.createElement('tr');tb.appendChild(l);
-				for (var i=0;i<valores[r].length;i++) {
+				for (var i=0;i<vlr[r].length;i++) {
 					var c = doc.createElement('td');
-					c.innerHTML = troca(valores[r][i],'\n','<br>');
+					c.innerHTML = troca(vlr[r][i],'\n','<br>');
 					l.appendChild(c);
 				}
 			}
-			if (r<valores.length) {
+			if (r<vlr.length) {
 				l = doc.createElement('tr');tb.appendChild(l);
 				var c = doc.createElement('td');
-				c.setAttribute('colspan',''+valores[r].length);
+				c.setAttribute('colspan',''+vlr[r].length);
 				c.innerHTML = '<h1>stop limit '+limit+'</h1>';
 				l.appendChild(c);
 			}
@@ -830,22 +843,27 @@ if (true) {
 			this.setMatriz(x);
 		}
 		//*********************************************
-		// GET valor de um campo pelo nome
-		this.get = function(Nome,pdr) {
-			if (ur >= valores.length) {
-				alert('erro..'+ur);
+		// GET valor de um campo pelo nome, ret padrão, e mov ponteiro
+		this.get = function(Nome,pdr,mv) {
+			//registro solicitado, pode haver movimento.
+			var rf = typeof(mv)=='number'?ur+mv:ur;
+			//lert('mv='+mv+' ur='+ur+' rf='+rf);
+			//registro calculado fora de faixa, retorna pdr
+			if (rf >= valores.length || rf < 0) {
+				//alert('erro..'+ur);
+				return pdr;
 			}
 			if (typeof(campos[Nome])=='undefined') {
 				return pdr;
 			}
 			var pc = campos[Nome];
-			if ( typeof(pdr)!='undefined' && typeof(valores[ur][pc])=='undefined' ) {
+			if ( typeof(pdr)!='undefined' && typeof(valores[rf][pc])=='undefined' ) {
 				return pdr;
 			}
 			try {
-				return valores[ur][pc];
+				return valores[rf][pc];
 			}  catch (e) {
-				alert('ur='+ur+' pc='+pc+' nome='+Nome+' '+erro(e));
+				alert('bancoDados.get ERRO ur='+rf+' pc='+pc+' nome='+Nome+' '+erro(e));
 			}
 		}
 		//*********************************************
@@ -872,6 +890,11 @@ if (true) {
 		}
 		//*********************************************
 		// recebe matriz ou csv com 1a linha nome campos
+		this.setVetObj = function(vet) {
+			//nao implem
+		}
+		//*********************************************
+		// recebe matriz ou csv com 1a linha nome campos
 		this.setMatriz = function(vet) {
 			if (typeof(vet)=='string') {
 				vet = palavraA(trimm(vet),this.dlRow,this.dlCol);
@@ -892,6 +915,7 @@ if (true) {
 		// seta valor de um campo pelo nome 
 		//		- add = para string, add mais texto
 		this.set = function(Nome,Valor,add) {
+			//se não existe, cria campo
 			if (typeof(campos[Nome])=='undefined') {
 				if (this.dev) {
 					debJ('novo campo '+Nome+' pos='+camposN.length);
@@ -923,10 +947,10 @@ if (true) {
 				}
 			} else if ( add && !nulo(valores[ur][pc]) ) {
 				//valor é string a add 
-				valores[ur][pc] += ' '+trimm(Valor);
+				valores[ur][pc] += ' '+trimm(''+Valor);
 			} else {
-				//valor simpes string
-				valores[ur][pc] = trimm(Valor);
+				//valor qq type
+				valores[ur][pc] = trimm(''+Valor);
 			}
 		}
 		//*********************************************
@@ -1798,7 +1822,7 @@ if (true) {
 				}
 				// delimit - 
 				var d = palavraA(leftAt(str,' '),'-');
-				var r = new Date(1*d[0],1*d[1],1*d[2],1*h[0],1*h[1],1*h[2],1*h[3]);
+				var r = new Date(1*d[0],1*d[1]-1,1*d[2],1*h[0],1*h[1],1*h[2],1*h[3]);
 				//lert('d='+d+' h='+h+' '+r);
 				return r;
 			} catch (e) {
@@ -1810,6 +1834,9 @@ if (true) {
 		function dataSql(a) {
 			//getDay = dia semana.
 			var d = vazio(a)?new Date():a;
+			if (typeof(a)=='number') {
+				d = new Date(a);
+			}
 			return takeYear(d)+'-'+strZero(d.getMonth()+1,2)
 			+'-'+strZero(d.getDate(),2)+' '
 			+strZero(d.getHours(),2)+':'

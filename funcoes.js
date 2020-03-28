@@ -310,6 +310,21 @@ if (true) {
 		this.dlRow = '\n';
 		this.dlCol = '\t';
 		//*********************************************
+		// eval em todos registros
+		this.eval = function(op) {
+			if (typeof(op)=='function') {
+				var x = op;
+				op = {};
+				op.func = x;
+			}
+			eu.top();
+			while (eu.next()) {
+				if (!op.cond || op.cond()) {
+					op.func(ur);
+				}
+			}
+		}
+		//*********************************************
 		// pivot calc like
 		this.pivot = function(Ds) {
 			var bd = this;

@@ -309,6 +309,7 @@ if (true) {
 		this.dev = false;
 		this.dlRow = '\n';
 		this.dlCol = '\t';
+		var fileHead;
 		//*********************************************
 		// eval em todos registros
 		this.eval = function(op) {
@@ -524,16 +525,25 @@ if (true) {
 		}		
 		//*********************************************
 		// cria objeto index por campo
-		this.index = function(nomeCampo) {
+		this.index = function(nomeCampo,uniq) {
 			var r = {};
-			var bur = ur;
-			this.reg(0);
+			var bur = ur; //guarda reg atual
+			this.top(); 
 			while (this.next()) {
 				var vc = this.get(nomeCampo);
 				if (!r[vc]) {
-					r[vc] = [];
+					if (uniq) {
+						r[vc] = ur;
+					} else {
+						r[vc] = [ur];
+					}
+				} else if (uniq) {
+					alert('index: error, duplicate value of key '
+						+nomeCampo+'['+vc+' & '+this.get(nomeCampo,'?',''+r[vc])+']'
+					);
+				} else {
+					r[vc][r[vc].length] = ur;
 				}
-				r[vc][r[vc].length] = this.reg();
 			}
 			ur = bur;
 			return r;
@@ -851,17 +861,56 @@ if (true) {
 			return e.toTxt()+'\n n='+camposN.length+' ('+camposN+')\n'+e;
 		}
 		//*********************************************
-		// recebe txt 1a linha campos e add regs
+		// recebe txt 1a linha campos* e add regs
+		// 		se 1a linha = ':' assume cabeçalho arquivo no padrão eml
+		//		separado do nome de campos e bloco dados por linha vazia
+		//		cabeçalho arquivo pode conter campo 'delimiter' this.dlCol
 		this.setTxt = function(tx) {
-			var x = palavraA(trimm(tx),'\n','\t');
+			var x = palavraA(trimm(tx),this.dlRow);
+			
+			//possui fileHead
+			if (trimm(x[0])==':') {
+				//read fileHead
+				fileHead = {'delimiter': this.dlCol};
+				for (var i=1;i<x.length;i++) {
+					var l = trimm(x[i]);
+					if (l=='') {
+						break;
+					}
+					var c = leftAt(l,':');
+					fileHead[c] = trimm(substrAt(l,':'));
+				}
+				this.dlCol = fileHead['delimiter'];
+				var xn=[];
+				//read dad
+				for (var d=i+1;d<x.length;d++) {
+					if (trimm(x[d])!='') {
+						xn[xn.length] = x[d].split(eu.dlCol);
+					}
+				}
+				x = xn;
+			} else {
+				//separa colunas
+				aeval(x,function(e,i) { x[i] = e.split(eu.dlCol); });
+			}
 			//lert(x[0]);
 			this.setMatriz(x);
 		}
 		//*********************************************
-		// GET valor de um campo pelo nome, ret padrão, e mov ponteiro
+		// GET valor de um campo pelo nome, ret padrão, se number mov ponteiro mv ou reg nro
+		this.getNum = function(Nome,pdr,mv) {
+			return 1*this.get(Nome,pdr,mv);
+		}
+		//*********************************************
+		// GET valor de um campo pelo nome, ret padrão, se number mov ponteiro mv ou reg nro
 		this.get = function(Nome,pdr,mv) {
 			//registro solicitado, pode haver movimento.
-			var rf = typeof(mv)=='number'?ur+mv:ur;
+			var rf = ur;
+			if (typeof(mv)=='number') {
+				rf = ur+mv;
+			} else if (typeof(mv)=='string') {
+				rf = 1*mv;
+			}
 			//lert('mv='+mv+' ur='+ur+' rf='+rf);
 			//registro calculado fora de faixa, retorna pdr
 			if (rf >= valores.length || rf < 0) {
@@ -910,9 +959,11 @@ if (true) {
 		}
 		//*********************************************
 		// recebe matriz ou csv com 1a linha nome campos
+		//		* ver setTxt
 		this.setMatriz = function(vet) {
 			if (typeof(vet)=='string') {
-				vet = palavraA(trimm(vet),this.dlRow,this.dlCol);
+				this.setTxt(vet);
+				return;
 			}
 			//nome campos na linha 0
 			for (var i=0;i<vet[0].length;i++) {
@@ -972,7 +1023,8 @@ if (true) {
 		this.addReg = function(cod) {
 			if (typeof(cod)=='undefined') {
 				//registro auto numerado
-				ur++;
+				// 2020-04 ur++;
+				ur = valores.length;
 			} else {
 				ur = cod;
 			}
@@ -1586,8 +1638,7 @@ if (true) {
 		}
 
 		//*******************************************
-		// obj paines se se escondem e aparecem 
-		//		conforme o mouse
+		// obj paineis que se escondem e aparecem onOver
 		//*******************************************
 		function painelOnOff(Obj,SobraH,SobraV,PosH,PosV) {
 			var eu = this;
@@ -1866,7 +1917,7 @@ if (true) {
 		}
 		//**************************//
 		function strZero(nr,t) {
-			return right('0000000000'+nr,t);
+			return right('0000000000'+Math.floor(nr+0.5),t);
 		}
 		//************************************
 		/* preciso armazenar objetos ligados a tags 

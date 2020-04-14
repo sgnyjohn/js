@@ -202,7 +202,7 @@ function graphBar(mat,Op) {
 			var rs = (v1[i][1]-mi)/df*100;
 			var rs = (v1[i][1])/mx*100;
 			r += '<td class="br" style="width:'+(100/v1.length*0.1)+'%;">'
-				+'<td class="bar" title="'+htmlToTxt(v1[i][0])+'\n'+v1[i][1]+' rs='+rs+'"'
+				+'<td class="bar" title="'+htmlToTxt(v1[i][0])+' = '+v1[i][1]+'"'
 				+' style="width:'+(100/v1.length*0.9)+'%;'
 				+'background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABHNCSVQICAgIfAhkiAAAAA1JREFUCFtj+MLA8B8ABNQB9EPwtFAAAAAASUVORK5CYII=);'
 				+'background-size:100% '+rs+'%;'

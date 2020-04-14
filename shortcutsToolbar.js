@@ -1,3 +1,9 @@
+//find web page regex
+//https://superuser.com/questions/417875/how-can-i-search-for-regular-expressions-within-webpages-using-google-chrome-or
+javascript:(function(){var p=/(\>{1}[^\n\<]*?)([^\n\<]{0,30}regu[^\n\<]{0,10})/gi,b=document.body;b.innerHTML=b.innerHTML.replace(p,'$1<span style="background-color:red;">$2</span>');})();
+javascript:(function(){var p=prompt('regex','/(\>{1}[^\n\<]*?)([^\n\<]{0,30}daily[^\n\<]{0,10})/gi'),b=document.body;b.innerHTML=b.innerHTML.replace(new RegExp(p,'gi'),'$1<span style="background-color:red;">$2</span>');})();
+
+
 //tw divs sem attr
 //		alert('tot div='+a.length);
 //		alert(cd+' '+a[e].innerHTML);

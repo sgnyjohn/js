@@ -550,12 +550,19 @@ if (true) {
 		}
 		//*********************************************
 		// gera objetos html 
-		// 	dst = obm dom destino
+		// 	targ = target dom destino
 		//	limit = limita nro regs
-		//	Valores = substitui dados originais por este vetor compatível
-		this.toDom = function(dst,limit,Valores) {
-			var vlr = Valores?Valores:valores;
+		//	values = substitui dados originais por este vetor compatível
+		this.toDom = function(op,Xlimit,XValores) {
+			if (!op || op.tagName) {
+				var r  = {targ:op,limit:Xlimit,values:XValores};
+				var op = r;
+			}
+			var vlr = op.values?op.values:valores;
+			var dst = op.targ?op.targ:false;
+			//lert('dst='+dst);
 			var doc = dst?domDoc(dst):document;
+			var limit = op.limit?op.limit:false;
 			var tb = doc.createElement('table');tb.className = this.className?this.className:'bdToDom';
 			tb.border=1;
 			//cabecalho
@@ -567,7 +574,7 @@ if (true) {
 			}
 			//dados
 			var r;
-			for (r=0;r<vlr.length && (!limit||r<limit);r++) {
+			for (r=0;r<vlr.length && (!op.limit||r<op.limit);r++) {
 				l = doc.createElement('tr');tb.appendChild(l);
 				for (var i=0;i<vlr[r].length;i++) {
 					var c = doc.createElement('td');

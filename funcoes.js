@@ -32,6 +32,45 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 if (true) {
 
+	//**************************//
+	function objDebug(o,Op) {
+		var op = mergeOptions({lim:200,filt:function(){return true;}},Op);
+		var doc = op.doc?op.doc:domDoc(o);
+		var z,e,i=0;
+		if ('~object~array~'.indexOf('~'+typeof(o)+'~')!=-1) {
+			var r = doc.createElement('table');
+			r.border=1;
+			for(var prop in o) {
+				try {
+					z = o[prop];
+				} catch (e) {
+					z = '?erro:'+erro(e);
+				}
+				
+				var l = domObj({tag:'tr',targ:r});
+				domObj({'':prop,tag:'td',targ:l});
+				domObj({tag:'td',targ:l}).appendChild(objDebug(z));
+
+				i++;
+				if (i>op.lim) break;
+			}
+			return r;
+		} else {
+			return domObj({tag:'span','':''+o});
+		}
+	}
+
+
+	//***********************************************
+	// mescla objeto opcoes com obj opcoes padrao
+	function mergeOptions(opp,op) {
+		if (typeof(op)!='object') {
+			return opp;
+		}
+		aeval(op,function(x,k){opp[k]=x;});
+		return op;
+	}
+	
 	//***********************************************
 	function getElementIndex(o) {
 		var op = o.parentNode;
@@ -1621,29 +1660,11 @@ if (true) {
 		}
 		//*******************************//
 		function format(v,d) {
-			var v1='',v2='',i,vr='';
-
-			v = ''+v;
-			i = v.indexOf('.');
-			if (i<0) {
-				v1 = v;
-			} else {
-				v1 = v.substring(0,i);
-				v2 = v.substring(i+1,999);
-			}
-
-			v1 = '000000000000000000'.substring(0,18-v1.length)+v1;
-			vr = v1.substring(0,3);
-			for (i=3;i<18;i+=3) {
-				vr += '.'+v1.substring(i,i+3);
-			}
-
-			while (vr.length>1 && '0.'.indexOf(vr.substring(0,1))>-1) 
-				vr = vr.substring(1,vr.length);
-
-				return vr+((d==0)?'':','+(v2+'0000000').substring(0,d))
+			return new Intl.NumberFormat( 
+				window.navigator.language
+				, { useGrouping: true,maximumFractionDigits:d,minimumFractionDigits:d}
+			).format(v);
 		}
-
 		//*******************************************
 		// obj paineis que se escondem e aparecem onOver
 		//*******************************************

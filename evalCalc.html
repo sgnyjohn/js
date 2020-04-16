@@ -1,0 +1,89 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>eval calc....</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+
+<script language=JavaScript src=/js/funcoes.js></script>
+<script language=JavaScript src=/js/funcoes1.js></script>
+
+
+</head>
+
+<script>
+var divR;
+function verEval(o) {
+	var v = document.getElementsByTagName('textarea');
+	var al = v[1];
+	var ev = v[0].value;
+	if (vazio(ev)) {
+		document.getElementsByTagName('td')[3].innerHTML = '';
+		al.value='';
+		return;
+	}
+	
+	var v = palavraA(trimm(troca(ev,'\n ','\n'))+'\n\n','\n');
+	var ex = '';
+	for (var i=0;i<v.length;i++) {
+		if (vazio(v[i]) && !vazio(ex)) {
+			try {
+				xx=eval(ex);
+				if (xx && xx.tagName) {
+					var x = document.getElementsByTagName('td')[3];
+					x.appendChild(domObj({tag:'hr'}));
+					x.appendChild(domObj({
+						tag:'p'
+						,style:'font-size:150%;'
+						,'':troca(ex,'\n','<br>')
+					}));
+					x.appendChild(xx);
+				}
+			} catch (e) {
+				xx='erro:\n'+erro(e);
+			}
+			al.value += '\n====>> '+i+'\n'+xx+'\n';
+			
+			ex = '';
+			
+		} else {
+			ex += v[i]+'\n';
+		}
+	}
+}
+setTimeout(verEval,1000);
+</script>
+
+
+<body>
+<table style="width:100%;xheight:90%;border:2px solid blue;background-color:#eefeee;">
+
+<tr>
+<td  style="width:48%;text-align:center;">code<br>
+<textarea style="width:95%;height:90%;" rows=20 onchange="javascript:verEval(this);">
+var x=12345679;
+x *= 9;
+x
+
+objDebug(window.navigator)
+
+objNav(window);
+</textarea>
+
+<td style="width:4%;text-align:center;"><input onclick="javascript:verEval();" type=button value=">>">
+
+<td style="width:48%;text-align:center;">result<br>
+<textarea style="width:95%;height:90%;"  rows=20 onchange="javascript:verEval();">
+	
+</textarea>
+
+
+<tr>
+
+<td colspan=3 style="width:100%;text-align:center;">
+
+
+</table>
+
+
+</body>
+
+</html>

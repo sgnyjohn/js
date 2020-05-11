@@ -1,0 +1,218 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>custom Elements</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+
+<script language=JavaScript src=/js/funcoes.js></script>
+<script language=JavaScript src=/js/funcoes1.js></script>
+
+
+</head>
+
+<style>
+	meu-quadrado { margin:5px; background-color:red;}
+</style>
+
+<script>
+function random(min, max) {
+  return Math.floor(Math.random() * (max - min + 1) + min );
+  return Math.floor(random1() * (max - min + 1) + min );
+}
+var seed = 1;
+function random1() {
+    var x = Math.sin(seed++) * 10000+Math.random();
+    return x - Math.floor(x);
+}
+
+
+function domCustomElementTeste(op) {
+	/* sgnyjohn mai/2020
+		através de event.rangeParent
+			é possível acessar dom objetos internos.
+	*/
+	op = mergeOptions({tag:'div'},op);
+	if ( ! op.customName ) {
+		op.customName = 'custom-'+((ms()-Math.floor(Math.random()*ms()/3)).toString(16));
+	}
+	var elem;
+	/*
+		objNav(customElements);
+		https://developer.mozilla.org/en-US/docs/Web/API/CustomElementRegistry
+		function define: function define() { [native code] }
+		function get: function get() { [native code] }
+		function whenDefined: function whenDefined() { [native cod...(+44)
+		function upgrade: function upgrade() { [native code] }
+	*/
+	window.customElements.define(op.customName, class extends HTMLElement {
+		/*static get observedAttributes() {
+			return ['style','html'];
+		}*/
+		constructor() {
+			super();
+			const shadow = this.attachShadow({mode: 'open'});
+			const elem = document.createElement(op.tag);
+			const style = document.createElement('style');
+			shadow.appendChild(style);
+			shadow.appendChild(elem);
+			//objNav(this);alert('ok '+op.tag);
+			this.elem = elem;
+			this.css = style;
+		}
+		/*attributeChangedCallback(name, oldValue, newValue) {
+			if (name == 'style') {
+				//lert('nst='+shadow.querySelector('style'));
+				this.shadowRoot.querySelector('style').textContent = newValue;
+			} else if (name == 'html') {
+				//lert('html ty='+typeof(newValue)+' elem='+this.elem);
+				this.elem.innerHTML = newValue;
+			}
+		}
+		*/
+	});
+	return op.customName;
+}
+
+
+var el = (function() {
+	setTimeout(add,100);
+	function tst() {
+		classe();
+		var tg = domCustomElement();
+		//lert(tg);
+		setTimeout(function() {
+			var ce = document.body.querySelector(tg);
+			ce.elem.innerHTML = '<h1>localizado e acessado ce.elem='+ce.elem+' </h1>';
+		},1000);
+		
+		domObj({tag:'hr',targ:document.body});
+		var ce = domObj({tag:tg
+			,'style':'div{border:2px outset green;}'
+			,'html':'<h1>teste</h1>'
+			,targ:document.body
+			,ev_click:function(ev) {
+				//bjNav(ev);
+				//lert('ev');
+				//acesso método classe custom.
+				var div = this.elem;
+				//setar html attributo objeto
+				div.innerHTML = '';
+				div.appendChild(domObj({tag:'h1','':'teste via dom'+ms()}));
+				//protege contra acessos futuros
+				this.elem = {};
+			}
+		});
+		
+		domObj({tag:'hr',targ:document.body});
+		
+		
+		var v = document.querySelectorAll('meu-quadrado');
+		var t = 'v='+v+' '+v.length;
+		v = v[0].querySelectorAll('td');
+		t += '<br>v='+v+' '+v.length+' não acessa domObjetos internos...';
+		var e = new estat('teste');
+		feval(2000,function(){e.inc(''+random(0,10),1);});
+		domObj({tag:'div','':t+e.toHtml(),targ:document.body});
+	}
+	function add() {
+		var f = function(ev) {
+			//bjNav(ev);alert(ev.target);
+			//rangeParent aponta a td.
+			if (ev.rangeParent.tagName == 'TD') {
+				//ev.rangeParent.style.cssText = 'background:'+`rgb(${random(0, 255)}, ${random(0, 255)}, ${random(0, 255)})`;
+				//bjNav(ev.rangeParent.style);
+				//lert(ev.rangeParent.style.cssText);
+				styleSet(ev.rangeParent,'background',`rgb(${random(0, 255)}, ${random(0, 255)}, ${random(0, 255)})`);
+				//lert(ev.rangeParent.style.cssText);
+			}
+			ev.target.setAttribute('style', 'table {'
+				+'border:2px solid '+`rgb(${random(0, 255)}, ${random(0, 255)}, ${random(0, 255)})`
+				+';background:'+`rgb(${random(0, 255)}, ${random(0, 255)}, ${random(0, 255)})`
+				+';width:350px;height:50px;margin:0;}'
+			);
+		};
+		domObj({tag:'meu-quadrado','':'t1',targ:document.body,ev_click:f});
+		domObj({tag:'meu-quadrado','':'t2',targ:document.body,ev_click:f});
+		domObj({tag:'h1','':'fim',targ:document.body,ev_click:f});
+		setTimeout(tst,100);
+	}
+})();
+
+//customElements.define('word-count', WordCount, { extends: 'p' });
+customElements.define('meu-quadrado', class extends HTMLElement {
+	static get observedAttributes() {
+		return ['style','css'];
+	}
+	constructor() {
+		super();
+		const shadow = this. attachShadow({mode: 'open'});
+		const div = document.createElement('table');
+		div.innerHTML = '<tr><td style="border:2px solid blue;width:75%;"></td>'
+			+'<td style="border:2px solid green;width:20%;"></td>'
+		;
+		const style = document.createElement('style');
+		style.textContent = 'table {border:2px solid red;background:blue;width:350px;height:50px}';
+		shadow.appendChild(style);
+		shadow.appendChild(div);
+		//lert('ok');
+	}
+	attributeChangedCallback(name, oldValue, newValue) {
+		if (name == 'style') {
+			//lert('nst='+shadow.querySelector('style'));
+			this.shadowRoot.querySelector('style').textContent = newValue;
+		} else if (name == 'style') {
+		} else if (name == 'css') {
+		}
+
+	}
+});
+
+function classe() {
+	//https://stackoverflow.com/questions/1535631/static-variables-in-javascript/1535687#1535687
+	class MyClass {
+	  // class constructor, equivalent to
+	  // the function body of a constructor
+	  constructor() {
+		const privateVariable = 'private value'; // Private variable at the constructor scope
+		this.publicVariable = 'public value'; // Public property
+
+		this.privilegedMethod = function() {
+		  // Public Method with access to the constructor scope variables
+		  console.log(privateVariable);
+		};
+	  }
+
+	  // Prototype methods:
+	  publicMethod() {
+		console.log(this.publicVariable);
+	  }
+
+	  // Static properties shared by all instances
+	  static staticProperty = 'static value';
+
+	  static staticMethod() {
+		console.log(this.staticProperty);
+	  }
+	}
+
+	// We can add properties to the class prototype
+	MyClass.prototype.additionalMethod = function() {
+	  console.log(this.publicVariable);
+	};
+
+	var myInstance = new MyClass();
+	myInstance.publicMethod();       // "public value"
+	myInstance.additionalMethod(); // "public value"
+	myInstance.privilegedMethod(); // "private value"
+	MyClass.staticMethod();             // "static value"
+}
+
+
+</script>
+
+
+<body>
+	<square1>teste shadow</square1>
+	<square1>teste</square1>
+</body>
+
+</html>

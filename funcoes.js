@@ -31,6 +31,66 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 if (true) {
+	
+	function domCustomElement(op) {
+		/* sgnyjohn mai/2020
+			através de event.rangeParent
+				é possível acessar dom objetos internos.
+		*/
+		op = mergeOptions({tag:'div'},op);
+		if ( ! op.customName ) {
+			op.customName = 'custom-'+((ms()-Math.floor(Math.random()*ms()/3)).toString(16));
+		}
+		window.customElements.define(op.customName, class extends HTMLElement {
+			constructor() {
+				super();
+				const shadow = this.attachShadow({mode: 'open'});
+				const elem = document.createElement(op.tag);
+				const style = document.createElement('style');
+				shadow.appendChild(style);
+				shadow.appendChild(elem);
+				//objNav(this);alert('ok '+op.tag);
+				this.elem = elem;
+				this.css = style;
+			}
+		});
+		return op.customName;
+	}
+	
+
+	//**************************//
+	function styleSet(dom,key,value) {
+		var o = textObj(dom.style.cssText);
+		o[key] = value;
+		dom.style.cssText = objText(o);
+	}
+	//**************************//
+	function objText(obj,delimElem,delimValue) {
+		delimElem = delimElem?delimElem:';'
+		delimValue = delimValue?delimValue:':'
+		var r = '';
+		for (var k in obj) {
+			r += k+delimValue+obj[k]+delimElem;
+		}		
+		return r;
+	}
+	//**************************//
+	function textObj(tex,delimElem,delimValue) {
+		var v = (tex?tex:'').split(delimElem?delimElem:';');
+		var r = {};
+		for (var i=0;i<v.length;i++) {
+			var l = v[i].split(delimValue?delimValue:':');
+			l[0] = trimm(l[0]);
+			if (l.length==1) { 
+				if (l[0]!='') {
+					r[l[0]] = true;
+				}
+			} else {
+				r[l[0]] = trimm(l[1]);
+			} 
+		}
+		return r;
+	}
 
 	//**************************//
 	function objDebug(o,Op) {
@@ -68,7 +128,7 @@ if (true) {
 			return opp;
 		}
 		aeval(op,function(x,k){opp[k]=x;});
-		return op;
+		return opp;
 	}
 	
 	//***********************************************
@@ -191,9 +251,10 @@ if (true) {
 	function domObj(p) {
 		p.doc=(p.doc?p.doc:document);
 		p.tag=(p.tag?p.tag:'p');
-		p.targ=(p.targ?p.targ:p.doc.body);
+		//p.targ=(p.targ?p.targ:p.doc.body);
 		var ret=p.doc.createElement(p.tag);
 		for (var i in p) {
+			//lert('dfsf='+i);
 			if (i=='innerHTML'||i=='') {
 				ret.innerHTML = p[i];
 			} else if (equals(i,'ev_')) {
@@ -204,7 +265,9 @@ if (true) {
 				ret.setAttribute(i,p[i]);
 			}
 		}
-		p.targ.appendChild(ret);
+		if (p.targ) {
+			p.targ.appendChild(ret);
+		}
 		return ret;
 	}
 	//***********************************************
@@ -959,7 +1022,7 @@ if (true) {
 			}
 			//lert('mv='+mv+' ur='+ur+' rf='+rf);
 			//registro calculado fora de faixa, retorna pdr
-			if (rf >= valores.length || rf < 0) {
+			if ( isNaN(rf) || typeof(rf)!='number'|| rf >= valores.length || rf < 0) {
 				//alert('erro..'+ur);
 				return pdr;
 			}
@@ -967,13 +1030,17 @@ if (true) {
 				return pdr;
 			}
 			var pc = campos[Nome];
-			if ( typeof(pdr)!='undefined' && typeof(valores[rf][pc])=='undefined' ) {
-				return pdr;
-			}
 			try {
-				return valores[rf][pc];
-			}  catch (e) {
-				alert('bancoDados.get ERRO ur='+rf+' pc='+pc+' nome='+Nome+' '+erro(e));
+				if ( typeof(pdr)!='undefined' && typeof(valores[rf][pc])=='undefined' ) {
+					return pdr;
+				}
+				try {
+					return valores[rf][pc];
+				}  catch (e) {
+					alert('bancoDados.get ERRO ur='+rf+' pc='+pc+' nome='+Nome+' '+erro(e));
+				}
+			} catch (e) {
+				alert('rf='+rf+' pc='+pc+' '+erro(e));
 			}
 		}
 		//*********************************************
@@ -2904,6 +2971,9 @@ if (true) {
 
 		//*********************************
 		function targetEvent(ev) {
+			if (ev.value && ev.tagName) {
+				return ev;
+			}
 			var v = Array('target','srcElement','originalTarget','currentTarget',
 			'explicitOriginalTarget','relatedTarget');
 			//localiza obj destino
@@ -3018,12 +3088,16 @@ if (true) {
 		function vazio(a) {
 			try {
 				//if ((a==null || isNaN(a) || typeof(a)=='undefined')) {
-				if ((a==null || typeof(a)=='undefined')) {
+				if (a==null || typeof(a)=='undefined') {
 					return true;
+				} else if (typeof(a)=='string') {
+					return trimm(a)=='';
+				} else if (typeof(a)=='number') {
+					return isNaN(a);
 				} else if (typeof(a)=='object') {
-					return objLen(a)==0;
+					return a.length===0 || objLen(a)==0;
 				} else {
-					return (typeof(a)=='string' && trimm(a)=='');
+					return false;
 				}
 			} catch (e) {
 				//lert('erro testando vazio(): '+erro(e)+' obj='+a);
@@ -3328,10 +3402,7 @@ if (true) {
 
 	//**************************//
 	//**************************//
-	var browse = new mznsie();
-	//**************************//
-	//**************************//
-	function mznsie() {
+	var browse = new (function() {
 		this.NS6 = false;
 		this.NS4 = false;
 		this.IE4 = false;
@@ -3724,6 +3795,6 @@ if (true) {
 		function obj_getAbsYIE4(o) {
 			return obj_getAbsYNS6(o);
 		}
-	}
+	})();
 
 }

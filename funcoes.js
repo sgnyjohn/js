@@ -32,6 +32,106 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 if (true) {
 	
+	//**************************
+	// load seq of XMLHttpRequest
+	// obj de obj -> 0 -> n {0:{url:'',callback:function,timeout},timeout:60,callback:?}
+	function loader(op) {
+		//default op
+		var op = mergeOptions({timeout:30,msegs:200},op);
+		var i=0;
+		while (op[i]) {
+			op[i] = mergeOptions({timeout:op.timeout},op[i]);
+			i++;
+		}
+		if (i==0) {
+			eu.error = 'no task XMLHttpRequest informed {0:{},...}'
+			return;
+		}
+		var eu = this;
+		var pos = 0;
+		this.end = false;
+		setTimeout(next);
+		//**************************
+		function end(v) {
+			this.end = v;
+			if (op.callback) {
+				op.callback(eu);
+			}
+		}
+		//**************************
+		function next() {
+			if (!op[pos].timeBegin) {
+				(new carregaUrl()).abre(op[pos].url,ret);
+				op[pos].timeBegin = ms()/1000;
+			} else if (op[pos].timeEnd) {
+				pos++;
+				if (!op[pos] || eu.error) {
+					end(true);
+					return;
+				}
+			} else if (op[pos].timeout<ms()/1000-op[pos].timeBegin) {
+				eu.error = 'timeout step '+pos+' '+(ms()/1000-op[pos].timeBegin);
+				alert(pos.url+' '+eu.error);
+				end(true);
+				return;
+			}
+			setTimeout(next,op.msegs);
+		}
+		//**************************
+		function ret(cod,b,text) {
+			if (cod==4) {
+				op[pos].callback(cod,b,text);
+				op[pos].timeEnd = ms()/1000;
+			}
+		}
+		
+		
+		
+		
+		
+	}
+	
+	//**************************
+	// sizeKey = first elements from array
+	// others is totaled
+	function total(SizeKey) {
+		var sizeKey = SizeKey;
+		var ix = {};
+		var v = [];
+		//**************************
+		this.getVector = function(descend) {
+			descend = descend?-1:1;
+			v.sort(function(a,b) { 
+				var r=0;
+				for (var i=0;i<sizeKey;i++) {
+					if (a[i]<b[i]) {
+						return -1*descend;
+					} else if (a[i]>b[i]) {
+						return 1*descend;
+					}
+				}
+				return 0;
+			});
+			return v;
+		}
+		//**************************
+		this.inc = function(arr) {
+			var k = '';
+			feval(sizeKey, function(i) { k += arr[i]; } );
+			var rg = ix[k];
+			if (typeof(rg)=='undefined') {
+				rg = v.length;
+				ix[k] = rg;
+				v[rg] = arr;
+			} else {
+				//sum not keys
+				for (var i=sizeKey;i<arr.length;i++) {
+					v[rg][i] += arr[i];
+				}
+			}
+		}
+	}
+	
 	function domCustomElement(op) {
 		/* sgnyjohn mai/2020
 			através de event.rangeParent
@@ -123,12 +223,12 @@ if (true) {
 
 	//***********************************************
 	// mescla objeto opcoes com obj opcoes padrao
-	function mergeOptions(opp,op) {
+	function mergeOptions(opDefault,op) {
 		if (typeof(op)!='object') {
 			return opp;
 		}
-		aeval(op,function(x,k){opp[k]=x;});
-		return opp;
+		aeval(opDefault,function(x,k){typeof(op[k])=='undefined'?op[k]=opDefault[k]:false;});
+		return op;
 	}
 	
 	//***********************************************

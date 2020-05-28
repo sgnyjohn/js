@@ -1,8 +1,9 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <title>eval calc....</title>
-<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 
+<script language=JavaScript src=/js/func.js></script>
 <script language=JavaScript src=/js/funcoes.js></script>
 <script language=JavaScript src=/js/funcoes1.js></script>
 
@@ -11,11 +12,11 @@
 
 <script>
 var divR;
-function verEval(o) {
+function verEval(ob) {
 	var v = document.getElementsByTagName('textarea');
 	var al = v[1];
 	var ev = v[0].value;
-	if (vazio(ev)) {
+	if (ob && ob.name=='clear') {
 		document.getElementsByTagName('td')[3].innerHTML = '';
 		al.value='';
 		return;
@@ -49,7 +50,7 @@ function verEval(o) {
 		}
 	}
 }
-setTimeout(verEval,1000);
+setTimeout(verEval,100);
 </script>
 
 
@@ -68,7 +69,9 @@ objDebug(window.navigator)
 objNav(window);
 </textarea>
 
-<td style="width:4%;text-align:center;"><input onclick="javascript:verEval();" type=button value=">>">
+<td style="width:4%;text-align:center;">
+	<input onclick="javascript:verEval();" type=button value=">>">
+	<input onclick="javascript:verEval(this);" name=clear title=clear type=button value="♻">
 
 <td style="width:48%;text-align:center;">result<br>
 <textarea style="width:95%;height:90%;"  rows=20 onchange="javascript:verEval();">

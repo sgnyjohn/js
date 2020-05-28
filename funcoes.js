@@ -16,15 +16,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 /*
- * alguns acreditam em fadas, outros num reino de freiras descalÁas... 
- * n„o importa, sÛ h· salvaÁ„o sob domÌnios do escrito, da lei, para TODOS.
+ * alguns acreditam em fadas, outros num reino de freiras descal√ßas... 
+ * n√£o importa, s√≥ h√° salva√ß√£o sob dom√≠nios do escrito, da lei, para TODOS.
  * 
- * a parte superior para +longe est· muito estreita, 
+ * a parte superior para +longe est√° muito estreita, 
  * a parte inferior da tela do computador fica borrada.
  * 
- * " possÌvel irrelev‚ncia das massas
+ * " poss√≠vel irrelev√¢ncia das massas
  * ...
- * … muito mais difÌcil lutar contra a irrelev‚ncia do que contra a exploraÁ„o. " Harari
+ * √â muito mais dif√≠cil lutar contra a irrelev√¢ncia do que contra a explora√ß√£o. " Harari
  * 
  * https://www.youtube.com/watch?v=zNoLeZi5gpk&t=41m18s
  * 
@@ -32,12 +32,72 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 if (true) {
 	
+	//***********************************************
+	// search for classes "expland" and reduce
+	function domExpland(Doc,Cl) {
+		var doc = Doc;
+		var cl = Cl?Cl:"expand";
+		var sim = ['‚ñ∂','‚ñΩ'];
+		var vo = [];
+		setTimeout(init,100);
+		function init() {
+			var v = doc.querySelectorAll('.'+cl);
+			//lert('domExpand: '+v.length+' '+cl);
+			for (var i=0;i<v.length;i++) {
+				var o = domDoc(doc).createElement('div');
+				o.i = i;
+				o.addEventListener('click',change);
+				v[i].parentNode.insertBefore(o,v[i]);
+				//o.appendChild(v[i]);
+				//alert(o.firstChild);
+				vo[i] = Array(v[i],o);
+				change(vo[i]); 
+			}
+		}
+		function change(ev) {
+			var v1 = (ev[0]?ev:vo[ev.target.i]);
+			if (hasClass(v1[0],cl+'_0')) {
+				v1[1].innerHTML = sim[1];
+				setCss(v1[0],'display','inline');
+				//browse.mostra(v1[0]);
+				classOff(v1[0],cl+'_0');
+				classOn(v1[0],cl+'_1');
+			} else {
+				v1[1].innerHTML = sim[0];
+				setCss(v1[0],'display','none');
+				//browse.esconde(v1[0]);
+				classOff(v1[0],cl+'_1');
+				classOn(v1[0],cl+'_0');
+			}
+		}
+	}
+	
+	function opener_() {
+		alert('opener');
+		try {
+			var r = opener;
+		} catch (e) {
+		}
+		return r;
+	}
+
+	//***********************************************
+	// []
+	function fSortCols(a,b,vCols,vDesc) {
+		vDesc = vDesc?vDesc:[];
+		aeval(vCols,function(v,nc) {
+			var swap = fSort(a[v],b[v],vDesc[nc]);
+			if (swap!=0) return swap;
+		});
+		return 0;
+	}
+
 	//**************************
 	// load seq of XMLHttpRequest
 	// obj de obj -> 0 -> n {0:{url:'',callback:function,timeout},timeout:60,callback:?}
 	function loader(op) {
 		//default op
-		var op = mergeOptions({timeout:30,msegs:200},op);
+		var op = mergeOptions({timeout:30,msegs:200,withCredentials:true},op);
 		var i=0;
 		while (op[i]) {
 			op[i] = mergeOptions({timeout:op.timeout},op[i]);
@@ -52,6 +112,35 @@ if (true) {
 		this.end = false;
 		setTimeout(next);
 		//**************************
+		function newOReq(v) {
+			var oReq;
+			try {
+				var tp = 0;
+				if (typeof(XMLHttpRequest)=='object') {
+					//safari 2015
+					oReq = new XMLHttpRequest();
+					oReq.tp = 1;
+				} else if (typeof(XMLHttpRequest)=='function') {
+					oReq = new XMLHttpRequest();
+					oReq.tp = 2;
+				} else {
+					var b=true?"Microsoft.XMLHTTP":"Msxml2.XMLHTTP";
+					oReq = new ActiveXObject(b);
+					oReq.tp = 3;
+				}
+				//lert(tp);
+				//interdominios cookies...
+				try {
+					oReq.withCredentials = op.withCredentials;
+				} catch (e) {
+					alert('ss withCredentials');
+				}
+			} catch (e) {
+				alert('erro criando obj AJAX obj='+oReq+' er='+erro(e));
+			}
+			return oReq;		
+		}
+		//**************************
 		function end(v) {
 			this.end = v;
 			if (op.callback) {
@@ -61,7 +150,12 @@ if (true) {
 		//**************************
 		function next() {
 			if (!op[pos].timeBegin) {
-				(new carregaUrl()).abre(op[pos].url,ret);
+				//(new carregaUrl()).abre(op[pos].url,ret);
+				var oReq = newOReq();
+				oReq.pos = pos;
+				oReq.onload = ret;
+				oReq.open("get", op[pos].url, true);
+				oReq.send();
 				op[pos].timeBegin = ms()/1000;
 			} else if (op[pos].timeEnd) {
 				pos++;
@@ -71,26 +165,29 @@ if (true) {
 				}
 			} else if (op[pos].timeout<ms()/1000-op[pos].timeBegin) {
 				eu.error = 'timeout step '+pos+' '+(ms()/1000-op[pos].timeBegin);
-				alert(pos.url+' '+eu.error);
+				//lert(pos.url+' '+eu.error);
 				end(true);
 				return;
 			}
 			setTimeout(next,op.msegs);
 		}
 		//**************************
-		function ret(cod,b,text) {
-			if (cod==4) {
-				op[pos].callback(cod,b,text);
-				op[pos].timeEnd = ms()/1000;
+		function ret() {
+			//status: 200 //readyState: 4
+			//objNav(this);lert('xxcd url='+op[this.pos].url+' th='+this.getAllResponseHeaders());
+			if (this.readyState != 4) {
+				return;
+			} else if (this.status!=200) {
+				eu.error = 'status: '+this.status+'\nurl: '+op[this.pos].url;
+				//lert(pos.url+' '+eu.error);
+				end(true);	
+				return;			
 			}
+			op[pos].callback(this.responseText,this);
+			op[pos].timeEnd = ms()/1000;
 		}
-		
-		
-		
-		
-		
 	}
-	
+
 	//**************************
 	// sizeKey = first elements from array
 	// others is totaled
@@ -134,8 +231,8 @@ if (true) {
 	
 	function domCustomElement(op) {
 		/* sgnyjohn mai/2020
-			atravÈs de event.rangeParent
-				È possÌvel acessar dom objetos internos.
+			atrav√©s de event.rangeParent
+				√© poss√≠vel acessar dom objetos internos.
 		*/
 		op = mergeOptions({tag:'div'},op);
 		if ( ! op.customName ) {
@@ -399,8 +496,8 @@ if (true) {
 	}
 	//***********************************************
 	//ADD cmd para ordenar a tabela conforme colunas.
-	// p1 È objeto dom table ou id de table
-	// p2 vetor strings para cada coluna com as possÌveis ordens 'ad','d','da',''
+	// p1 √© objeto dom table ou id de table
+	// p2 vetor strings para cada coluna com as poss√≠veis ordens 'ad','d','da',''
 	function tabelaSort(id,Ord) {
 		var obj = id;
 		var sAt = -1;
@@ -439,7 +536,7 @@ if (true) {
 			var t = getParentByTagName(ob,'tr');
 			var v = t.getElementsByTagName('th');
 			if (v.length==0) {
-				alert('n„o h· cabecalhos na tabela <th>, impossÌvel ordenar...');
+				alert('n√£o h√° cabecalhos na tabela <th>, imposs√≠vel ordenar...');
 				return;
 			}
 			col = -1;
@@ -487,7 +584,7 @@ if (true) {
 	}
 	//***********************************************
 	//monta  banco de dados estilo tabela com estrutura 'fixa', mas
-	//		permite campo others cujo conte˙do ser· v[nomeCampo]=valor
+	//		permite campo others cujo conte√∫do ser√° v[nomeCampo]=valor
 	// pode preencher a partir de: 
 	//		1 - objeto dom table - setTable
 	//		2 - txt csv - setMatriz ou vetor 1a linha cab
@@ -501,7 +598,7 @@ if (true) {
 		//vetor de nome de campos
 		var others = false; //name of field others
 		var campos = Array(); //[nome]=posicao
-		//vetor campos index posiÁ„o
+		//vetor campos index posi√ß√£o
 		var camposN = Array(); //[]=nome
 		//var valor;this.valor = valor;
 		var valores = Array(); //valores string
@@ -751,10 +848,18 @@ if (true) {
 			return r;
 		}
 		//*********************************************
+		// show in lists 
+		this.showField = function(reg,field) { //,fieldName) {
+			if (typeof(reg[field])=='undefined') {
+				return '-';
+			}
+			return troca(''+reg[field],'\n','<br>');
+		}
+		//*********************************************
 		// gera objetos html 
 		// 	targ = target dom destino
 		//	limit = limita nro regs
-		//	values = substitui dados originais por este vetor compatÌvel
+		//	values = substitui dados originais por este vetor compat√≠vel
 		this.toDom = function(op,Xlimit,XValores) {
 			if (!op || op.tagName) {
 				var r  = {targ:op,limit:Xlimit,values:XValores};
@@ -767,23 +872,26 @@ if (true) {
 			var limit = op.limit?op.limit:false;
 			var tb = doc.createElement('table');tb.className = this.className?this.className:'bdToDom';
 			tb.border=1;
-			//cabecalho
+			// head
 			var l = doc.createElement('tr');l.className='head';tb.appendChild(l);
 			for (var i=0;i<camposN.length;i++) {
 				var c = doc.createElement('th');
 				c.innerHTML = camposN[i];
 				l.appendChild(c);
 			}
-			//dados
+			// data
 			var r;
+			// all rows
 			for (r=0;r<vlr.length && (!op.limit||r<op.limit);r++) {
 				l = doc.createElement('tr');tb.appendChild(l);
+				// all cols
 				for (var i=0;i<vlr[r].length;i++) {
 					var c = doc.createElement('td');
-					c.innerHTML = troca(vlr[r][i],'\n','<br>');
+					c.innerHTML = eu.showField(vlr[r],i);//troca(vlr[r][i],'\n','<br>');
 					l.appendChild(c);
 				}
 			}
+			// limit rows ?
 			if (r<vlr.length) {
 				l = doc.createElement('tr');tb.appendChild(l);
 				var c = doc.createElement('td');
@@ -985,7 +1093,7 @@ if (true) {
 				valores.sort(ar);
 				return;
 			}
-			//passou sÛ objeto
+			//passou s√≥ objeto
 			if (ar['campo']) {
 				ar = [ar];
 			}
@@ -1071,9 +1179,9 @@ if (true) {
 		}
 		//*********************************************
 		// recebe txt 1a linha campos* e add regs
-		// 		se 1a linha = ':' assume cabeÁalho arquivo no padr„o eml
+		// 		se 1a linha = ':' assume cabe√ßalho arquivo no padr√£o eml
 		//		separado do nome de campos e bloco dados por linha vazia
-		//		cabeÁalho arquivo pode conter campo 'delimiter' this.dlCol
+		//		cabe√ßalho arquivo pode conter campo 'delimiter' this.dlCol
 		this.setTxt = function(tx) {
 			var x = palavraA(trimm(tx),this.dlRow);
 			
@@ -1106,12 +1214,12 @@ if (true) {
 			this.setMatriz(x);
 		}
 		//*********************************************
-		// GET valor de um campo pelo nome, ret padr„o, se number mov ponteiro mv ou reg nro
+		// GET valor de um campo pelo nome, ret padr√£o, se number mov ponteiro mv ou reg nro
 		this.getNum = function(Nome,pdr,mv) {
 			return 1*this.get(Nome,pdr,mv);
 		}
 		//*********************************************
-		// GET valor de um campo pelo nome, ret padr„o, se number mov ponteiro mv ou reg nro
+		// GET valor de um campo pelo nome, ret padr√£o, se number mov ponteiro mv ou reg nro
 		this.get = function(Nome,pdr,mv) {
 			//registro solicitado, pode haver movimento.
 			var rf = ur;
@@ -1194,7 +1302,7 @@ if (true) {
 		// seta valor de um campo pelo nome 
 		//		- add = para string, add mais texto
 		this.set = function(Nome,Valor,add) {
-			//se n„o existe, cria campo
+			//se n√£o existe, cria campo
 			if (typeof(campos[Nome])=='undefined') {
 				if (this.dev) {
 					debJ('novo campo '+Nome+' pos='+camposN.length);
@@ -1208,7 +1316,7 @@ if (true) {
 			//tipo valor
 			if ( Valor && Valor.regs ) {
 				try {
-					//valor È objeto bancoDados
+					//valor √© objeto bancoDados
 					if (nulo(valores[ur][pc])) {
 						valores[ur][pc] = Valor;
 					} else {
@@ -1225,7 +1333,7 @@ if (true) {
 					alert(erro(e)+' ==> Valor='+Valor+' ty='+typeof(Valor));
 				}
 			} else if ( add && !nulo(valores[ur][pc]) ) {
-				//valor È string a add 
+				//valor √© string a add 
 				valores[ur][pc] += ' '+trimm(''+Valor);
 			} else {
 				//valor qq type
@@ -1369,7 +1477,7 @@ if (true) {
 			if ( tp!='' ) {
 				var tf = eu.ver[tp];
 				if (typeof(tf)!='function') {
-					alert('ver_'+tp+' n„o È funÁ„o conhecida..');
+					alert('ver_'+tp+' n√£o √© fun√ß√£o conhecida..');
 				} else {
 					tv = tf(vd);
 				}
@@ -1573,7 +1681,7 @@ if (true) {
 		if (equals(end,'r ')) {
 			end = 'rua '+substrAt(end,' ');
 		} else if (equals(end,'pc ')) {
-			end = 'praÁa '+substrAt(end,' ');
+			end = 'pra√ßa '+substrAt(end,' ');
 		} else if (equals(end,'av ')) {
 			end = 'avenida '+substrAt(end,' ');
 		} else if (equals(end,'ac ')) {
@@ -1586,7 +1694,7 @@ if (true) {
 	}
 
 	//*******************************************
-	// falta em SP È 9 + 2
+	// falta em SP √© 9 + 2
 	// ver ddd por cidade.
 	// como funciona a zona 51 conurbada ?
 	function fone(n) {
@@ -1674,17 +1782,17 @@ if (true) {
 	//################################
 	function strPesq(o) {
 		// validar portugues pt 
-		//  	/^[a-z·‡‚„ÈËÍÌÔÛÙıˆ˙ÁÒ ]+$/i
-		//ou	/^[A-Za-z·‡‚„ÈËÍÌÔÛÙıˆ˙ÁÒ¡¿¬√…»Õœ”‘’÷⁄«— ]+$/
+		//  	/^[a-z√°√†√¢√£√©√®√™√≠√Ø√≥√¥√µ√∂√∫√ß√± ]+$/i
+		//ou	/^[A-Za-z√°√†√¢√£√©√®√™√≠√Ø√≥√¥√µ√∂√∫√ß√±√Å√Ä√Ç√É√â√à√ç√è√ì√î√ï√ñ√ö√á√ë ]+$/
 		
 		//vetor acentos
-		////·‡‚„ÈÍÌÛÙı˙¸ÒÁ
-		var va = {'a' : '·,‡,‚,„'
-			,'e' : 'È,Í'
-			,'i' : 'Ì'
-			,'o' : 'Û,Ù,ı'
-			,'u' : '˙,¸'
-			,'c' : 'Á'
+		////√°√†√¢√£√©√™√≠√≥√¥√µ√∫√º√±√ß
+		var va = {'a' : '√°,√†,√¢,√£'
+			,'e' : '√©,√™'
+			,'i' : '√≠'
+			,'o' : '√≥,√¥,√µ'
+			,'u' : '√∫,√º'
+			,'c' : '√ß'
 		};
 		for (var x in va) {
 			//lert(x);
@@ -1703,7 +1811,7 @@ if (true) {
 			vri[i] = new RegExp(v[i],'i');
 			//ok vr[i] = /d[iu]as/i;
 			//vr[i] = /histo\u0301ria/i; //ok com acento?
-			// ********* na realidade a acentuaÁ„o fica a letra original + algo... Histo%C3%8C%C2%81ria
+			// ********* na realidade a acentua√ß√£o fica a letra original + algo... Histo%C3%8C%C2%81ria
 			//vr[i] = /historia/i; //ok so sem acento
 			//lert('vr='+vr[i]);
 		}
@@ -1711,11 +1819,11 @@ if (true) {
 		this.valid = function() {
 			var r=false;
 			aeval(this.v,function(x) {if (x.length>2) r=true;});
-			return r?NaN:"consulta inv·lida '"+a+"'";
+			return r?NaN:"consulta inv√°lida '"+a+"'";
 		}
 		//###################################
 		function rExpr(t) {
-			//·‡‚„ÈÍÌÛÙı˙¸ÒÁ
+			//√°√†√¢√£√©√™√≠√≥√¥√µ√∫√º√±√ß
 			var r = '';
 			for (var i=0;i<t.length;i++) {
 				var c = t.charAt(i);
@@ -2057,6 +2165,7 @@ if (true) {
 			}
 		}
 		//**************************//
+		var strToDate = strToData;
 		function strToData(str) {
 			if (!str) {
 				//lert('erro strToData(), data invalida '+str);
@@ -2076,12 +2185,12 @@ if (true) {
 						h[3] = '0';
 					}
 				}
-				// delimit /
+				// d/m/y 
 				if (str.indexOf('/')!=-1) {
 					var d = palavraA(leftAt(str,' '),'/');
-					return new Date(1*d[2],1*d[1],1*d[0],1*h[0],1*h[1],1*h[2],1*h[3]);
+					return new Date(1*d[2],1*d[1]-1,1*d[0],1*h[0],1*h[1],1*h[2],1*h[3]);
 				}
-				// delimit - 
+				// y-m-d 
 				var d = palavraA(leftAt(str,' '),'-');
 				var r = new Date(1*d[0],1*d[1]-1,1*d[2],1*h[0],1*h[1],1*h[2],1*h[3]);
 				//lert('d='+d+' h='+h+' '+r);
@@ -2092,10 +2201,15 @@ if (true) {
 			}
 		}
 		//**************************//
+		var dateSql = dataSql;
 		function dataSql(a) {
 			//getDay = dia semana.
 			var d = vazio(a)?new Date():a;
-			if (typeof(a)=='number') {
+			//bjNav(a);
+			//lert(a+' '+typeof(a)+' '+d);
+			if (typeof(a)=='string') {
+				d = strToData(a);
+			} else if (typeof(a)=='number') {
 				d = new Date(a);
 			}
 			return takeYear(d)+'-'+strZero(d.getMonth()+1,2)
@@ -2116,8 +2230,8 @@ if (true) {
 		}
 		//************************************
 		/* preciso armazenar objetos ligados a tags 
-			atÈ onde eu sei n„o podem ser armazenados 
-			nas tags, ent„o vamos de vetor
+			at√© onde eu sei n√£o podem ser armazenados 
+			nas tags, ent√£o vamos de vetor
 			q armazena {objJs,tag} e setda cod em JS
 			e o atributo codTag em tag
 		*/
@@ -2353,7 +2467,7 @@ if (true) {
 			//*********************************
 			// analiza e acerta atalhos
 			function acertaAtalhos(ob) {
-				//tem aÁ„o?
+				//tem a√ß√£o?
 				var of = ob.firstElementChild;
 				var acao = of.getAttribute('jxAcao');
 				if ( acao == 'logon' ) {
@@ -2411,7 +2525,7 @@ if (true) {
 							//pega result dentro de ID?
 							//lert('oid='+oId+' '+oDest);
 							if (vazio(id1)) { //nao
-								// id destino È FUNC
+								// id destino √© FUNC
 								if (equals(oId,'&')) { //sim
 									var id = substrAt(oId,'~');
 									eval(leftAt(oId.substring(1),'~')+'(id,hR.responseText);');
@@ -2526,7 +2640,7 @@ if (true) {
 		}
 		//**************************//
 		function tiraAcentos(s) {
-			var acentos  = "·ÈÌÛ˙¸‡‚ÍÙ„ıÒÁ¡…Õ”⁄‹¿¬ ‘√’—«‰ƒ";
+			var acentos  = "√°√©√≠√≥√∫√º√†√¢√™√¥√£√µ√±√ß√Å√â√ç√ì√ö√ú√Ä√Ç√ä√î√É√ï√ë√á√§√Ñ";
 			var acentost = "aeiouuaaeoaoncAEIOUUAAEOAONCaA";
 			var p;
 			for (var i=0;i<s.length;i++) {
@@ -2546,7 +2660,7 @@ if (true) {
 		}
 
 	//*******************************//
-	//funÁıes cookie
+	//fun√ß√µes cookie
 		//********************
 		function cookieGet(nome,padrao) {
 			var co = ' '+document.cookie+';';
@@ -2794,7 +2908,12 @@ if (true) {
 		this.putJ = function(a,b) {
 			//lert('set a='+a+' b='+b);
 			paramJ[a] = b;
+			if (this.updUrlJ) {
+				//lert('atalhoJ'+this.atalhoJ());
+				window.location = leftAt(''+window.location,'#')+this.atalhoJ();
+			}
 		}
+		this.setJ = this.putJ;
 	}
 
 		//***********************************************************
@@ -2817,7 +2936,7 @@ if (true) {
 			var d = ' '+ob.className+' ';
 			var ligar = ligar1;
 			if (nulo(ligar)) {
-				//se n„o informou, inverte sit atual
+				//se n√£o informou, inverte sit atual
 				ligar = d.indexOf(' '+estilo+' ')==-1;
 			}
 			var r = ligar;
@@ -2896,7 +3015,7 @@ if (true) {
 		}
 		//p = filho;
 		//***************************************************
-		// 1o filho cujo textContent n„o vazio
+		// 1o filho cujo textContent n√£o vazio
 		function firstChild(obj) {
 			for (var i=0;i<obj.childNodes.length;i++) {
 				if ( !vazio(obj.childNodes.item(i).textContent) ) {
@@ -2908,7 +3027,7 @@ if (true) {
 		// retorna o parent que possui o attributo setado
 		function getParentByClassName(o,cl) {
 			var nomeAtr = 'className';
-			//obj È evento?
+			//obj √© evento?
 			//lert(o.target+'&&'+o.type);
 			//lert(o+' '+o.type);
 			if (o && !o.tagName && o.type) { //&& o.target
@@ -2946,7 +3065,7 @@ if (true) {
 		// retorna o parent que possui o attributo setado
 		var getParentByAttr = getParentNodeAttr;
 		function getParentNodeAttr(o,nomeAtr,limit) {
-			//obj È evento?
+			//obj √© evento?
 			if (o && o.target && o.type) {
 				o = targetEvent(o);
 			}
@@ -3047,7 +3166,7 @@ if (true) {
 				b = ' \n\r\t';
 			}
 			if (typeof(a)!='string') {
-				//debJ(erro('trimm n„o string: '+a));
+				//debJ(erro('trimm n√£o string: '+a));
 				return '';
 			}
 			//retira do inicio
@@ -3195,7 +3314,7 @@ if (true) {
 				} else if (typeof(a)=='number') {
 					return isNaN(a);
 				} else if (typeof(a)=='object') {
-					return a.length===0 || objLen(a)==0;
+					return a == {};
 				} else {
 					return false;
 				}

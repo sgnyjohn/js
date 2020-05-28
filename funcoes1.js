@@ -188,22 +188,22 @@ function graphBar(mat,Op) {
 	var df = mx-mi;
 	df = Math.ceil(mx+df*0.1)-Math.floor(mi-df*0.1);
 	// opcões padrão
-	var op={height:'320px',width:'100px'};
+	var op={height:'320px',width:'100%',label:true};
 	for (var i in Op) {
 		op[i] = Op[i];
 	}
 	//*******************************
 	this.getHtml = function() {
-		var r = '<table class="graphBar" xborder=1 style="width:'+op['width']+';">'
-			+'<tr style="height:'+op['height']+';">'
+		var r = '<table class="graphBar" xborder=1 style="width:'+op.width+';">'
+			+'<tr style="height:'+op.height+';">'
 		;
 		//linha
 		for(var i=0;i<v1.length;i++) {
 			var rs = (v1[i][1]-mi)/df*100;
 			var rs = (v1[i][1])/mx*100;
 			r += '<td class="br" style="width:'+(100/v1.length*0.1)+'%;">'
-				+'<td class="bar" title="'+htmlToTxt(v1[i][0])+' = '+v1[i][1]+'"'
-				+' style="width:'+(100/v1.length*0.9)+'%;'
+				+'<td class="bar" title="'+htmlToTxt(v1[i][0])+': '+v1[i][1]+'"'
+				+' style="width:'+(100/v1.length*0.7)+'%;'
 				+'background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABHNCSVQICAgIfAhkiAAAAA1JREFUCFtj+MLA8B8ABNQB9EPwtFAAAAAASUVORK5CYII=);'
 				+'background-size:100% '+rs+'%;'
 				+'background-position:bottom;'
@@ -218,7 +218,7 @@ function graphBar(mat,Op) {
 				+'<td '
 				+' style="width:'+(100/v1.length*0.9)+'%;text-align:center;'
 				+'" >'
-				+v1[i][0]
+				+(op.label?v1[i][0]:'')
 			;
 		}
 
@@ -2077,7 +2077,11 @@ var obj_obj;
 		if (s=='resize') {
 		}
 		if (s=='load') {
-			//lert('l='+opener);
+			
+			//bjNav(opener);
+			//lert('l='+(window==opener_()));
+			
+			domExpland(document);
 			if (objLen(opener)!=0) {
 				parente = opener;
 				objPai = opener.objParente();

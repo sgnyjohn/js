@@ -1,14 +1,29 @@
 /*
-	signey jun/2018 mai/2019 
+	signey jun/2018 mai/2019 mai/2020 
+
+	//dom objects not work.
 */
 
-//dom objects NÃO FUNCIONA.
-if (!Node.prototype.doc) {
-	Node.prototype.doc = function() {
-		return document;
+
+//Date
+if (!Date.prototype.getDayStr) {
+	//0 para Domingo
+	//window.navigator.language
+	Date.prototype.wd = {
+		'pt':['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado']
+		,'en':['sunday','monday','tuesday','wednesday','thursday','friday','saturday']
+	};
+	Date.prototype.getDayStr = function() {
+		r = this.wd[window.navigator.language];
+		if (!r) r = this.wd[window.navigator.language.leftAt('-')]
+		if (r) return r[this.getDay()];
 	}
-	//lert('fi node...');
+	Date.prototype.getDayStr3 = function(p) {
+		r = this.getDayStr()
+		if (r) return r.substring(0,3);
+	}
 }
+
 //javascript objects
 if(!String.prototype.trimm){  
   String.prototype.trimm = function(b){  

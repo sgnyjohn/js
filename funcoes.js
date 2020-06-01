@@ -85,10 +85,10 @@ if (true) {
 	// []
 	function fSortCols(a,b,vCols,vDesc) {
 		vDesc = vDesc?vDesc:[];
-		aeval(vCols,function(v,nc) {
-			var swap = fSort(a[v],b[v],vDesc[nc]);
+		for (var i=0;i<vCols.length;i++) {
+			var swap = fSort(a[vCols[i]],b[vCols[i]],vDesc[i]);
 			if (swap!=0) return swap;
-		});
+		}
 		return 0;
 	}
 
@@ -189,13 +189,66 @@ if (true) {
 	}
 
 	//**************************
-	// sizeKey = first elements from array
-	// others is totaled
+	// sizeKey = first columns from matrice
+	// others columns is totaled
 	function total(SizeKey) {
 		var sizeKey = SizeKey;
 		var ix = {};
 		var v = [];
+		this.dec = []; //decimal
 		//**************************
+		// sort in matrice
+		this.sort = function(func) {
+			v.sort(func);
+			//ix refresh
+			ix = {};
+			aeval(v,function(rg,n) {ix[getKey(rg)]=n;});
+		}
+		//**************************
+		// aeval in matrice
+		this.aeval = function(func) {
+			aeval(v,func);
+		}
+		//**************************
+		// get key
+		function getKey(arr) {
+			var k = '';
+			feval(sizeKey, function(i) { k += arr[i]; } );
+			return k;
+		}
+		//**************************
+		// show in table order
+		this.show = function() {
+			var cnt = domObj({tag:domCustomElement({tag:'table'})});
+			var t = cnt.elem;
+			var sn = ':nth-child(n+'+(sizeKey+1)+'):nth-child(-n+'+v[0].length+')'
+			cnt.css.textContent = 'TABLE {border-spacing:0;border-collapse:collapse;}'
+				+'\nTABLE TH,TABLE TD {text-align:left;padding:2px 7px;border:2px solid;}'
+				+'\nTABLE TH'+sn+',TABLE TD'+sn+' {'
+				+'text-align:right;}'
+			;
+			//protege ?
+			//cnt.elem=false;
+			//cnt.css = false;
+			if (this.cab) domObj({tag:'tr','':this.cab,targ:t});
+			dec = this.dec;
+			aeval(v,function(rg) {
+				var r = domObj({tag:'tr',targ:t});
+				aeval(rg,function(c,i) {
+					domObj({tag:'td',targ:r,'':i<sizeKey?c:format(c,dec[i-sizeKey]?dec[i-sizeKey]:0)});
+				});
+			});
+			return cnt;
+		}
+		//**************************
+		// return line key
+		this.getRow = function(aKey) {
+			var k = getKey(aKey);
+			if (typeof(ix[k])=='undefined') return;
+			return v[ix[k]];			
+		}
+		//**************************
+		// return row key sorted matrice 
 		this.getVector = function(descend) {
 			descend = descend?-1:1;
 			v.sort(function(a,b) { 
@@ -212,9 +265,20 @@ if (true) {
 			return v;
 		}
 		//**************************
+		this.set = function(arr) {
+			var k = getKey(arr);
+			var rg = ix[k];
+			if (typeof(rg)=='undefined') {
+				rg = v.length;
+				ix[k] = rg;
+			}
+			v[rg] = arr;
+			return rg;
+		}
+		//**************************
+		// incrementa numericos no registro
 		this.inc = function(arr) {
-			var k = '';
-			feval(sizeKey, function(i) { k += arr[i]; } );
+			var k = getKey(arr);
 			var rg = ix[k];
 			if (typeof(rg)=='undefined') {
 				rg = v.length;
@@ -229,6 +293,8 @@ if (true) {
 		}
 	}
 	
+	//***********************************************
+	// dom customElement
 	function domCustomElement(op) {
 		/* sgnyjohn mai/2020
 			através de event.rangeParent
@@ -322,7 +388,7 @@ if (true) {
 	// mescla objeto opcoes com obj opcoes padrao
 	function mergeOptions(opDefault,op) {
 		if (typeof(op)!='object') {
-			return opp;
+			return opDefault;
 		}
 		aeval(opDefault,function(x,k){typeof(op[k])=='undefined'?op[k]=opDefault[k]:false;});
 		return op;
@@ -505,40 +571,48 @@ if (true) {
 		if (typeof(obj)=='string') {
 			obj = document.getElementById(id);
 		}
-		//adiciona evento no cabecalho
-		var cb = obj.getElementsByTagName('tr');
-		cb[0].addEventListener('click',click);
-		// cria opcoes de ascendente, descendente por coluna
+		//rows
+		var rows = obj.getElementsByTagName('tr');
+		//lert('rows len='+rows.length);
+		// header row add event click
+		rows[0].addEventListener('click',click);
+		// init: cols order
 		var ordN = 0;
 		var ord = Ord;
+		var sStr = function(x){return x;};
+		var sNum = function(x){return x.localToNumber();};
+		var valueSort = [];
 		if (!ord) {
 			ord = [];
-			feval(cb[0].childNodes.length,function(x){ord[x]='ad';});
+			feval(rows[0].childNodes.length,function(x){
+				ord[x]='ad';
+			});
 		}
-		//guarda ordem noraml no TR...
-		for (var i=1;i<cb.length;i++) {
-			cb[i].setAttribute('ord',strZero(i,5));
+		//store original position on row 'ord' attribute...
+		for (var i=1;i<rows.length;i++) {
+			rows[i].setAttribute('ord',i);
 		}
 		//*****************************************
 		function val(o) {
 			if ( ordN != -1 ) {
-				var c = o.childNodes.item(col);
-				var x = c.getAttribute('ord');
-				return (x?x:c.textContent);
+				//sort by column 'col'
+				return valueSort[col](o.childNodes.item(col).textContent);
 			} else {
-				return o.getAttribute('ord');
+				//original ord
+				return 1*o.getAttribute('ord');
 			}
 		}		
 		//*****************************************
 		function click(ev) {
 			var ob = targetEvent(ev);
-			//alert(ob.tagName);
+			//localiza linha cabeçalho
 			var t = getParentByTagName(ob,'tr');
 			var v = t.getElementsByTagName('th');
 			if (v.length==0) {
 				alert('não há cabecalhos na tabela <th>, impossível ordenar...');
 				return;
 			}
+			// search clicked column position
 			col = -1;
 			for (var i=0;i<v.length;i++) {
 				if (ob == v[i]) {
@@ -550,28 +624,42 @@ if (true) {
 				alert('erro: orderm col '+col);
 				return;
 			}
-			//lert('col='+col+' colA='+colA);
+			
+			//
+			if (!valueSort[col]) {
+				valueSort[col] = sNum;
+				for (var i=1;i<rows.length;i++) {
+					if ( isNaN(rows[i].childNodes.item(col).textContent.localToNumber()) ) {
+						valueSort[col] = sStr;
+						break;
+					}
+				}
+				//lert('col num? '+(valueSort[col] == sNum));
+			}
 
 			//ordem atual da coluna
 			ordN = (col==colA?ordN+1:0);
+			//?
 			if (ordN>=ord[col].length) {
 				ordN = -1;
 			}
 			
+			//ordena
 			var cont = true;
 			while (cont) {
 				cont = false;
-				var t = obj.getElementsByTagName('tr');
+				var t =obj.getElementsByTagName('tr');
 				//bjNav(t[1]);
 				//lert('t='+t.length);
 				for (var l=2;l<t.length;l++) {
 					var v2 = val(t[l]);
 					var v1 = val(t[l-1]);
-					
+					//trocar
 					var f = v2>v1;
 					if (ordN==-1 || ord[col].substring(ordN,ordN+1)=='a') {
 						f = v2<v1;
 					}
+					//swap
 					if (f) {
 						t[l-1].parentNode.insertBefore(t[l],t[l-1]);
 						cont = true;
@@ -597,7 +685,7 @@ if (true) {
 		var ur = -1; //registro atual
 		//vetor de nome de campos
 		var others = false; //name of field others
-		var campos = Array(); //[nome]=posicao
+		var campos = {}; //[nome]=posicao
 		//vetor campos index posição
 		var camposN = Array(); //[]=nome
 		//var valor;this.valor = valor;
@@ -806,10 +894,18 @@ if (true) {
 			}
 		}		
 		//*********************************************
-		// retorna vetor registro
-		this.getVetor = function() {
+		// get Arr
+		this.getArr = function(arr) {
+			var r = [];
+			aeval(arr,function(v,i) {r[i]=eu.get('v')});
+			return r;
+		}
+		//*********************************************
+		// get row
+		this.getRow = function() {
 			return valores[ur];
 		}
+		this.getVetor = this.getRow;
 		//*********************************************
 		// cria objeto hash do registro
 		this.getReg = function() {
@@ -866,6 +962,10 @@ if (true) {
 				var op = r;
 			}
 			var vlr = op.values?op.values:valores;
+			if (!vlr) {
+				alert('bd.toDom: invalid values '+vlr);
+				return;
+			}
 			var dst = op.targ?op.targ:false;
 			//lert('dst='+dst);
 			var doc = dst?domDoc(dst):document;
@@ -885,10 +985,16 @@ if (true) {
 			for (r=0;r<vlr.length && (!op.limit||r<op.limit);r++) {
 				l = doc.createElement('tr');tb.appendChild(l);
 				// all cols
-				for (var i=0;i<vlr[r].length;i++) {
-					var c = doc.createElement('td');
-					c.innerHTML = eu.showField(vlr[r],i);//troca(vlr[r][i],'\n','<br>');
-					l.appendChild(c);
+				try {
+					for (var i=0;i<vlr[r].length;i++) {
+						var c = doc.createElement('td');
+						c.innerHTML = eu.showField(vlr[r],i);//troca(vlr[r][i],'\n','<br>');
+						l.appendChild(c);
+					}
+				} catch (e) {
+					alert('erro bd.toDom:'+e+' reg:'+r+' vlr[r]:'+vlr[r]
+						+'\n\n'+erro(e)
+					);
 				}
 			}
 			// limit rows ?
@@ -1087,36 +1193,65 @@ if (true) {
 			return t+'</table><p>.</p><p>.</p>';
 		}
 		//*********************************************
+		// string - like 'ORDER BY' sql
 		this.sort = function(ar) {
 			//passou funcao
 			if (typeof ar == 'function') {
 				valores.sort(ar);
 				return;
+			} else if (typeof(ar)=='string') {
+				var ar = ar.split(',');
+				aeval(ar,function(v,i) {
+					v = trimm(v);
+					var nom = trimm(v.leftRat(' '));
+					if (isNaN(nom)) {
+						//lert(v+' n'+nom+' c'+campos[nom]);
+						nom = campos[nom]; 
+						if (isNaN(nom)) {
+							alert('bd.sort: field name '+nom+' not exists!');
+							return false;
+						}
+					}
+					ar[i] = [1*nom
+						,v.indexOf(' ')>0 && v.substrRat(' ').toLowerCase()=='desc'?1:-1
+					];
+				});
+				//lert(ar);
+			} else if (typeof(ar)=='object') {
+				//passou só um objeto
+				if (ar['campo']) {
+					ar = [ar];
+				}
+				//processa array de objetos
+				for (k in ar) {
+					if (typeof(ar[k].length)!='number') {
+						ar[k] = [campos[ar[k]['campo']],(ar[k]['desc']?1:-1)];
+					}
+				}
 			}
-			//passou só objeto
-			if (ar['campo']) {
-				ar = [ar];
-			}
-
-			//passa nome campos para nro
-			for (k in ar) {
-				ar[k] = [campos[ar[k]['campo']],(ar[k]['desc']?1:-1)];
-			}
-			//lert(ar);
+			//ar is two columns array
+			//	column 1 - numeric position of field
+			//	column 2 - order 1=descend -1=ascend
+			var i1=0,i2=0,i3=0;
 			valores.sort(
 				function(a,b) {
-					for (k in ar) {
+					for (var k=0;k<ar.length;k++) {
 						var ch=ar[k][0];
+						//lert(ch+' a='+a[ch]+' b='+b[ch]);
 						if ( a[ch] < b[ch] ) {
+							i1++;
 							return ar[k][1];
 						}
 						if ( a[ch] > b[ch] ) {
+							i2++;
 							return -ar[k][1];
 						}
 					}
+					i3++;
 					return 0;
 				}
 			);
+			//lert(' i1='+i1+' i2='+i2+' i3='+i3 );
 		}
 		//*********************************************
 		this.count = function() {
@@ -1212,6 +1347,11 @@ if (true) {
 			}
 			//lert(x[0]);
 			this.setMatriz(x);
+		}
+		//*********************************************
+		// GET valor de um campo pelo nome, ret padrão, se number mov ponteiro mv ou reg nro
+		this.getDate = function(Nome,pdr,mv) {
+			return strToDate(this.get(Nome,pdr,mv));
 		}
 		//*********************************************
 		// GET valor de um campo pelo nome, ret padrão, se number mov ponteiro mv ou reg nro
@@ -1934,11 +2074,16 @@ if (true) {
 			return "0123456789ABCDEF".substring(n,n+1);
 		}
 		//*******************************//
+		var _format_ = [];
 		function format(v,d) {
-			return new Intl.NumberFormat( 
-				window.navigator.language
-				, { useGrouping: true,maximumFractionDigits:d,minimumFractionDigits:d}
-			).format(v);
+			// cache of NumberFormat object
+			if (! _format_[d] ) {
+				_format_[d] = new Intl.NumberFormat(
+					window.navigator.language
+					, { useGrouping: true,maximumFractionDigits:d,minimumFractionDigits:d}
+				);
+			}
+			return _format_[d].format(v);
 		}
 		//*******************************************
 		// obj paineis que se escondem e aparecem onOver
@@ -3165,8 +3310,8 @@ if (true) {
 			if (typeof(b)=='undefined') {
 				b = ' \n\r\t';
 			}
-			if (typeof(a)!='string') {
-				//debJ(erro('trimm não string: '+a));
+			if (!a.substring) {
+				alert(erro('trimm: not function substring: '+typeof(a)));
 				return '';
 			}
 			//retira do inicio

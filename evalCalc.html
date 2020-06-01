@@ -12,22 +12,24 @@
 
 <script>
 var divR;
+var __xx_xxzzzz_ = function(){return eval(arguments[0])};
 function verEval(ob) {
 	var v = document.getElementsByTagName('textarea');
 	var al = v[1];
 	var ev = v[0].value;
-	if (ob && ob.name=='clear') {
+	if (ob && (ob.name=='clear'||ob.type=='textarea')) {
 		document.getElementsByTagName('td')[3].innerHTML = '';
 		al.value='';
-		return;
+		//return;
 	}
 	
 	var v = palavraA(trimm(troca(ev,'\n ','\n'))+'\n\n','\n');
 	var ex = '';
+	var xx;
 	for (var i=0;i<v.length;i++) {
 		if (vazio(v[i]) && !vazio(ex)) {
 			try {
-				xx=eval(ex);
+				xx=(__xx_xxzzzz_)(ex);
 				if (xx && xx.tagName) {
 					var x = document.getElementsByTagName('td')[3];
 					x.appendChild(domObj({tag:'hr'}));
@@ -41,7 +43,9 @@ function verEval(ob) {
 			} catch (e) {
 				xx='erro:\n'+erro(e);
 			}
-			al.value += '\n====>> '+i+'\n'+xx+'\n';
+			al.value += '\n====>> '+i+'ª: '+ex
+				+'\n'+xx+'\n'
+			;
 			
 			ex = '';
 			
@@ -59,7 +63,10 @@ setTimeout(verEval,100);
 
 <tr>
 <td  style="width:48%;text-align:center;">code<br>
-<textarea style="width:95%;height:90%;" rows=20 onchange="javascript:verEval(this);">
+<textarea style="width:95%;height:90%;" rows=20 
+	onchange="javascript:verEval(this);"
+	onblur="javascript:verEval(this);"
+>
 var x=12345679;
 x *= 9;
 x
@@ -67,11 +74,14 @@ x
 objDebug(window.navigator)
 
 objNav(window);
+
+domObj({tag:'table','':'<tr><td style="border:20px solid;">teste'})
+
 </textarea>
 
 <td style="width:4%;text-align:center;">
+	<input onclick="javascript:verEval(this);" name=clear title=clear type=button value=">">
 	<input onclick="javascript:verEval();" type=button value=">>">
-	<input onclick="javascript:verEval(this);" name=clear title=clear type=button value="♻">
 
 <td style="width:48%;text-align:center;">result<br>
 <textarea style="width:95%;height:90%;"  rows=20 onchange="javascript:verEval();">

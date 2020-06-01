@@ -4,6 +4,21 @@
 	//dom objects not work.
 */
 
+if (!Number.prototype.format) {
+	// cache of NumberFormat object
+	Number.prototype._format_ = {};
+	Number.prototype.format = function(dec) {
+		if (! Number.prototype._format_[dec] ) {
+			Number.prototype._format_[dec] = new Intl.NumberFormat(
+				window.navigator.language
+				, { useGrouping: true,maximumFractionDigits:dec,minimumFractionDigits:dec}
+			);
+			//bjNav(Number.prototype._format_);
+			//lert('tm for='+Number.prototype._format_.length+' '+Number.prototype._format_);
+		}
+		return Number.prototype._format_[dec].format(this);
+	}
+}
 
 //Date
 if (!Date.prototype.getDayStr) {
@@ -24,7 +39,39 @@ if (!Date.prototype.getDayStr) {
 	}
 }
 
-//javascript objects
+//String
+if(!String.prototype.replaceAll){ 
+	String.prototype.replaceAll = function(a,b) {
+		var r = this;
+		while (r.indexOf(a)!=-1) {
+			r = r.replace(a,b);
+		}
+		return r;
+	}
+	String.prototype.replaceAll1 = function(a,b) {
+		return this.replace(new RegExp(a,'g'),b);
+	}	
+}
+if(!String.prototype.localToNumber){ 
+	String.prototype.localToNumber = function() {
+		if (!String.prototype._value_dec) {
+			var a = (2324423.3).format(1);
+			String.prototype._value_dec = a.substring(a.length-2,a.length-1);
+			String.prototype._value_mil = a=='.'?',':'.';
+			//lert('dec='+String.prototype._value_dec+' mil='+String.prototype._value_mil);
+		}
+		try {
+			var r = this.replaceAll(String.prototype._value_mil,'');
+			if (String.prototype._value_dec != '.') {
+				r = r.replace(String.prototype._value_dec,'.');
+			}
+			return 1*r;
+		} catch (e) {
+			//lert(erro(e));
+			return Number.NaN;
+		}
+	}
+}
 if(!String.prototype.trimm){  
   String.prototype.trimm = function(b){  
     var i,t,a=this;
@@ -34,8 +81,8 @@ if(!String.prototype.trimm){
 		if (typeof(b)=='undefined') {
 			b = ' \n\r\t';
 		}
-		if (typeof(a)!='string') {
-			//debJ(erro('trimm não string: '+a));
+		if (!a.substring) {
+			alert(erro('trimm: param not substring function '+a));
 			return '';
 		}
 		//retira do inicio
@@ -52,6 +99,11 @@ if(!String.prototype.trimm){
 		if (i!=t-1) a = a.substring(0,i+1);
 		return a; 
   };  
+}
+if(!String.prototype.right){
+	String.prototype.right = function(n) {
+		return this.substring(this.length-n,this.length);
+	} 
 }
 if(!String.prototype.trim){  
   String.prototype.trim = function(){  

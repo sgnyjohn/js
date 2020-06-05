@@ -31,6 +31,113 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 if (true) {
+
+	//***********************************************
+	function addStyleId(cssText,id) {
+		var v = document.querySelectorAll('style.'+id);
+		if (v.length!=0) return false;
+		var ne = document.createElement('style');
+		ne.id = id;
+		ne.innerHTML = cssText;
+		var x = document.getElementsByTagName('head')[0];
+		x.parentNode.insertBefore(ne,getIrmao(x));
+		return true;
+	}
+
+	//***********************************************
+	// tabs 
+	function tabs(Op) {
+		var op = mergeOptions({id:'tabs'},Op);;
+		var vt = []; //vetor objetos
+		var cnt;//destiny of objects
+		var idx = {};
+		var objAtivo=0;
+		var lin; //linha menu 
+		//************************
+		function click(ev) {
+			cnt.innerHTML = '';
+			if (ev) {
+				//lert(ev.target.value+' e='+ev.target.getAttribute('value'))
+				classOff(lin.childNodes.item(objAtivo),op.id+'A');
+				objAtivo = 1*ev.target.getAttribute('value');
+				classOn(ev.target,op.id+'A');
+				
+			}
+			var o = vt[objAtivo].obj;
+			//lert('ev='+ev.target.value+' o='+o);
+			aeval(o.length?o:[o],function(a){cnt.appendChild(a);});
+		}
+		//************************
+		this.css = function() {
+			var x = `
+				TABLE.tabs {border-spacing:0;xborder-collapse:collapse;xborder:2px solid;width:100%;}
+				TABLE.tabs TD.tabs {cursor:pointer;border:2px solid;padding:1px 5px;
+					text-align:center;
+					border-top-left-radius:7px;border-top-right-radius:13px;
+				}
+				TABLE.tabs TD.tabsC {padding:1px 5px;text-align:center;
+						border-left:2px solid;
+						border-right:2px solid;border-bottom:2px solid;
+				}
+				TABLE.tabs TD.tabsA {border-bottom:0;}
+				TABLE.tabs TD.tabs:hover {color: blue;}`
+			;
+			addStyleId(x.replaceAll('.tabs','.'+op.id),op.id);
+		}
+		//************************
+		this.show = function() {
+			this.css();
+			var r = domObj({tag:'table',class:op.id});
+			//lert('sh vt='+vt);
+			lin = domObj({tag:'tr',targ:r});
+			for (var i=0;i<vt.length;i++) {
+				domObj({tag:'td',class:op.id+(objAtivo==i?' '+op.id+'A':'')
+					,title:vt[i].title?vt[i].title:''
+					,targ:lin
+					,value:i
+					,ev_click:click
+					,'':vt[i].label
+				});
+			}
+			cnt = domObj({tag:'td',class: op.id+'C'
+				,colspan:vt.length
+				,targ:domObj({tag:'tr',targ:r})
+			});
+			//bjNav(r);
+			//lert('r='+r+' op.dst='+op.dst);
+			if (op.dst) {
+				op.dst.innerHTML = '';
+				op.dst.appendChild(r);
+			}
+			click();
+			return r;
+		}
+		//************************
+		this.addTop = function(obj) {
+			var pos = idx[obj.label];
+			if (typeof(pos)=='number') {
+				var o = vt[pos].obj;
+				//add older to the end
+				aeval(o.length?o:[o]
+					,function(a){obj.obj[obj.obj.length] = a;}
+				);
+			}
+			this.add(obj);
+		}
+		//************************
+		this.add = function(obj) {
+			//mergeOptions({label:,title:,obj:},obj);
+			var ch = obj.label;
+			var pos = idx[ch];
+			if (typeof(pos)!='number') {
+				pos = vt.length;
+			} else if (cnt && objAtivo==pos) {
+				click();
+			}
+			vt[pos] = obj;
+			idx[ch] = pos;
+		}
+	}
 	
 	//***********************************************
 	// search for classes "expland" and reduce
@@ -565,72 +672,70 @@ if (true) {
 	// p1 é objeto dom table ou id de table
 	// p2 vetor strings para cada coluna com as possíveis ordens 'ad','d','da',''
 	function tabelaSort(id,Ord) {
+		var vOrd = (Ord?Ord:[]);
 		var obj = id;
-		var sAt = -1;
-		var col,colA = -1; //ordem anterior
+		//var sAt = -1;
+		//var col,colA = -1; //ordem anterior
 		if (typeof(obj)=='string') {
 			obj = document.getElementById(id);
 		}
 		//rows
-		var rows = obj.getElementsByTagName('tr');
 		//lert('rows len='+rows.length);
 		// header row add event click
-		rows[0].addEventListener('click',click);
+		//rows[0].addEventListener('click',click);
 		// init: cols order
-		var ordN = 0;
-		var ord = Ord;
 		var sStr = function(x){return x;};
 		var sNum = function(x){return x.localToNumber();};
-		var valueSort = [];
-		if (!ord) {
-			ord = [];
+		var vImg = '⬍⬆⬇'
+		setTimeout(init);
+		//*****************************************
+		function init() {
+			var rows = obj.getElementsByTagName('tr');
+			//store original position on row 'ord' attribute...
+			for (var i=1;i<rows.length;i++) {
+				rows[i].setAttribute('ord',i);
+			}
+			//add click options
 			feval(rows[0].childNodes.length,function(x){
-				ord[x]='ad';
+				vOrd[x]={op:vOrd[x]?vOrd[x]:'da'
+					,ord:-1
+					,dom: domObj({tag:'sup'
+						,targ:rows[0].childNodes.item(x)
+						,title:'click to change column order'
+						,'':vImg.substring(0,1)
+						,style:'padding:1px 3px;cursor:pointer;'
+						,ev_click: click
+						,pos:x
+					})
+				};
 			});
 		}
-		//store original position on row 'ord' attribute...
-		for (var i=1;i<rows.length;i++) {
-			rows[i].setAttribute('ord',i);
-		}
 		//*****************************************
-		function val(o) {
-			if ( ordN != -1 ) {
+		function val(col,row) {
+			if ( vOrd[col].ord != -1 ) {
 				//sort by column 'col'
-				return valueSort[col](o.childNodes.item(col).textContent);
+				return vOrd[col].func(row.childNodes.item(col).textContent);
 			} else {
 				//original ord
-				return 1*o.getAttribute('ord');
+				return 1*row.getAttribute('ord');
 			}
 		}		
 		//*****************************************
 		function click(ev) {
 			var ob = targetEvent(ev);
-			//localiza linha cabeçalho
-			var t = getParentByTagName(ob,'tr');
-			var v = t.getElementsByTagName('th');
-			if (v.length==0) {
-				alert('não há cabecalhos na tabela <th>, impossível ordenar...');
+			if (!ob) {
 				return;
 			}
-			// search clicked column position
-			col = -1;
-			for (var i=0;i<v.length;i++) {
-				if (ob == v[i]) {
-					col = i;
-					break;
-				}
-			}
-			if (col==-1) {
-				alert('erro: orderm col '+col);
-				return;
-			}
+			var col = 1*ob.getAttribute('pos');
+			var oOrd = vOrd[col];
 			
-			//
-			if (!valueSort[col]) {
-				valueSort[col] = sNum;
+			//verify field type of column
+			if (!oOrd.func) {
+				oOrd.func = sNum;
+				var rows = obj.getElementsByTagName('tr');
 				for (var i=1;i<rows.length;i++) {
 					if ( isNaN(rows[i].childNodes.item(col).textContent.localToNumber()) ) {
-						valueSort[col] = sStr;
+						oOrd.func = sStr;
 						break;
 					}
 				}
@@ -638,26 +743,30 @@ if (true) {
 			}
 
 			//ordem atual da coluna
-			ordN = (col==colA?ordN+1:0);
-			//?
-			if (ordN>=ord[col].length) {
-				ordN = -1;
+			oOrd.ord++;
+			if (oOrd.ord>=oOrd.op.length) {
+				oOrd.ord = -1;
 			}
+			//desmarca ordem por outras colunas
+			aeval(vOrd,function(x){x.dom.innerHTML=vImg.substring(0,1);});
+			ob.innerHTML = vImg.substring(oOrd.ord+1,oOrd.ord+2)
 			
 			//ordena
 			var cont = true;
 			while (cont) {
 				cont = false;
+				//pega lista de linha toda vez, muda
 				var t =obj.getElementsByTagName('tr');
 				//bjNav(t[1]);
 				//lert('t='+t.length);
 				for (var l=2;l<t.length;l++) {
-					var v2 = val(t[l]);
-					var v1 = val(t[l-1]);
+					var v2 = val(col,t[l]);
+					var v1 = val(col,t[l-1]);
 					//trocar
-					var f = v2>v1;
-					if (ordN==-1 || ord[col].substring(ordN,ordN+1)=='a') {
-						f = v2<v1;
+					if (oOrd.ord==-1 || oOrd.op.substring(oOrd.ord,oOrd.ord+1)=='a') {
+						var f = v2<v1;
+					} else {
+						var f = v2>v1;
 					}
 					//swap
 					if (f) {
@@ -666,7 +775,6 @@ if (true) {
 					}
 				}
 			}
-			colA = col;
 		}
 		
 	}
@@ -1007,6 +1115,8 @@ if (true) {
 			}
 			//adiciona ao dst
 			if (dst) dst.appendChild(tb);
+			//permite ordenar colunas
+			tabelaSort(tb);
 			return tb;
 		}		
 		//*********************************************
@@ -3072,7 +3182,14 @@ if (true) {
 		}
 		//***********************************************************
 		function classOff(ob,estilo) {
-			classAddDel(ob,estilo,false);
+			var vt = ob.className.split(' ');
+			var r = '';
+			aeval(vt,function(v) {
+				if (v!=estilo) {
+					r += ' '+v;
+				}
+			});
+			ob.className = r.trimm();
 		}
 		function classOn(ob,estilo) {
 			classAddDel(ob,estilo,true);

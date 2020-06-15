@@ -42,9 +42,12 @@ if (!Date.prototype.getDayStr) {
 //String
 if(!String.prototype.replaceAll){ 
 	String.prototype.replaceAll = function(a,b) {
+		if (a==b) return this;
 		var r = this;
-		while (r.indexOf(a)!=-1) {
+		var p = 0;
+		while ( (p=r.indexOf(a,p))!=-+1) {
 			r = r.replace(a,b);
+			p = p+b.length;
 		}
 		return r;
 	}
@@ -65,7 +68,11 @@ if(!String.prototype.localToNumber){
 			if (String.prototype._value_dec != '.') {
 				r = r.replace(String.prototype._value_dec,'.');
 			}
-			return 1*r;
+			if (isNaN(r)) {
+				return Number.NaN;
+			} else {
+				return 1*r;
+			}
 		} catch (e) {
 			//lert(erro(e));
 			return Number.NaN;

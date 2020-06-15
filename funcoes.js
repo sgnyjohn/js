@@ -33,21 +33,57 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 if (true) {
 
 	//***********************************************
+	function running(domObj,tpImage) {
+		var im = tpImage;
+		var tb='🕐🕑🕒🕓🕔🕕🕖🕗🕘🕙🕚🕛';
+		var ni = tb.length/12;
+		var n=-ni;
+		var oDm = domObj;
+		var vDm = domObj.innerHTML;
+		var ti = ms(),nv=0;
+		if (im) {
+			oDm.innerHTML = '<img src=\"/imagens/loading.gif\">';
+		} else {
+			var to;
+			inc();
+		}
+		function inc() {
+			nv++;
+			n += ni;
+			if (n>=tb.length) n=0;
+			oDm.innerHTML = tb.substring(n,n+ni);
+			to = setTimeout(inc,200);
+		}
+		this.end = function() {
+			clearTimeout(to);
+			oDm.innerHTML = vDm;
+			//lert('fim '+nv+' t='+(ms()-ti));
+		}
+	}
+
+
+	//***********************************************
 	function addStyleId(cssText,id) {
-		var v = document.querySelectorAll('style.'+id);
+		var v = document.querySelectorAll('style#'+id);
 		if (v.length!=0) return false;
 		var ne = document.createElement('style');
 		ne.id = id;
 		ne.innerHTML = cssText;
-		var x = document.getElementsByTagName('head')[0];
-		x.parentNode.insertBefore(ne,getIrmao(x));
+		var x = document.querySelector('head style');
+		if (x) {
+			//style exist, insert before
+			x.parentNode.insertBefore(ne,x);
+		} else {
+			//append to head
+			document.querySelector('head').appendChild(ne);
+		}
 		return true;
 	}
 
 	//***********************************************
 	// tabs 
 	function tabs(Op) {
-		var op = mergeOptions({id:'tabs'},Op);;
+		var op = mergeOptions({id:'tabs'},Op);
 		var vt = []; //vetor objetos
 		var cnt;//destiny of objects
 		var idx = {};
@@ -61,7 +97,9 @@ if (true) {
 				classOff(lin.childNodes.item(objAtivo),op.id+'A');
 				objAtivo = 1*ev.target.getAttribute('value');
 				classOn(ev.target,op.id+'A');
-				
+				if (op.ped) op.ped.putJ(op.id,objAtivo);
+			} else if (vt.length<=objAtivo) { //active invalid
+				objAtivo = 0;
 			}
 			var o = vt[objAtivo].obj;
 			//lert('ev='+ev.target.value+' o='+o);
@@ -70,25 +108,31 @@ if (true) {
 		//************************
 		this.css = function() {
 			var x = `
-				TABLE.tabs {border-spacing:0;xborder-collapse:collapse;xborder:2px solid;width:100%;}
-				TABLE.tabs TD.tabs {cursor:pointer;border:2px solid;padding:1px 5px;
+				TABLE.### {border-spacing:0;xborder-collapse:collapse;xborder:2px solid;width:100%;}
+				TABLE.### TD.### {cursor:pointer;border:2px solid;padding:1px 5px;
 					text-align:center;
 					border-top-left-radius:7px;border-top-right-radius:13px;
 				}
-				TABLE.tabs TD.tabsC {padding:1px 5px;text-align:center;
+				TABLE.### TD.###C {padding:1px 5px 5px;text-align:center;
 						border-left:2px solid;
 						border-right:2px solid;border-bottom:2px solid;
 				}
-				TABLE.tabs TD.tabsA {border-bottom:0;}
-				TABLE.tabs TD.tabs:hover {color: blue;}`
+				TABLE.### TD.###A {border-bottom:0;}
+				TABLE.### TD.###:hover {color: blue;}
+				TABLE.### TD.###V {border:0;
+					border-bottom:2px solid;width:100%;
+				}
+				`
 			;
-			addStyleId(x.replaceAll('.tabs','.'+op.id),op.id);
+			addStyleId(x.replaceAll('.###','.'+op.id),op.id);
 		}
 		//************************
 		this.show = function() {
 			this.css();
 			var r = domObj({tag:'table',class:op.id});
 			//lert('sh vt='+vt);
+			if (op.ped&&op.ped.getJ(op.id))
+				objAtivo = 1*op.ped.getJ(op.id);
 			lin = domObj({tag:'tr',targ:r});
 			for (var i=0;i<vt.length;i++) {
 				domObj({tag:'td',class:op.id+(objAtivo==i?' '+op.id+'A':'')
@@ -99,8 +143,12 @@ if (true) {
 					,'':vt[i].label
 				});
 			}
+			//linha 100%
+			domObj({tag:'td',class:op.id+'V',targ:lin,'x':'sdfsdf'});
+			
+			
 			cnt = domObj({tag:'td',class: op.id+'C'
-				,colspan:vt.length
+				,colspan:vt.length+1
 				,targ:domObj({tag:'tr',targ:r})
 			});
 			//bjNav(r);
@@ -687,6 +735,7 @@ if (true) {
 		var sStr = function(x){return x;};
 		var sNum = function(x){return x.localToNumber();};
 		var vImg = '⬍⬆⬇'
+		var runSort = false;
 		setTimeout(init);
 		//*****************************************
 		function init() {
@@ -697,7 +746,9 @@ if (true) {
 			}
 			//add click options
 			feval(rows[0].childNodes.length,function(x){
-				vOrd[x]={op:vOrd[x]?vOrd[x]:'da'
+				vOrd[x]={pos:x
+					,col: rows[0].childNodes.item(x)
+					,op:vOrd[x]?vOrd[x]:'da'
 					,ord:-1
 					,dom: domObj({tag:'sup'
 						,targ:rows[0].childNodes.item(x)
@@ -721,20 +772,47 @@ if (true) {
 			}
 		}		
 		//*****************************************
+		// ordena
 		function click(ev) {
+			//running sort?
+			if ( runSort !== false ) {
+				alertDev('ja rodando');
+				return;
+			}
 			var ob = targetEvent(ev);
 			if (!ob) {
 				return;
 			}
+			
 			var col = 1*ob.getAttribute('pos');
 			var oOrd = vOrd[col];
+			
+			//sinaliza ordenando.
+			runSort = new running(ob);
+			
+			try {
+				run(oOrd);
+			} catch (e) {
+				alertDev('erro '+erro(e));
+			}
+			
+			runSort.end();
+			runSort = false;
+			
+			//desmarca ordem por outras colunas
+			aeval(vOrd,function(x){x.dom.innerHTML=vImg.substring(0,1);});
+			ob.innerHTML = vImg.substring(oOrd.ord+1,oOrd.ord+2)			
+			
+		}
+		//*****************************************
+		function run(oOrd) {
 			
 			//verify field type of column
 			if (!oOrd.func) {
 				oOrd.func = sNum;
 				var rows = obj.getElementsByTagName('tr');
 				for (var i=1;i<rows.length;i++) {
-					if ( isNaN(rows[i].childNodes.item(col).textContent.localToNumber()) ) {
+					if ( isNaN(rows[i].childNodes.item(oOrd.pos).textContent.localToNumber()) ) {
 						oOrd.func = sStr;
 						break;
 					}
@@ -747,11 +825,8 @@ if (true) {
 			if (oOrd.ord>=oOrd.op.length) {
 				oOrd.ord = -1;
 			}
-			//desmarca ordem por outras colunas
-			aeval(vOrd,function(x){x.dom.innerHTML=vImg.substring(0,1);});
-			ob.innerHTML = vImg.substring(oOrd.ord+1,oOrd.ord+2)
 			
-			//ordena
+			//sort
 			var cont = true;
 			while (cont) {
 				cont = false;
@@ -760,8 +835,8 @@ if (true) {
 				//bjNav(t[1]);
 				//lert('t='+t.length);
 				for (var l=2;l<t.length;l++) {
-					var v2 = val(col,t[l]);
-					var v1 = val(col,t[l-1]);
+					var v2 = val(oOrd.pos,t[l]);
+					var v1 = val(oOrd.pos,t[l-1]);
 					//trocar
 					if (oOrd.ord==-1 || oOrd.op.substring(oOrd.ord,oOrd.ord+1)=='a') {
 						var f = v2<v1;
@@ -2152,800 +2227,797 @@ if (true) {
 	}
 
 
+	//**************************//
+	function seVazio(v,r) {
+		if (vazio(v)) return r;
+		return v;
+	}
+	//**************************//
+	function inteiro(nm) {
+		if ((''+nm).indexOf('.')==-1) return nm;
+		//nm += 0.5;
+		nm = ''+nm;
+		return 1*(nm.substring(0,nm.indexOf('.')));
+	}
 
-
-
-		//**************************//
-		function seVazio(v,r) {
-			if (vazio(v)) return r;
-			return v;
+	//**************************//
+	function asc(c) {
+		return c.charCodeAt(0);
+	}
+	//**************************//
+	function decToHex(c) {
+		if (c==256) return 'FF';
+		while (c<0) c += 256;
+		while (c>256) c -= 256;
+		return ''+decToHex1(Math.floor(c / 16))+''+decToHex1(c % 16);
+	}
+	//**************************//
+	function decToHex1(n) {
+		return "0123456789ABCDEF".substring(n,n+1);
+	}
+	//*******************************//
+	var _format_ = [];
+	function format(v,d) {
+		// cache of NumberFormat object
+		if (! _format_[d] ) {
+			_format_[d] = new Intl.NumberFormat(
+				window.navigator.language
+				, { useGrouping: true,maximumFractionDigits:d,minimumFractionDigits:d}
+			);
 		}
-		//**************************//
-		function inteiro(nm) {
-			if ((''+nm).indexOf('.')==-1) return nm;
-			//nm += 0.5;
-			nm = ''+nm;
-			return 1*(nm.substring(0,nm.indexOf('.')));
+		return _format_[d].format(v);
+	}
+	//*******************************************
+	// obj paineis que se escondem e aparecem onOver
+	//*******************************************
+	function painelOnOff(Obj,SobraH,SobraV,PosH,PosV) {
+		var eu = this;
+		var obj = Obj;
+		var sobraV = SobraV,sobraH = SobraH;
+		var posV = PosV, posH = PosH;
+		var tx,ty,Esconde=false,visivel=true;
+		setTimeout(init,200);
+		//****************************************
+		function init() {
+			//chamado manual - inicializa
+			tx = browse.getTX(obj);
+			ty = browse.getTY(obj);
+			obj.addEventListener('mouseover',onOff,true);
+			obj.addEventListener('mouseout',onOff,true);
+			setCss(obj,'z-index',500);
+			esconde(true);
 		}
-
-		//**************************//
-		function asc(c) {
-			return c.charCodeAt(0);
-		}
-		//**************************//
-		function decToHex(c) {
-			if (c==256) return 'FF';
-			while (c<0) c += 256;
-			while (c>256) c -= 256;
-			return ''+decToHex1(Math.floor(c / 16))+''+decToHex1(c % 16);
-		}
-		//**************************//
-		function decToHex1(n) {
-			return "0123456789ABCDEF".substring(n,n+1);
-		}
-		//*******************************//
-		var _format_ = [];
-		function format(v,d) {
-			// cache of NumberFormat object
-			if (! _format_[d] ) {
-				_format_[d] = new Intl.NumberFormat(
-					window.navigator.language
-					, { useGrouping: true,maximumFractionDigits:d,minimumFractionDigits:d}
-				);
-			}
-			return _format_[d].format(v);
-		}
-		//*******************************************
-		// obj paineis que se escondem e aparecem onOver
-		//*******************************************
-		function painelOnOff(Obj,SobraH,SobraV,PosH,PosV) {
-			var eu = this;
-			var obj = Obj;
-			var sobraV = SobraV,sobraH = SobraH;
-			var posV = PosV, posH = PosH;
-			var tx,ty,Esconde=false,visivel=true;
-			setTimeout(init,200);
-			//****************************************
-			function init() {
-				//chamado manual - inicializa
-				tx = browse.getTX(obj);
-				ty = browse.getTY(obj);
-				obj.addEventListener('mouseover',onOff,true);
-				obj.addEventListener('mouseout',onOff,true);
-				setCss(obj,'z-index',500);
-				esconde(true);
-			}
-			//****************************************
-			function esconde(p) {
-				if ( p || Esconde ) {
-					//lert(posH+'-'+(tx-sobraH)+'px\n'+posV+'-'+(ty-sobraV)+'px');
-					if (sobraH!=0) setCss(obj,posH,'-'+(tx-sobraH)+'px');
-					if (sobraV!=0) setCss(obj,posV,'-'+(ty-sobraV)+'px');
-					visivel = false;
-					Esconde = false;
-				}
-			}
-			//****************************************
-			function onOff(ev) {
-				//mostra ou esconde
-				if ( ev.type == 'mouseover' ) {
-					//mostra
-					Esconde = false;
-					if (sobraH!=0) setCss(obj,posH,'0px');
-					if (sobraV!=0) setCss(obj,posV,'0px');
-					return;
-				}
-				Esconde = true;
-				setTimeout(esconde,1000);
+		//****************************************
+		function esconde(p) {
+			if ( p || Esconde ) {
+				//lert(posH+'-'+(tx-sobraH)+'px\n'+posV+'-'+(ty-sobraV)+'px');
+				if (sobraH!=0) setCss(obj,posH,'-'+(tx-sobraH)+'px');
+				if (sobraV!=0) setCss(obj,posV,'-'+(ty-sobraV)+'px');
+				visivel = false;
+				Esconde = false;
 			}
 		}
-
-		//**************************//
-		function setClass(obj,nome) {
-			classAddDel(ob,nome,true);
-		}
-		//**************************//
-		function delClass(obj,nome) {
-			classAddDel(ob,nome,false);
-		}
-		//**************************//
-		function style(obj) {
-			var v = {};
-			aeval(palavraA(obj.style.cssText,';'),function(e,n) {
-				v[trimm(leftAt(e,':'))] = trimm(substrAt(e,':'));
-			});
-			//************************
-			this.set = function(k,V) {
-				v[k] = V;
-			}
-			//************************
-			this.get = function(k) {
-				return v[k];
-			}
-			//************************
-			this.text = function() {
-				var r = '';
-				aeval(v,function(v,k) {
-					if (!vazio(v)) {
-						r += k+':'+v+';';
-					}
-				});
-				return r;
-			}
-		}
-		//**************************//
-		function setCss(obj,nomep,vlr) {
-			var r = Array(obj,nomep,'');
-			//parametro 1 = array?
-			if (vazio(nomep)) {
-				//lert('o='+obj);
-				nomep = obj[1];
-				vlr = obj[2];
-				obj = obj[0];
-			}
-			try {
-				var v = palavraA(obj.style.cssText,';');
-				var ok = -1;
-				for (var i=0;i<v.length;i++) {
-					if (equals(trimm(v[i]),nomep+':')) {
-						ok = i;
-					}
-				}
-				if (ok==-1) {
-					if (vazio(vlr)) {
-						//nada
-					} else {
-						v[v.length] = nomep+':'+vlr;
-					}
-				} else {
-					r[2] = substrAt(v[ok],':');
-					if (false && vazio(vlr)) {
-						v.slice(ok,ok+1);
-					} else {
-						v[ok] = nomep+':'+vlr;
-					}
-				}
-				//lert(dPalavra(v,';')+';34342903');
-				obj.style.cssText = dPalavra(v,';')+';';
-			} catch (e) {
-				alert('funcoes.js setCss '+e+' obj='+obj+' e='+erro(e));
-			}
-			return r;
-		}
-		
-		//**************************//
-		function dPalavra(v,del) {
-			var r = '';
-			if (v.length==0) {
+		//****************************************
+		function onOff(ev) {
+			//mostra ou esconde
+			if ( ev.type == 'mouseover' ) {
+				//mostra
+				Esconde = false;
+				if (sobraH!=0) setCss(obj,posH,'0px');
+				if (sobraV!=0) setCss(obj,posV,'0px');
 				return;
 			}
-			for (var i=0;i<v.length;i++) {
-				r += ';'+v[i];
-			}
-			return r.substring(1);
+			Esconde = true;
+			setTimeout(esconde,1000);
 		}
-		
-		//**************************//
-		function ref(doc) {
-			return (doc?doc:document).referrer;
+	}
+
+	//**************************//
+	function setClass(obj,nome) {
+		classAddDel(ob,nome,true);
+	}
+	//**************************//
+	function delClass(obj,nome) {
+		classAddDel(ob,nome,false);
+	}
+	//**************************//
+	function style(obj) {
+		var v = {};
+		aeval(palavraA(obj.style.cssText,';'),function(e,n) {
+			v[trimm(leftAt(e,':'))] = trimm(substrAt(e,':'));
+		});
+		//************************
+		this.set = function(k,V) {
+			v[k] = V;
 		}
-			
-		//**************************//
-		function absoluteUrl(url,base) {
-			if (vazio(base)) {
-				base = window.location;
-			}
-			base=''+base;
-			url=''+url;
-			if (equals(url,'/')) {
-				return url;
-			}
-			if (equals(url,'http://') || equals(url,'https://')) {
-				return '/'+substrAt(substrAt(url,'//'),'/');
-			}
-			if (equals(base,'http://') || equals(base,'https://')) {
-				base = '/'+substrAt(substrAt(base,'//'),'/');
-			}
-			if (base.indexOf('?')!=-1) {
-				base = leftAt(base,'?');
-			}
-			base = leftRat(base,'/');
-			url = trocaTudo(base+'/'+url,'//','/');
-			url = troca(url,'/./','/');
-			/*while (url.indexOf('..')==-1) {
-			}
-			*/
-			return url;
-		}	
-
-		//***********************************************
-		function alertErro(e) {
-			alert(erro(e));
+		//************************
+		this.get = function(k) {
+			return v[k];
 		}
-		//***********************************************
-		function nada() {}
-		//***********************************************
-		function alertXXX(tx) {
-			var v = document.getElementsByTagName('script');
-			objNav(v[0]);
-			alert('foi');
-		}
-		//;setTimeout(alertXXX,100);
-
-
-		//***********************************************
-		function alertDev(tx) {
-			if (Dev) {
-				alert(tx);
-			}
-		}
-
-		//***********************************************
-		function css(ev) {
-			if (!ev && browse.ie) {
-				ev = event;
-			}
-			if (!ev) {
-				return false;
-			}
-			return (ev.ctrlKey || ev.shiftKey);
-		}
-
-
-		//***********************************************
-		function getId(obj,id,nome) {
-			if (!nome) {
-				nome = 'id';
-			}
-			var r = false;
-			if (obj.getAttribute && obj.getAttribute (nome)==id) {
-				r = obj;
-			} else if (obj.childNodes && obj.childNodes.length>0) {
-				for (var i=0;i<obj.childNodes.length;i++) {
-					r = getId(obj.childNodes.item(i),id,nome);
-					if (r) {
-						break;
-					}
+		//************************
+		this.text = function() {
+			var r = '';
+			aeval(v,function(v,k) {
+				if (!vazio(v)) {
+					r += k+':'+v+';';
 				}
-			}
+			});
 			return r;
 		}
-
-		//**************************//
-		function addEvento(elem,eve,fun,bool) {
-			if (typeof elem.addEventListener != 'undefined' ) {
-				elem.addEventListener(eve, fun, bool);
-			} else if (typeof elem.attachEvent != 'undefined' ) {
-				elem.attachEvent('on'+eve, fun);
-			}
+	}
+	//**************************//
+	function setCss(obj,nomep,vlr) {
+		var r = Array(obj,nomep,'');
+		//parametro 1 = array?
+		if (vazio(nomep)) {
+			//lert('o='+obj);
+			nomep = obj[1];
+			vlr = obj[2];
+			obj = obj[0];
 		}
-		//**************************//
-		var strToDate = strToData;
-		function strToData(str) {
-			if (!str) {
-				//lert('erro strToData(), data invalida '+str);
-				return new Date(); 
-			}
-			try {
-				//lert('strToData: '+str);
-				//falta hora?
-				if (str.indexOf(' ')==-1) {
-					var h = [0,0,0,0];
-				} else {
-					var h = palavraA(substrAt(str,' '),':');
-					if (h[2].indexOf('.')!=-1) {
-						h[3] = substrAt(h[2],'.');
-						h[2] = leftAt(h[2],'.');
-					} else {
-						h[3] = '0';
-					}
-				}
-				// d/m/y 
-				if (str.indexOf('/')!=-1) {
-					var d = palavraA(leftAt(str,' '),'/');
-					return new Date(1*d[2],1*d[1]-1,1*d[0],1*h[0],1*h[1],1*h[2],1*h[3]);
-				}
-				// y-m-d 
-				var d = palavraA(leftAt(str,' '),'-');
-				var r = new Date(1*d[0],1*d[1]-1,1*d[2],1*h[0],1*h[1],1*h[2],1*h[3]);
-				//lert('d='+d+' h='+h+' '+r);
-				return r;
-			} catch (e) {
-				alert('erro strToData '+erro(e));
-				return new Date();
-			}
-		}
-		//**************************//
-		var dateSql = dataSql;
-		function dataSql(a) {
-			//getDay = dia semana.
-			var d = vazio(a)?new Date():a;
-			//bjNav(a);
-			//lert(a+' '+typeof(a)+' '+d);
-			if (typeof(a)=='string') {
-				d = strToData(a);
-			} else if (typeof(a)=='number') {
-				d = new Date(a);
-			}
-			return takeYear(d)+'-'+strZero(d.getMonth()+1,2)
-			+'-'+strZero(d.getDate(),2)+' '
-			+strZero(d.getHours(),2)+':'
-			+strZero(d.getMinutes(),2)+':'+strZero(d.getSeconds(),2);
-		}
-		//**************************//
-		function takeYear(theDate) {
-			x = theDate.getYear();
-			var y = x % 100;
-			y += (y < 38) ? 2000 : 1900;
-			return y;
-		}
-		//**************************//
-		function strZero(nr,t) {
-			return right('0000000000'+Math.floor(nr+0.5),t);
-		}
-		//************************************
-		/* preciso armazenar objetos ligados a tags 
-			até onde eu sei não podem ser armazenados 
-			nas tags, então vamos de vetor
-			q armazena {objJs,tag} e setda cod em JS
-			e o atributo codTag em tag
-		*/
-		var _objTag = new Array();
-		function objTag(ob,tg) {
-			var c = ms();
-			_objTag[c] = new Array(ob,tg);
-			ob.cod = c;
-			tg.setAttribute('codTag',c);
-		}
-		//************************************
-		//executa scripts do objeto
-		// para usar com ajax
-		function scripts(ob) {
-			var v = ob.getElementsByTagName('script');
+		try {
+			var v = palavraA(obj.style.cssText,';');
+			var ok = -1;
 			for (var i=0;i<v.length;i++) {
-				debJ('eval js: '+v[i].textContent);
-				with (document) {
-					eval(v[i].textContent);
+				if (equals(trimm(v[i]),nomep+':')) {
+					ok = i;
+				}
+			}
+			if (ok==-1) {
+				if (vazio(vlr)) {
+					//nada
+				} else {
+					v[v.length] = nomep+':'+vlr;
+				}
+			} else {
+				r[2] = substrAt(v[ok],':');
+				if (false && vazio(vlr)) {
+					v.slice(ok,ok+1);
+				} else {
+					v[ok] = nomep+':'+vlr;
+				}
+			}
+			//lert(dPalavra(v,';')+';34342903');
+			obj.style.cssText = dPalavra(v,';')+';';
+		} catch (e) {
+			alert('funcoes.js setCss '+e+' obj='+obj+' e='+erro(e));
+		}
+		return r;
+	}
+	
+	//**************************//
+	function dPalavra(v,del) {
+		var r = '';
+		if (v.length==0) {
+			return;
+		}
+		for (var i=0;i<v.length;i++) {
+			r += ';'+v[i];
+		}
+		return r.substring(1);
+	}
+	
+	//**************************//
+	function ref(doc) {
+		return (doc?doc:document).referrer;
+	}
+		
+	//**************************//
+	function absoluteUrl(url,base) {
+		if (vazio(base)) {
+			base = window.location;
+		}
+		base=''+base;
+		url=''+url;
+		if (equals(url,'/')) {
+			return url;
+		}
+		if (equals(url,'http://') || equals(url,'https://')) {
+			return '/'+substrAt(substrAt(url,'//'),'/');
+		}
+		if (equals(base,'http://') || equals(base,'https://')) {
+			base = '/'+substrAt(substrAt(base,'//'),'/');
+		}
+		if (base.indexOf('?')!=-1) {
+			base = leftAt(base,'?');
+		}
+		base = leftRat(base,'/');
+		url = trocaTudo(base+'/'+url,'//','/');
+		url = troca(url,'/./','/');
+		/*while (url.indexOf('..')==-1) {
+		}
+		*/
+		return url;
+	}	
+
+	//***********************************************
+	function alertErro(e) {
+		alert(erro(e));
+	}
+	//***********************************************
+	function nada() {}
+	//***********************************************
+	function alertXXX(tx) {
+		var v = document.getElementsByTagName('script');
+		objNav(v[0]);
+		alert('foi');
+	}
+	//;setTimeout(alertXXX,100);
+
+
+	//***********************************************
+	function alertDev(tx) {
+		if (Dev) {
+			alert(tx);
+		}
+	}
+
+	//***********************************************
+	function css(ev) {
+		if (!ev && browse.ie) {
+			ev = event;
+		}
+		if (!ev) {
+			return false;
+		}
+		return (ev.ctrlKey || ev.shiftKey);
+	}
+
+
+	//***********************************************
+	function getId(obj,id,nome) {
+		if (!nome) {
+			nome = 'id';
+		}
+		var r = false;
+		if (obj.getAttribute && obj.getAttribute (nome)==id) {
+			r = obj;
+		} else if (obj.childNodes && obj.childNodes.length>0) {
+			for (var i=0;i<obj.childNodes.length;i++) {
+				r = getId(obj.childNodes.item(i),id,nome);
+				if (r) {
+					break;
 				}
 			}
 		}
+		return r;
+	}
 
-
-		//**************************//
-		function ms() {
-			return (new Date()).getTime();
+	//**************************//
+	function addEvento(elem,eve,fun,bool) {
+		if (typeof elem.addEventListener != 'undefined' ) {
+			elem.addEventListener(eve, fun, bool);
+		} else if (typeof elem.attachEvent != 'undefined' ) {
+			elem.attachEvent('on'+eve, fun);
 		}
-		//********************
-		//retira da url o host menos www
-		function host(url) {
-			tx = ''+url;
-			var p = tx.indexOf('://');
-			if (p!=-1) {
-				tx = tx.substring(p+3);
+	}
+	//**************************//
+	var strToDate = strToData;
+	function strToData(str) {
+		if (!str) {
+			//lert('erro strToData(), data invalida '+str);
+			return new Date(); 
+		}
+		try {
+			//lert('strToData: '+str);
+			//falta hora?
+			if (str.indexOf(' ')==-1) {
+				var h = [0,0,0,0];
+			} else {
+				var h = palavraA(substrAt(str,' '),':');
+				if (h[2].indexOf('.')!=-1) {
+					h[3] = substrAt(h[2],'.');
+					h[2] = leftAt(h[2],'.');
+				} else {
+					h[3] = '0';
+				}
 			}
-			if (tx.substring(0,4)=='www.') {
-				tx = tx.substring(4);
+			// d/m/y 
+			if (str.indexOf('/')!=-1) {
+				var d = palavraA(leftAt(str,' '),'/');
+				return new Date(1*d[2],1*d[1]-1,1*d[0],1*h[0],1*h[1],1*h[2],1*h[3]);
 			}
-			p = tx.indexOf('/');
-			if (p!=-1) {
-				tx = tx.substring(0,p);
+			// y-m-d 
+			var d = palavraA(leftAt(str,' '),'-');
+			var r = new Date(1*d[0],1*d[1]-1,1*d[2],1*h[0],1*h[1],1*h[2],1*h[3]);
+			//lert('d='+d+' h='+h+' '+r);
+			return r;
+		} catch (e) {
+			alert('erro strToData '+erro(e));
+			return new Date();
+		}
+	}
+	//**************************//
+	var dateSql = dataSql;
+	function dataSql(a) {
+		//getDay = dia semana.
+		var d = vazio(a)?new Date():a;
+		//bjNav(a);
+		//lert(a+' '+typeof(a)+' '+d);
+		if (typeof(a)=='string') {
+			d = strToData(a);
+		} else if (typeof(a)=='number') {
+			d = new Date(a);
+		}
+		return takeYear(d)+'-'+strZero(d.getMonth()+1,2)
+		+'-'+strZero(d.getDate(),2)+' '
+		+strZero(d.getHours(),2)+':'
+		+strZero(d.getMinutes(),2)+':'+strZero(d.getSeconds(),2);
+	}
+	//**************************//
+	function takeYear(theDate) {
+		x = theDate.getYear();
+		var y = x % 100;
+		y += (y < 38) ? 2000 : 1900;
+		return y;
+	}
+	//**************************//
+	function strZero(nr,t) {
+		return right('0000000000'+Math.floor(nr+0.5),t);
+	}
+	//************************************
+	/* preciso armazenar objetos ligados a tags 
+		até onde eu sei não podem ser armazenados 
+		nas tags, então vamos de vetor
+		q armazena {objJs,tag} e setda cod em JS
+		e o atributo codTag em tag
+	*/
+	var _objTag = new Array();
+	function objTag(ob,tg) {
+		var c = ms();
+		_objTag[c] = new Array(ob,tg);
+		ob.cod = c;
+		tg.setAttribute('codTag',c);
+	}
+	//************************************
+	//executa scripts do objeto
+	// para usar com ajax
+	function scripts(ob) {
+		var v = ob.getElementsByTagName('script');
+		for (var i=0;i<v.length;i++) {
+			debJ('eval js: '+v[i].textContent);
+			with (document) {
+				eval(v[i].textContent);
 			}
-			return trimm(''+tx);
+		}
+	}
+
+
+	//**************************//
+	function ms() {
+		return (new Date()).getTime();
+	}
+	//********************
+	//retira da url o host menos www
+	function host(url) {
+		tx = ''+url;
+		var p = tx.indexOf('://');
+		if (p!=-1) {
+			tx = tx.substring(p+3);
+		}
+		if (tx.substring(0,4)=='www.') {
+			tx = tx.substring(4);
+		}
+		p = tx.indexOf('/');
+		if (p!=-1) {
+			tx = tx.substring(0,p);
+		}
+		return trimm(''+tx);
+	}
+	//*********************************
+	function domRemove(ob) {
+		ob.parentNode.removeChild(ob);
+	}
+	//*********************************
+	function carregaObj(url,id,id1) {
+		//ert('url='+url+' id='+id+' id1='+id1);
+		if (!url || !id) {
+			alert('faltou url='+url+' id='+id);
+		}
+		var x = new carregaUrl();
+		x.carregaObj(url,id,id1);
+	}
+	//*********************************
+	var carregaUrlO = new Array();
+	//*********************************
+	function carregaUrl() {
+		var eu = this;
+		this.url = '';
+		this.abre = abre;
+		this.carregaObj = carregaObj;
+		this.js = js;
+		this.charSet = 'ISO-8859-1';
+		var vHead = new Array();
+		var xmlhttp=false;
+		this.debug = false;
+		xmlhttp = false;
+		try {
+			var tp = 0;
+			if (typeof(XMLHttpRequest)=='object') {
+				//safari 2015
+				xmlhttp = new XMLHttpRequest();
+				tp = 1;
+			} else if (typeof(XMLHttpRequest)=='function') {
+				xmlhttp = new XMLHttpRequest();
+				tp = 2;
+			} else {
+				var b=true?"Microsoft.XMLHTTP":"Msxml2.XMLHTTP";
+				xmlhttp = new ActiveXObject(b);
+				tp = 3;
+			}
+			//lert(tp);
+			//interdominios cookies...
+			try {
+				xmlhttp.withCredentials = true;
+			} catch (e) {
+			}
+		} catch (e) {
+			alert('erro criando obj AJAX obj='+xmlhttp+' er='+erro(e));
+		}
+		
+		if (!xmlhttp) {
+			alert('erro criando obj httpREQ tof='+typeof(XMLHttpRequest)+' ie='+browse.ie+' x='+xmlhttp);
+		}
+		this.httpReq = xmlhttp;
+		//*********************************
+		function deb(s,ob) {
+			if (!eu.debug) {
+				return;
+			}
+			if (ob) {
+				objNav(ob);
+			}
+			alert(s);
 		}
 		//*********************************
-		function domRemove(ob) {
-			ob.parentNode.removeChild(ob);
+		//executa os javaScript do obj
+		function js(obj,tx) {
+			var t = obj.getElementsByTagName('script');
+			deb('vai js '+t.length+' '+tx);
+			//ie ignora script em ajax...
+			if (t.length==0 && tx.indexOf('<script>')!=-1) {
+				var t = ''+tx;
+				while (t.indexOf('<script>')!=-1) {
+					var e = substrAtAt(t,'<script>','</script>');
+					deb('vai js IE... '+e);
+					eval(e);
+					t = substrAt(t,'</script>');
+				}
+			}
+			for (var i=0;i<t.length;i++) {
+				try {
+					eval(t[i].innerHTML);
+				} catch (e) {
+					alert('ajax erro: '+e+'\n em javaScript:\n '+troca(t[i].innerHTML,';',';\n'));
+				}
+			}
 		}
 		//*********************************
 		function carregaObj(url,id,id1) {
-			//ert('url='+url+' id='+id+' id1='+id1);
-			if (!url || !id) {
-				alert('faltou url='+url+' id='+id);
-			}
-			var x = new carregaUrl();
-			x.carregaObj(url,id,id1);
+			this.idObj = id;
+			this.idObj1 = id1;
+			this.abre(url);
 		}
+		
 		//*********************************
-		var carregaUrlO = new Array();
-		//*********************************
-		function carregaUrl() {
-			var eu = this;
-			this.url = '';
-			this.abre = abre;
-			this.carregaObj = carregaObj;
-			this.js = js;
-			this.charSet = 'ISO-8859-1';
-			var vHead = new Array();
-			var xmlhttp=false;
-			this.debug = false;
-			xmlhttp = false;
-			try {
-				var tp = 0;
-				if (typeof(XMLHttpRequest)=='object') {
-					//safari 2015
-					xmlhttp = new XMLHttpRequest();
-					tp = 1;
-				} else if (typeof(XMLHttpRequest)=='function') {
-					xmlhttp = new XMLHttpRequest();
-					tp = 2;
-				} else {
-					var b=true?"Microsoft.XMLHTTP":"Msxml2.XMLHTTP";
-					xmlhttp = new ActiveXObject(b);
-					tp = 3;
+		function abre(url,funcRet) {
+			//eb(this.debug+' url='+url);
+			this.funcRet = funcRet;
+			this.url = url;
+			this.method = 'GET';
+			this.dados = null;
+			if (this.form) {
+				//url vazio
+				this.url = vazio(this.url)?this.form.action:this.url;
+				//lert(this.url+' a='+this.form.action);
+			
+				//monta string
+				var t1 = '';
+				for (var i=0;i<this.form.elements.length;i++) {
+					var o = this.form.elements.item(i);
+					//var v = troca(escape(trimm(o.value)),'+','%2B');
+					var v = troca(encodeURIComponent(trimm(o.value)),'+','%2B');
+					if (o.type=='checkbox') {
+						v = o.checked?'on':'';
+					}
+					t1 += '&'+o.name+'='+v;
 				}
-				//lert(tp);
-				//interdominios cookies...
+				t1 = t1.substring(1); //+'&lixo=1';
+				
+				//GET ou POST
+				if (this.form.method && this.form.method.toLowerCase()=='post') {
+					this.method = 'post';
+					this.dados = t1;
+				} else {
+					this.url += this.url.indexOf('?')==-1?'?'+t1:'&'+t1;
+				}
+				if (this.debug) {
+					alert('ajax: m='+this.method+'\n url='+this.url+'\n'+troca(''+this.dados,'&','\n'));
+				}
+			}
+			
+			//monta PEDIDO
+			//lert('a='+this.method+','+this.url+' '+url);
+			this.httpReq.open(this.method,this.url,true);
+			this.httpReq.withCredentials = true;
+			//nao exoste this.httpReq.setDisableHeaderCheck(true);
+			this.httpReq.onreadystatechange=recebe;
+			this.httpReq.setRequestHeader('encoding',eu.charSet);
+			//lert('charSet='+eu.charSet); 
+			if (this.method=='post') {
+				//this.httpReq.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+				this.httpReq.setRequestHeader('Content-length', this.dados.length );
+			}
+			//application/x-www-form-urlencoded;charset=utf-8
+			//lert('charSet='+eu.charSet);	
+			this.httpReq.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded;charset='+eu.charSet);
+			if (browse.ie) {
 				try {
-					xmlhttp.withCredentials = true;
+					this.httpReq.setRequestHeader('Cookie', document.cookie);
 				} catch (e) {
 				}
-			} catch (e) {
-				alert('erro criando obj AJAX obj='+xmlhttp+' er='+erro(e));
+				//lert(document.cookie);
+			}
+			if (this.cookie) {
+				//lert('cook='+this.cookie);
+				this.httpReq.setRequestHeader('Cookie', this.cookie);
 			}
 			
-			if (!xmlhttp) {
-				alert('erro criando obj httpREQ tof='+typeof(XMLHttpRequest)+' ie='+browse.ie+' x='+xmlhttp);
-			}
-			this.httpReq = xmlhttp;
-			//*********************************
-			function deb(s,ob) {
-				if (!eu.debug) {
-					return;
-				}
-				if (ob) {
-					objNav(ob);
-				}
-				alert(s);
-			}
-			//*********************************
-			//executa os javaScript do obj
-			function js(obj,tx) {
-				var t = obj.getElementsByTagName('script');
-				deb('vai js '+t.length+' '+tx);
-				//ie ignora script em ajax...
-				if (t.length==0 && tx.indexOf('<script>')!=-1) {
-					var t = ''+tx;
-					while (t.indexOf('<script>')!=-1) {
-						var e = substrAtAt(t,'<script>','</script>');
-						deb('vai js IE... '+e);
-						eval(e);
-						t = substrAt(t,'</script>');
-					}
-				}
-				for (var i=0;i<t.length;i++) {
-					try {
-						eval(t[i].innerHTML);
-					} catch (e) {
-						alert('ajax erro: '+e+'\n em javaScript:\n '+troca(t[i].innerHTML,';',';\n'));
-					}
+			//cab
+			if (false) {
+				for (var ci=0;ci<vHead.length;ci++) {
+					this.httpReq.setRequestHeader(vHead[ci][0],vHead[ci][1]);
+					alert(this.method+' set head='+vHead[ci][0]+' == '+vHead[ci][1]);
 				}
 			}
-			//*********************************
-			function carregaObj(url,id,id1) {
-				this.idObj = id;
-				this.idObj1 = id1;
-				this.abre(url);
-			}
-			
-			//*********************************
-			function abre(url,funcRet) {
-				//eb(this.debug+' url='+url);
-				this.funcRet = funcRet;
-				this.url = url;
-				this.method = 'GET';
-				this.dados = null;
-				if (this.form) {
-					//url vazio
-					this.url = vazio(this.url)?this.form.action:this.url;
-					//lert(this.url+' a='+this.form.action);
-				
-					//monta string
-					var t1 = '';
-					for (var i=0;i<this.form.elements.length;i++) {
-						var o = this.form.elements.item(i);
-						//var v = troca(escape(trimm(o.value)),'+','%2B');
-						var v = troca(encodeURIComponent(trimm(o.value)),'+','%2B');
-						if (o.type=='checkbox') {
-							v = o.checked?'on':'';
-						}
-						t1 += '&'+o.name+'='+v;
-					}
-					t1 = t1.substring(1); //+'&lixo=1';
-					
-					//GET ou POST
-					if (this.form.method && this.form.method.toLowerCase()=='post') {
-						this.method = 'post';
-						this.dados = t1;
-					} else {
-						this.url += this.url.indexOf('?')==-1?'?'+t1:'&'+t1;
-					}
-					if (this.debug) {
-						alert('ajax: m='+this.method+'\n url='+this.url+'\n'+troca(''+this.dados,'&','\n'));
-					}
-				}
-				
-				//monta PEDIDO
-				//lert('a='+this.method+','+this.url+' '+url);
-				this.httpReq.open(this.method,this.url,true);
-				this.httpReq.withCredentials = true;
-				//nao exoste this.httpReq.setDisableHeaderCheck(true);
-				this.httpReq.onreadystatechange=recebe;
-				this.httpReq.setRequestHeader('encoding',eu.charSet);
-				//lert('charSet='+eu.charSet); 
-				if (this.method=='post') {
-					//this.httpReq.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-					this.httpReq.setRequestHeader('Content-length', this.dados.length );
-				}
-				//application/x-www-form-urlencoded;charset=utf-8
-				//lert('charSet='+eu.charSet);	
-				this.httpReq.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded;charset='+eu.charSet);
-				if (browse.ie) {
-					try {
-						this.httpReq.setRequestHeader('Cookie', document.cookie);
-					} catch (e) {
-					}
-					//lert(document.cookie);
-				}
-				if (this.cookie) {
-					//lert('cook='+this.cookie);
-					this.httpReq.setRequestHeader('Cookie', this.cookie);
-				}
-				
-				//cab
-				if (false) {
-					for (var ci=0;ci<vHead.length;ci++) {
-						this.httpReq.setRequestHeader(vHead[ci][0],vHead[ci][1]);
-						alert(this.method+' set head='+vHead[ci][0]+' == '+vHead[ci][1]);
-					}
-				}
 
-				//guarda EU
-				eu = this;
-				
-				//envia PEDIDO
-				//bjNav(this.httpReq);
-				//lert('dad='+this.dados);
-				this.httpReq.send(this.dados);
-				return true;
-			}
-			//*********************************
-			this.addHead = function(ch,v) {
-				vHead[vHead.length] = new Array(ch,v);
-			}
-			//*********************************
-			// recebe tela logon
-			function fLogon(ob,b,c) {
-				alert('logon:'+c);
-				var d = new dialogo(leftRat('<tab'+substrAt(c,'<tab'),'</tab')+'</table>','logon');
-				d.ver();
-			}
-			//*********************************
-			// analiza e acerta atalhos
-			function acertaAtalhos(ob) {
-				//tem ação?
-				var of = ob.firstElementChild;
-				var acao = of.getAttribute('jxAcao');
-				if ( acao == 'logon' ) {
-					var x = new carregaUrl();
-					x.abre(of.getAttribute('data-url'),fLogon);
-				} else if ( acao ) {
-					alert('acao='+acao);
-					return;
-				}
-				//*********************************
-				//acerta atalhos
-				var v = ob.getElementsByTagName('a');
-				for (var i=0;i<v.length;i++) {
-					var o = v[i];
-					var hr = substrAtAt(o.outerHTML,' href="','"');
-					var u = o.href;
-					if (hr.charAt(0)=='?') {
-						//lert(o.href);
-						u = leftAt(eu.url,'?')+'?'+substrAt(o.href,'?');
-						//lert(u);
-					}
-					if (o.getAttribute('target')) {
-						o.href = u;
-					} else {
-						var p = new pedido(u);
-						p.set('obj',1);
-						o.href="javascript:carregaObj('"+p.atalho()+"','"+eu.idObj+"')";
-					}
-				}
-			}
-			//*********************************
-			function recebe() {
-				//lert('recebe..');
-				//ebJ(eu);
-				var funcRet = eu.funcRet;
-				var hR =  eu.httpReq;
-				var fR = funcRet;
-				var oId = eu.idObj; //coloca objeto num id
-				var id1 = eu.idObj1; //pega os dados de outro id
-				var th = eu;			
-				var XX = hR.readyState;
-				//eb('ajax recebe'+eu+' '+XX);
-				if (XX==4) {
-						var XR = hR.responseText;
-						if (eu.debug) {
-							objNav(eu);
-							alert(hR.getAllResponseHeaders()+'\n\n h='+'xresp:'+XR);
-						}
-						//joga resultado em ID?
-						if (oId) { //sim
-							var oDest = (typeof(oId)=='object'?oId:browse.getId(oId));
-							if (!oDest) {
-								alert('nao encontrei id='+oId);
-							}
-							//pega result dentro de ID?
-							//lert('oid='+oId+' '+oDest);
-							if (vazio(id1)) { //nao
-								// id destino é FUNC
-								if (equals(oId,'&')) { //sim
-									var id = substrAt(oId,'~');
-									eval(leftAt(oId.substring(1),'~')+'(id,hR.responseText);');
-								} else {
-									//eb(' XX ajax recebe dest '+oDest+' '+hR.responseText);
-									//bjNav(oDest);
-									//lert('vai setar html'+hR.responseText);
-									oDest.innerHTML = (hR.responseText);
-									th.js(oDest,hR.responseText);
-									setTimeout(function() {acertaAtalhos(oDest);},100);
-									////////////////////////////////////////////
-									//attacha evento para desviar o click
-									// para acerto url destino, bem como carga nova...
-									/*
-									if ( carregaUrlO[oDest] ) { 
-										oDest.removeEventListener('click', carregaUrlO[oDest].clickAtalho);
-									}
-									carregaUrlO[oDest] = eu;
-									addEvento(oDest,'click',eu.clickAtalho);
-									*/
-								}
-							} else { //pega result dentro de ID
-								var o = document.createElement("div");
-								oDest.innerHTML = hR.responseText;
-								var o1 = browse.getId(id1,o);
-								oDest.innerHTML = o1.innerHTML;
-								th.js(oDest,hR.responseText);
-							}
-						} else if (funcRet) { //chama funcao ou addChild
-							//lert('oid='+oId+' '+funcRet);
-							if (typeof(funcRet)=='function') {
-								funcRet(XX,th,XR);
-							} else if (typeof(funcRet)=='object') {
-								funcRet.innerHTML = XR;
-							} else if (funcRet.indexOf('()')!=-1) {
-								eval(troca(funcRet,'()','(XR)'));
-							} else {
-								eval(funcRet+'('+XX+',th,XR)');
-							}
-						}
-				} else {
-					//ebJ('xx='+XX);
-				}
-			}
-		}
-
-		//*********************************
-		function valMail(o) {
-			//objNav(o);
-			var em = (o.type?o.value:o);
-			//var em = o.value;
-			em = tiraAcentos(em);
-			if (em.indexOf('<')!=-1) {
-				em = substrAt(em,'<');
-			}
-			if (em.indexOf('>')!=-1) {
-				em = leftAt(em,'>');
-			}
-			while (em.indexOf('"')!=-1) {
-				em = substrAt(em,'"');
-			}
-			em = trimm(troca(em,' ',''));
-			if (em!=o.value) {
-				o.value = em;
-				//lert(em);
-			}
-			var v1 = palavraA(em,'@');
-			if (em.length<8 || v1.length!=2 || v1[0].length<1 || v1[1].length<4 ) {
-				return false;
-			}
+			//guarda EU
+			eu = this;
 			
-			//tem ponto?
-			if (v1[1].indexOf('.')==-1) return false;
-			
-			if (!valEmailP(v1[0]) || !valEmailP(v1[1])) {
-				return false;
-			}
+			//envia PEDIDO
+			//bjNav(this.httpReq);
+			//lert('dad='+this.dados);
+			this.httpReq.send(this.dados);
 			return true;
 		}
-		//*******************************
-		function getEmail(Texto) {
-			var v = palavraA(trocaTudo(trocaChars(''+Texto,'<>,;:',' '),'  ',' '),' ');
-			//ebJ('v='+v);
-			var r = '';
+		//*********************************
+		this.addHead = function(ch,v) {
+			vHead[vHead.length] = new Array(ch,v);
+		}
+		//*********************************
+		// recebe tela logon
+		function fLogon(ob,b,c) {
+			alert('logon:'+c);
+			var d = new dialogo(leftRat('<tab'+substrAt(c,'<tab'),'</tab')+'</table>','logon');
+			d.ver();
+		}
+		//*********************************
+		// analiza e acerta atalhos
+		function acertaAtalhos(ob) {
+			//tem ação?
+			var of = ob.firstElementChild;
+			var acao = of.getAttribute('jxAcao');
+			if ( acao == 'logon' ) {
+				var x = new carregaUrl();
+				x.abre(of.getAttribute('data-url'),fLogon);
+			} else if ( acao ) {
+				alert('acao='+acao);
+				return;
+			}
+			//*********************************
+			//acerta atalhos
+			var v = ob.getElementsByTagName('a');
 			for (var i=0;i<v.length;i++) {
-				if ( v[i].indexOf('@')!=-1 && valEmailP(v[i]) ) {
-					r += ' '+trimm(v[i]);
+				var o = v[i];
+				var hr = substrAtAt(o.outerHTML,' href="','"');
+				var u = o.href;
+				if (hr.charAt(0)=='?') {
+					//lert(o.href);
+					u = leftAt(eu.url,'?')+'?'+substrAt(o.href,'?');
+					//lert(u);
+				}
+				if (o.getAttribute('target')) {
+					o.href = u;
+				} else {
+					var p = new pedido(u);
+					p.set('obj',1);
+					o.href="javascript:carregaObj('"+p.atalho()+"','"+eu.idObj+"')";
 				}
 			}
-			return r.substring(1);
 		}
-		//*******************************
-		function valEmailP(s) {
-			var i = s.length;
-			return !('-@_.'.indexOf(s.substring(0,1))!=-1 || '-@_.'.indexOf(s.substring(i-1,i))!=-1);
-		}
-		//**************************//
-		function capitalize(s) {
-			var tb = '~de~e~do~em~dos~rs~no~na~da~das~';
-			var a,v = palavraA(s,' '),r='';
-			for (var i=0;i<v.length;i++) {
-				if (!vazio(v[i])) {
-					r +=( '(-'.indexOf(v[i].substring(0,1))!=-1
-						?v[i].toUpperCase()
-						:(tb.indexOf('~'+v[i].toLowerCase()+'~')==-1
-								?v[i].substring(0,1).toUpperCase()+v[i].substring(1).toLowerCase()
-								:v[i].toLowerCase())
-					)+' ';
-				}
-			}
-			return trimm(r);
-		}
-		//**************************//
-		function tiraAcentos(s) {
-			var acentos  = "áéíóúüàâêôãõñçÁÉÍÓÚÜÀÂÊÔÃÕÑÇäÄ";
-			var acentost = "aeiouuaaeoaoncAEIOUUAAEOAONCaA";
-			var p;
-			for (var i=0;i<s.length;i++) {
-				if ((p=acentos.indexOf(s.substring(i,i+1)))!=-1) {
-					s = s.substring(0,i)+acentost.substring(p,p+1)+s.substring(i+1);
-				}
-			}
-			return s;
-		}
-		//***********************************************
-		function fSort(a,b,desc) {
-			if (desc) {
-				return (b>a?1:(b<a?-1:0));
+		//*********************************
+		function recebe() {
+			//lert('recebe..');
+			//ebJ(eu);
+			var funcRet = eu.funcRet;
+			var hR =  eu.httpReq;
+			var fR = funcRet;
+			var oId = eu.idObj; //coloca objeto num id
+			var id1 = eu.idObj1; //pega os dados de outro id
+			var th = eu;			
+			var XX = hR.readyState;
+			//eb('ajax recebe'+eu+' '+XX);
+			if (XX==4) {
+					var XR = hR.responseText;
+					if (eu.debug) {
+						objNav(eu);
+						alert(hR.getAllResponseHeaders()+'\n\n h='+'xresp:'+XR);
+					}
+					//joga resultado em ID?
+					if (oId) { //sim
+						var oDest = (typeof(oId)=='object'?oId:browse.getId(oId));
+						if (!oDest) {
+							alert('nao encontrei id='+oId);
+						}
+						//pega result dentro de ID?
+						//lert('oid='+oId+' '+oDest);
+						if (vazio(id1)) { //nao
+							// id destino é FUNC
+							if (equals(oId,'&')) { //sim
+								var id = substrAt(oId,'~');
+								eval(leftAt(oId.substring(1),'~')+'(id,hR.responseText);');
+							} else {
+								//eb(' XX ajax recebe dest '+oDest+' '+hR.responseText);
+								//bjNav(oDest);
+								//lert('vai setar html'+hR.responseText);
+								oDest.innerHTML = (hR.responseText);
+								th.js(oDest,hR.responseText);
+								setTimeout(function() {acertaAtalhos(oDest);},100);
+								////////////////////////////////////////////
+								//attacha evento para desviar o click
+								// para acerto url destino, bem como carga nova...
+								/*
+								if ( carregaUrlO[oDest] ) { 
+									oDest.removeEventListener('click', carregaUrlO[oDest].clickAtalho);
+								}
+								carregaUrlO[oDest] = eu;
+								addEvento(oDest,'click',eu.clickAtalho);
+								*/
+							}
+						} else { //pega result dentro de ID
+							var o = document.createElement("div");
+							oDest.innerHTML = hR.responseText;
+							var o1 = browse.getId(id1,o);
+							oDest.innerHTML = o1.innerHTML;
+							th.js(oDest,hR.responseText);
+						}
+					} else if (funcRet) { //chama funcao ou addChild
+						//lert('oid='+oId+' '+funcRet);
+						if (typeof(funcRet)=='function') {
+							funcRet(XX,th,XR);
+						} else if (typeof(funcRet)=='object') {
+							funcRet.innerHTML = XR;
+						} else if (funcRet.indexOf('()')!=-1) {
+							eval(troca(funcRet,'()','(XR)'));
+						} else {
+							eval(funcRet+'('+XX+',th,XR)');
+						}
+					}
 			} else {
-				return (a>b?1:(a<b?-1:0));
+				//ebJ('xx='+XX);
 			}
 		}
+	}
 
-	//*******************************//
-	//funções cookie
-		//********************
-		function cookieGet(nome,padrao) {
-			var co = ' '+document.cookie+';';
-			var i = co.indexOf(' '+nome+'=')+1;
-			var f = co.indexOf(';',i+nome.length+1);
-			if (i==-1 || f<=i) {
-				return padrao;
-			} else {
-				return decodeURIComponent(co.substring(i+nome.length+1,f));
+	//*********************************
+	function valMail(o) {
+		//objNav(o);
+		var em = (o.type?o.value:o);
+		//var em = o.value;
+		em = tiraAcentos(em);
+		if (em.indexOf('<')!=-1) {
+			em = substrAt(em,'<');
+		}
+		if (em.indexOf('>')!=-1) {
+			em = leftAt(em,'>');
+		}
+		while (em.indexOf('"')!=-1) {
+			em = substrAt(em,'"');
+		}
+		em = trimm(troca(em,' ',''));
+		if (em!=o.value) {
+			o.value = em;
+			//lert(em);
+		}
+		var v1 = palavraA(em,'@');
+		if (em.length<8 || v1.length!=2 || v1[0].length<1 || v1[1].length<4 ) {
+			return false;
+		}
+		
+		//tem ponto?
+		if (v1[1].indexOf('.')==-1) return false;
+		
+		if (!valEmailP(v1[0]) || !valEmailP(v1[1])) {
+			return false;
+		}
+		return true;
+	}
+	//*******************************
+	function getEmail(Texto) {
+		var v = palavraA(trocaTudo(trocaChars(''+Texto,'<>,;:',' '),'  ',' '),' ');
+		//ebJ('v='+v);
+		var r = '';
+		for (var i=0;i<v.length;i++) {
+			if ( v[i].indexOf('@')!=-1 && valEmailP(v[i]) ) {
+				r += ' '+trimm(v[i]);
 			}
 		}
-		//********************
-		function cookiePut(nome,vlr,venceDias,domi) {
-			if (venceDias!=0 && vazio(venceDias)) {
-				venceDias = 120;
+		return r.substring(1);
+	}
+	//*******************************
+	function valEmailP(s) {
+		var i = s.length;
+		return !('-@_.'.indexOf(s.substring(0,1))!=-1 || '-@_.'.indexOf(s.substring(i-1,i))!=-1);
+	}
+	//**************************//
+	function capitalize(s) {
+		var tb = '~de~e~do~em~dos~rs~no~na~da~das~';
+		var a,v = palavraA(s,' '),r='';
+		for (var i=0;i<v.length;i++) {
+			if (!vazio(v[i])) {
+				r +=( '(-'.indexOf(v[i].substring(0,1))!=-1
+					?v[i].toUpperCase()
+					:(tb.indexOf('~'+v[i].toLowerCase()+'~')==-1
+							?v[i].substring(0,1).toUpperCase()+v[i].substring(1).toLowerCase()
+							:v[i].toLowerCase())
+				)+' ';
 			}
-			var v = new Date();
-			v.setTime(v.getTime() + 1000*60*60*24*venceDias);
-			v = v.toGMTString();
-			if (venceDias<0) {
-				v = "Thu, 01-Jan-1970 00:00:01 GMT";
-			}
-			var dc = nome + '=' + vlr
-				+(venceDias==0?'' : ';expires=' + v)+';path=/'
-				+(domi?';domain='+domi:'')
-			;
-			//debJ('dc1='+dc);
-			document.cookie = dc;
 		}
-		var cookieSet = cookiePut;
+		return trimm(r);
+	}
+	//**************************//
+	function tiraAcentos(s) {
+		var acentos  = "áéíóúüàâêôãõñçÁÉÍÓÚÜÀÂÊÔÃÕÑÇäÄ";
+		var acentost = "aeiouuaaeoaoncAEIOUUAAEOAONCaA";
+		var p;
+		for (var i=0;i<s.length;i++) {
+			if ((p=acentos.indexOf(s.substring(i,i+1)))!=-1) {
+				s = s.substring(0,i)+acentost.substring(p,p+1)+s.substring(i+1);
+			}
+		}
+		return s;
+	}
+	//***********************************************
+	function fSort(a,b,desc) {
+		if (desc) {
+			return (b>a?1:(b<a?-1:0));
+		} else {
+			return (a>b?1:(a<b?-1:0));
+		}
+	}
+
+//*******************************//
+//funções cookie
+	//********************
+	function cookieGet(nome,padrao) {
+		var co = ' '+document.cookie+';';
+		var i = co.indexOf(' '+nome+'=')+1;
+		var f = co.indexOf(';',i+nome.length+1);
+		if (i==-1 || f<=i) {
+			return padrao;
+		} else {
+			return decodeURIComponent(co.substring(i+nome.length+1,f));
+		}
+	}
+	//********************
+	function cookiePut(nome,vlr,venceDias,domi) {
+		if (venceDias!=0 && vazio(venceDias)) {
+			venceDias = 120;
+		}
+		var v = new Date();
+		v.setTime(v.getTime() + 1000*60*60*24*venceDias);
+		v = v.toGMTString();
+		if (venceDias<0) {
+			v = "Thu, 01-Jan-1970 00:00:01 GMT";
+		}
+		var dc = nome + '=' + vlr
+			+(venceDias==0?'' : ';expires=' + v)+';path=/'
+			+(domi?';domain='+domi:'')
+		;
+		//debJ('dc1='+dc);
+		document.cookie = dc;
+	}
+	var cookieSet = cookiePut;
 
 
 	//******************************
@@ -3134,6 +3206,11 @@ if (true) {
 			param[ch] = null;
 		}
 		//******************************
+		this.getNum = function(a,b) {
+			var r = ''+param[a]; //.localToNumber();
+			return isNaN(r)?b:1*r;
+		}
+		//******************************
 		function get(a,b) {
 			var r = param[a];
 			if (vazio(r) && !nulo(b)) {
@@ -3155,14 +3232,19 @@ if (true) {
 			doc.location = this.atalho();
 		}
 		//******************************
+		this.putNum = function (a,b) {
+			//lert('set a='+a+' b='+b);
+			param[a] = (''+b).localToNumber();
+		}
+		//******************************
 		function put(a,b) {
 			//lert('set a='+a+' b='+b);
 			param[a] = b;
 		}
 		//******************************
-		this.putJ = function(a,b) {
+		this.putJ = function(name,value) {
 			//lert('set a='+a+' b='+b);
-			paramJ[a] = b;
+			paramJ[name] = value;
 			if (this.updUrlJ) {
 				//lert('atalhoJ'+this.atalhoJ());
 				window.location = leftAt(''+window.location,'#')+this.atalhoJ();
@@ -3171,714 +3253,714 @@ if (true) {
 		this.setJ = this.putJ;
 	}
 
-		//***********************************************************
-		function hasClass(ob,estilo) {
-			//alert('='+(' '+ob.className+' ').indexOf(' '+estilo+' '));
-			return (' '+ob.className+' ').indexOf(' '+estilo+' ')!=-1;
-		}
-		//***********************************************************
-		function estiloAddDel(ob,estilo,ligar1) {
-			return classAddDel(ob,estilo,ligar1);
-		}
-		//***********************************************************
-		function classOff(ob,estilo) {
-			var vt = ob.className.split(' ');
-			var r = '';
-			aeval(vt,function(v) {
-				if (v!=estilo) {
-					r += ' '+v;
-				}
-			});
-			ob.className = r.trimm();
-		}
-		function classOn(ob,estilo) {
-			classAddDel(ob,estilo,true);
-		}
-		function classAddDel(ob,estilo,ligar1) {
-			var d = ' '+ob.className+' ';
-			var ligar = ligar1;
-			if (nulo(ligar)) {
-				//se não informou, inverte sit atual
-				ligar = d.indexOf(' '+estilo+' ')==-1;
+	//***********************************************************
+	function hasClass(ob,estilo) {
+		//alert('='+(' '+ob.className+' ').indexOf(' '+estilo+' '));
+		return (' '+ob.className+' ').indexOf(' '+estilo+' ')!=-1;
+	}
+	//***********************************************************
+	function estiloAddDel(ob,estilo,ligar1) {
+		return classAddDel(ob,estilo,ligar1);
+	}
+	//***********************************************************
+	function classOff(ob,estilo) {
+		var vt = ob.className.split(' ');
+		var r = '';
+		aeval(vt,function(v) {
+			if (v!=estilo) {
+				r += ' '+v;
 			}
-			var r = ligar;
-			if (ligar && d.indexOf(' '+estilo+' ')==-1) {
-				d += estilo;
-				r = true;
-			} else if (!ligar && d.indexOf(' '+estilo+' ')!=-1) {
-				d = troca(d,' '+estilo+' ',' ');
-				//ebJ('deslig');
-				r = false;
-			}
-			//ebJ(ob.name+' '+ligar1+' = '+ligar+' cl='+ob.className+' cln='+d+' ret='+r);
-			d = trimm(d);
-			if (ob.className!=d) {
-				ob.className = d;
-			}
-			return r;
+		});
+		ob.className = r.trimm();
+	}
+	function classOn(ob,estilo) {
+		classAddDel(ob,estilo,true);
+	}
+	function classAddDel(ob,estilo,ligar1) {
+		var d = ' '+ob.className+' ';
+		var ligar = ligar1;
+		if (nulo(ligar)) {
+			//se não informou, inverte sit atual
+			ligar = d.indexOf(' '+estilo+' ')==-1;
 		}
-		//**************************//
-		function repl(str,nv) {
-			var r = '';
-			for (var i=0;i<nv;i++) {
-				r += str;
-			}
-			return r;
+		var r = ligar;
+		if (ligar && d.indexOf(' '+estilo+' ')==-1) {
+			d += estilo;
+			r = true;
+		} else if (!ligar && d.indexOf(' '+estilo+' ')!=-1) {
+			d = troca(d,' '+estilo+' ',' ');
+			//ebJ('deslig');
+			r = false;
 		}
-		//**********************
-		function trocaTudo(g,a,b) {
-			while (g.indexOf(a)!=-1) {
-				g = troca(g,a,b);
-			}
-			return g;
+		//ebJ(ob.name+' '+ligar1+' = '+ligar+' cl='+ob.className+' cln='+d+' ret='+r);
+		d = trimm(d);
+		if (ob.className!=d) {
+			ob.className = d;
 		}
-		//**********************
-		function trocaChars(g,a,b) {
-			for (var i=0;i<a.length;i++) {
-				g = troca(g,a.substring(i,i+1),b);
-			}
-			return g;
+		return r;
+	}
+	//**************************//
+	function repl(str,nv) {
+		var r = '';
+		for (var i=0;i<nv;i++) {
+			r += str;
 		}
-		//**********************
-		function troca(g,a,b) {
-			var i=0,p,ta,tb;
-	  
-			ta = a.length;
-			tb = b.length;
-			
-			try {
-	  
-				while ( (p = g.indexOf(a,i)) > -1 )  {
-					g = g.substring(0,p)+b+g.substring(p+ta);
-					//,g.length
-					i = p - ta + tb + 1;
-				}
-			} catch (e) {
-				alert(erro(e));
-			}
-	  
-			return g;
+		return r;
+	}
+	//**********************
+	function trocaTudo(g,a,b) {
+		while (g.indexOf(a)!=-1) {
+			g = troca(g,a,b);
 		}
+		return g;
+	}
+	//**********************
+	function trocaChars(g,a,b) {
+		for (var i=0;i<a.length;i++) {
+			g = troca(g,a.substring(i,i+1),b);
+		}
+		return g;
+	}
+	//**********************
+	function troca(g,a,b) {
+		var i=0,p,ta,tb;
+  
+		ta = a.length;
+		tb = b.length;
+		
+		try {
+  
+			while ( (p = g.indexOf(a,i)) > -1 )  {
+				g = g.substring(0,p)+b+g.substring(p+ta);
+				//,g.length
+				i = p - ta + tb + 1;
+			}
+		} catch (e) {
+			alert(erro(e));
+		}
+  
+		return g;
+	}
 
-		//****************************************************
-		//retorna 1o atributo de parente com nome obj
-		function o(obj) {
-			return getParentAttr(obj,'obj');
+	//****************************************************
+	//retorna 1o atributo de parente com nome obj
+	function o(obj) {
+		return getParentAttr(obj,'obj');
+	}
+	//****************************************************
+	//retorna o filho n do objeto
+	function filho(ob,n) {
+		var r;
+		try {
+			r = ob.childNodes.item(n);
+		} catch (e) {
 		}
-		//****************************************************
-		//retorna o filho n do objeto
-		function filho(ob,n) {
-			var r;
-			try {
-				r = ob.childNodes.item(n);
-			} catch (e) {
-			}
-			return r;
-		}
-		//p = filho;
-		//***************************************************
-		// 1o filho cujo textContent não vazio
-		function firstChild(obj) {
-			for (var i=0;i<obj.childNodes.length;i++) {
-				if ( !vazio(obj.childNodes.item(i).textContent) ) {
-					return obj.childNodes.item(i);
-				}
-			}
-		}		
-		//***************************************************
-		// retorna o parent que possui o attributo setado
-		function getParentByClassName(o,cl) {
-			var nomeAtr = 'className';
-			//obj é evento?
-			//lert(o.target+'&&'+o.type);
-			//lert(o+' '+o.type);
-			if (o && !o.tagName && o.type) { //&& o.target
-				o = targetEvent(o);
-			}
-			var oa = o;
-			while (o) {
-				if (o.getAttribute && o.getAttribute(nomeAtr) && tst(o.getAttribute(nomeAtr)) ) {
-					return o;
-				} else if (tst(o[nomeAtr])) {
-					return o;
-				}
-				o = o.parentNode;
-			}
-			return o;
-			function tst(t) {
-				//lert(t);
-				return (' '+t+' ').indexOf(' '+cl+' ')!=-1;
+		return r;
+	}
+	//p = filho;
+	//***************************************************
+	// 1o filho cujo textContent não vazio
+	function firstChild(obj) {
+		for (var i=0;i<obj.childNodes.length;i++) {
+			if ( !vazio(obj.childNodes.item(i).textContent) ) {
+				return obj.childNodes.item(i);
 			}
 		}
-		//***************************************************
-		// retorna o parent que possui o attributo setado
-		function getParentAttr(O,nomeAtr,limit) {
-			var o = getParentNodeAttr(O,nomeAtr,limit);
-			if ( !o ) {
-			} else if (o.getAttribute && o.getAttribute(nomeAtr) && o.getAttribute(nomeAtr)!=null ) {
-				return o.getAttribute(nomeAtr);
+	}		
+	//***************************************************
+	// retorna o parent que possui o attributo setado
+	function getParentByClassName(o,cl) {
+		var nomeAtr = 'className';
+		//obj é evento?
+		//lert(o.target+'&&'+o.type);
+		//lert(o+' '+o.type);
+		if (o && !o.tagName && o.type) { //&& o.target
+			o = targetEvent(o);
+		}
+		var oa = o;
+		while (o) {
+			if (o.getAttribute && o.getAttribute(nomeAtr) && tst(o.getAttribute(nomeAtr)) ) {
+				return o;
+			} else if (tst(o[nomeAtr])) {
+				return o;
+			}
+			o = o.parentNode;
+		}
+		return o;
+		function tst(t) {
+			//lert(t);
+			return (' '+t+' ').indexOf(' '+cl+' ')!=-1;
+		}
+	}
+	//***************************************************
+	// retorna o parent que possui o attributo setado
+	function getParentAttr(O,nomeAtr,limit) {
+		var o = getParentNodeAttr(O,nomeAtr,limit);
+		if ( !o ) {
+		} else if (o.getAttribute && o.getAttribute(nomeAtr) && o.getAttribute(nomeAtr)!=null ) {
+			return o.getAttribute(nomeAtr);
+		} else if (o[nomeAtr]) {
+			return o[nomeAtr];
+		}
+		var r;
+		return r;
+	}	
+	//***************************************************
+	// retorna o parent que possui o attributo setado
+	var getParentByAttr = getParentNodeAttr;
+	function getParentNodeAttr(o,nomeAtr,limit) {
+		//obj é evento?
+		if (o && o.target && o.type) {
+			o = targetEvent(o);
+		}
+		var oa = o;
+		while (o) {
+			if (o.getAttribute && o.getAttribute(nomeAtr) && o.getAttribute(nomeAtr)!=null ) {
+				return o;
 			} else if (o[nomeAtr]) {
-				return o[nomeAtr];
+				return o;
+			} else if (limit && o==limit) {
+				return null;
 			}
-			var r;
-			return r;
-		}	
-		//***************************************************
-		// retorna o parent que possui o attributo setado
-		var getParentByAttr = getParentNodeAttr;
-		function getParentNodeAttr(o,nomeAtr,limit) {
-			//obj é evento?
-			if (o && o.target && o.type) {
-				o = targetEvent(o);
-			}
-			var oa = o;
-			while (o) {
-				if (o.getAttribute && o.getAttribute(nomeAtr) && o.getAttribute(nomeAtr)!=null ) {
-					return o;
-				} else if (o[nomeAtr]) {
-					return o;
-				} else if (limit && o==limit) {
-					return null;
-				}
-				o = o.parentNode;
-			}
-			return o;
+			o = o.parentNode;
 		}
+		return o;
+	}
 
-		//**************************//
-		function html(a) {
-			return troca(troca(a,'<','&lt;'),'>','&gt;');
-		}
-		//**************************//
-		function objLen(o){
-			var i=0;
-			try {
-				for(var prop in o) {
-					i++;
-				}
-			} catch (e) {
-				//lert(erro(e));
+	//**************************//
+	function html(a) {
+		return troca(troca(a,'<','&lt;'),'>','&gt;');
+	}
+	//**************************//
+	function objLen(o){
+		var i=0;
+		try {
+			for(var prop in o) {
+				i++;
 			}
-			return i;
+		} catch (e) {
+			//lert(erro(e));
 		}
-		//**************************//
-		function equals(strLonga,strCurta) {
-			if (vazio(strCurta) || vazio(strLonga)) return false;
-			if (strCurta.length>strLonga.length) return false;
-			return (strLonga.substring(0,strCurta.length)==strCurta);
+		return i;
+	}
+	//**************************//
+	function equals(strLonga,strCurta) {
+		if (vazio(strCurta) || vazio(strLonga)) return false;
+		if (strCurta.length>strLonga.length) return false;
+		return (strLonga.substring(0,strCurta.length)==strCurta);
+	}
+	//**************************//
+	function palavraA(tx,a,b) {
+		var p=0,pn,t=a.length,pi=0,r = new Array();
+		while ((pn=tx.indexOf(a,p))!=-1) {
+			r[pi++] = tx.substring(p,pn);
+			p = pn + t;
 		}
-		//**************************//
-		function palavraA(tx,a,b) {
-			var p=0,pn,t=a.length,pi=0,r = new Array();
-			while ((pn=tx.indexOf(a,p))!=-1) {
-				r[pi++] = tx.substring(p,pn);
-				p = pn + t;
-			}
-			r[pi++] = tx.substring(p); //,g.length()
+		r[pi++] = tx.substring(p); //,g.length()
 
-			//lert(b);
-			if (nulo(b)) {
-				return r;
-			}
-			for (var i=0;i<r.length;i++) {
-				//lert(b.length+' '+r[i]);
-				r[i] = palavraA(''+r[i],b);
-				//lert(r[i].length);
-			}
+		//lert(b);
+		if (nulo(b)) {
 			return r;
 		}
-		//**************************//
-		function leftAt(s,s1) {
-			var p = s.indexOf(s1);
-			if (p==-1) {
-				return s;
-			}
-			return s.substring(0,p);
+		for (var i=0;i<r.length;i++) {
+			//lert(b.length+' '+r[i]);
+			r[i] = palavraA(''+r[i],b);
+			//lert(r[i].length);
 		}
-		//*****************************************
-		function substrRat(g,a) {
-			var i = g.lastIndexOf(a);
-			if (i<0) return g;
-			return g.substring(i+1);
+		return r;
+	}
+	//**************************//
+	function leftAt(s,s1) {
+		var p = s.indexOf(s1);
+		if (p==-1) {
+			return s;
 		}
-		//*****************************************
-		function leftRat(g,a) {
-			var i = g.lastIndexOf(a);
-			if (i<0) return g;
-			return g.substring(0,i);
-		}
-		//*****************************************
-		function substrAtAt(g,a,b) {
-			return leftAt(substrAt(g,a),b);
-		}
-		//*****************************************
-		function substrAt(g,a) {
-			var i = g.indexOf(a);
-			if (i<0) return g;
-			return g.substring(i+a.length);
-		}
+		return s.substring(0,p);
+	}
+	//*****************************************
+	function substrRat(g,a) {
+		var i = g.lastIndexOf(a);
+		if (i<0) return g;
+		return g.substring(i+1);
+	}
+	//*****************************************
+	function leftRat(g,a) {
+		var i = g.lastIndexOf(a);
+		if (i<0) return g;
+		return g.substring(0,i);
+	}
+	//*****************************************
+	function substrAtAt(g,a,b) {
+		return leftAt(substrAt(g,a),b);
+	}
+	//*****************************************
+	function substrAt(g,a) {
+		var i = g.indexOf(a);
+		if (i<0) return g;
+		return g.substring(i+a.length);
+	}
 
-		//**************************************
-		function trimm(a,b) {
-			var i,t;
-			if (typeof(a)=='undefined') {
-				return '';
-			}
-			if (typeof(b)=='undefined') {
-				b = ' \n\r\t';
-			}
-			if (!a.substring) {
-				alert(erro('trimm: not function substring: '+typeof(a)));
-				return '';
-			}
-			//retira do inicio
-			t = a.length-1;
-			if (t<0) return a;
-			i = 0;
-			while (i<t & b.indexOf(a.substring(i,i+1))>-1) i++;
-			if (i!=0) a = a.substring(i,t+1);
-			//retira do fim
-			t = a.length;
-			if (t<1) return a;
-			i = t-1;
-			while (i>-1 && b.indexOf(a.substring(i,i+1))>-1) i--;
-			if (i!=t-1) a = a.substring(0,i+1);
-			return a;
+	//**************************************
+	function trimm(a,b) {
+		var i,t;
+		if (typeof(a)=='undefined') {
+			return '';
 		}
-		//**************************//
-		function right(s,t) {
-			return s.substring(s.length-t,s.length);
+		if (typeof(b)=='undefined') {
+			b = ' \n\r\t';
 		}
+		if (!a.substring) {
+			alert(erro('trimm: not function substring: '+typeof(a)));
+			return '';
+		}
+		//retira do inicio
+		t = a.length-1;
+		if (t<0) return a;
+		i = 0;
+		while (i<t & b.indexOf(a.substring(i,i+1))>-1) i++;
+		if (i!=0) a = a.substring(i,t+1);
+		//retira do fim
+		t = a.length;
+		if (t<1) return a;
+		i = t-1;
+		while (i>-1 && b.indexOf(a.substring(i,i+1))>-1) i--;
+		if (i!=t-1) a = a.substring(0,i+1);
+		return a;
+	}
+	//**************************//
+	function right(s,t) {
+		return s.substring(s.length-t,s.length);
+	}
 
-		//*********************************
-		function targetEvent(ev) {
-			if (ev.value && ev.tagName) {
-				return ev;
-			}
-			var v = Array('target','srcElement','originalTarget','currentTarget',
-			'explicitOriginalTarget','relatedTarget');
-			//localiza obj destino
-			for (var i=0;i<v.length;i++) {
-				try {
-					var o = ev[v[i]];
-					if (o!=null) {
-						return o;
-					}
-				} catch (e) {
-				}
-			}
-			return null;
+	//*********************************
+	function targetEvent(ev) {
+		if (ev.value && ev.tagName) {
+			return ev;
 		}
-
-
-		//***************************************************
-		//
-		function getElementsByClassName(doc,val) {
-			if (doc.getElementsByClassName) {
-				return doc.getElementsByClassName(val);
-			}
-			if (!val) {
-				val = doc;
-				doc = document;
-			}
-			return getElementsByAttr(doc
-				,'class'+(browse.ie?'Name':'')
-				,function(x){return (' '+x+' ').indexOf(' '+val+' ')!=-1;}
-			);	
-		}
-		//***************************************************
-		//
-		function getElementsByAttr(obj,nome,val,arr) {
-			if (nulo(arr)) {
-				arr = new Array();
-			}
+		var v = Array('target','srcElement','originalTarget','currentTarget',
+		'explicitOriginalTarget','relatedTarget');
+		//localiza obj destino
+		for (var i=0;i<v.length;i++) {
 			try {
-				var v = obj.getAttribute(nome);
-			} catch (e) {
-			}
-			if ( typeof(val)=='function' ? val(v)  : v && (nulo(val) || v==val) ) {
-				//ebJ('achei...: '+obj.tagName+' '+v);
-				arr[arr.length] = obj;
-			}
-			if (obj.childNodes && obj.childNodes.length>0) {
-				for (var i=0;i<obj.childNodes.length;i++) {
-					getElementsByAttr(obj.childNodes.item(i),nome,val,arr);
-				}
-			}
-			return arr;
-		}
-		//***************************************************
-		// retorna child atributo
-		function getChildAttr(obj,nome) {
-			var o = getChildByAttr(obj,nome);
-			if (o) {
-				return o.getAttribute(nome);
-			}
-			return null;
-		}
-		//***************************************************
-		// retorna obj child que possua o atributo
-		function getChildByAttr(obj,nome) {
-			try {
-				var v = obj.getAttribute(nome);
-			} catch (e) {
-			}
-			if ( v  ) {
-				return obj;
-			}
-			if (obj.childNodes && obj.childNodes.length>0) {
-				for (var i=0;i<obj.childNodes.length;i++) {
-					var o = getChildByAttr(obj.childNodes.item(i),nome);
-					if (o) return o;
-				}
-			}
-			return null;
-		}
-		//***************************************************
-		function getProxByTagName(o,nome) {
-			nome = nome.toUpperCase();
-			//while ((o=o.parentNode) && o.tagName.toUpperCase()!=nome);
-			while (o) {
-				if (o.tagName && o.tagName.toUpperCase()==nome) {
+				var o = ev[v[i]];
+				if (o!=null) {
 					return o;
 				}
-				//procura nos filhos
-				var v = o.getElementsByTagName(nome);
-				if (v.length>0) {
-					return v[0];
-				}
-				o = o.parentNode;
-			}
-			return o;
-		}
-		//***************************************************
-		function getParentByTagName(o,nome,limit) {
-			nome = nome.toUpperCase();
-			//while ((o=o.parentNode) && o.tagName.toUpperCase()!=nome);
-			while (o) {
-				if (o.tagName && o.tagName.toUpperCase()==nome) {
-					return o;
-				} else if (limit && limit==o) {
-					return null;
-				}
-				o = o.parentNode;
-			}
-			return o;
-		}
-		//*******************************//
-		function vazio(a) {
-			try {
-				//if ((a==null || isNaN(a) || typeof(a)=='undefined')) {
-				if (a==null || typeof(a)=='undefined') {
-					return true;
-				} else if (typeof(a)=='string') {
-					return trimm(a)=='';
-				} else if (typeof(a)=='number') {
-					return isNaN(a);
-				} else if (typeof(a)=='object') {
-					return a == {};
-				} else {
-					return false;
-				}
 			} catch (e) {
-				//lert('erro testando vazio(): '+erro(e)+' obj='+a);
-				//objNav(e);
+			}
+		}
+		return null;
+	}
+
+
+	//***************************************************
+	//
+	function getElementsByClassName(doc,val) {
+		if (doc.getElementsByClassName) {
+			return doc.getElementsByClassName(val);
+		}
+		if (!val) {
+			val = doc;
+			doc = document;
+		}
+		return getElementsByAttr(doc
+			,'class'+(browse.ie?'Name':'')
+			,function(x){return (' '+x+' ').indexOf(' '+val+' ')!=-1;}
+		);	
+	}
+	//***************************************************
+	//
+	function getElementsByAttr(obj,nome,val,arr) {
+		if (nulo(arr)) {
+			arr = new Array();
+		}
+		try {
+			var v = obj.getAttribute(nome);
+		} catch (e) {
+		}
+		if ( typeof(val)=='function' ? val(v)  : v && (nulo(val) || v==val) ) {
+			//ebJ('achei...: '+obj.tagName+' '+v);
+			arr[arr.length] = obj;
+		}
+		if (obj.childNodes && obj.childNodes.length>0) {
+			for (var i=0;i<obj.childNodes.length;i++) {
+				getElementsByAttr(obj.childNodes.item(i),nome,val,arr);
+			}
+		}
+		return arr;
+	}
+	//***************************************************
+	// retorna child atributo
+	function getChildAttr(obj,nome) {
+		var o = getChildByAttr(obj,nome);
+		if (o) {
+			return o.getAttribute(nome);
+		}
+		return null;
+	}
+	//***************************************************
+	// retorna obj child que possua o atributo
+	function getChildByAttr(obj,nome) {
+		try {
+			var v = obj.getAttribute(nome);
+		} catch (e) {
+		}
+		if ( v  ) {
+			return obj;
+		}
+		if (obj.childNodes && obj.childNodes.length>0) {
+			for (var i=0;i<obj.childNodes.length;i++) {
+				var o = getChildByAttr(obj.childNodes.item(i),nome);
+				if (o) return o;
+			}
+		}
+		return null;
+	}
+	//***************************************************
+	function getProxByTagName(o,nome) {
+		nome = nome.toUpperCase();
+		//while ((o=o.parentNode) && o.tagName.toUpperCase()!=nome);
+		while (o) {
+			if (o.tagName && o.tagName.toUpperCase()==nome) {
+				return o;
+			}
+			//procura nos filhos
+			var v = o.getElementsByTagName(nome);
+			if (v.length>0) {
+				return v[0];
+			}
+			o = o.parentNode;
+		}
+		return o;
+	}
+	//***************************************************
+	function getParentByTagName(o,nome,limit) {
+		nome = nome.toUpperCase();
+		//while ((o=o.parentNode) && o.tagName.toUpperCase()!=nome);
+		while (o) {
+			if (o.tagName && o.tagName.toUpperCase()==nome) {
+				return o;
+			} else if (limit && limit==o) {
+				return null;
+			}
+			o = o.parentNode;
+		}
+		return o;
+	}
+	//*******************************//
+	function vazio(a) {
+		try {
+			//if ((a==null || isNaN(a) || typeof(a)=='undefined')) {
+			if (a==null || typeof(a)=='undefined') {
 				return true;
+			} else if (typeof(a)=='string') {
+				return trimm(a)=='';
+			} else if (typeof(a)=='number') {
+				return isNaN(a);
+			} else if (typeof(a)=='object') {
+				return a == {};
+			} else {
+				return false;
 			}
-		}
-		//*******************************//
-		function nulo(a) {
-			return ( typeof(a)=='undefined' || a==null );
-		}
-
-		//*******************************//
-		function alertErro(e,s) {
-			if(typeof(e)=='string') {
-				var x=e;
-				e=s;
-				s=x;
-			}
-			alert('dev: "'+s+'" ERRO=<'+erro(e)+'>');
-		}
-		//*******************************//
-		function erro(e) {
+		} catch (e) {
+			//lert('erro testando vazio(): '+erro(e)+' obj='+a);
 			//objNav(e);
-			//http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Reference:Global_Objects:Error
-			if (typeof(e)=='string' || typeof(e)=='undefined') {
-				//return (e+' (string)');
-				e = new Error(''+e);
-			}
-			return 'Erro='
-				+e.name
-				+(browse.ie?' ('+e.number+')':'')
-				+' '+e.message
-				+' '+(browse.ie?' '+e.description:'')
-				+(!browse.ie?(''+e.stack).replace('\n','\n\n'):'')
-			;
-			//return 'erro='+troca(''+e.stack,'@','\n');
+			return true;
 		}
+	}
+	//*******************************//
+	function nulo(a) {
+		return ( typeof(a)=='undefined' || a==null );
+	}
 
-		//*********************************
-		var _debJ = 0;
-		//*********************************
-		//texto e opcionalmente nome monitor
-		function debJ(str,mon) {
-			var jan = browse.getId('debJ');
-			if (vazio(jan)) {
-				//lert('criar div para debug J');
-				var css = document.createElement('style');
-				css.innerHTML = 'DIV.debJ {border: 4px double #C83800;overflow: auto;'
-					+'padding: 5px 10px;position:fixed;'
-					+'width: 500px;left: -490px;height: 300px;bottom: -290px;'
-					+'background-color: #00A068;}'
-					+'DIV.debJ:hover {left: 0; bottom: 0;}'
-				;
-				document.body.appendChild(css);
-				var jan = document.createElement('div');
-				jan.className = 'debJ';
-				jan.id = 'debJ';
-				//no caso de touch 
-				jan.addEventListener('click',function(ev){var o=targetEvent(ev);setCSS(o,'left','0');setCSS(o,'bottom','0');},true);
-				jan.innerHTML = '<div  class="debJMon"></div>';
-				document.body.appendChild(jan);
-			}
-			if (!mon) {
-				jan.innerHTML = ((''+str).indexOf('<')!=-2?'<p>'+(_debJ++)+' '+troca(html(str),'\n','<br>')+'</p>':str) 
-					+'<hr>'+ jan.innerHTML;
-				return;
-			}
-			//procura por monitor dentro da janela
-			var monG = getElementsByClassName(jan,'debJMon')[0];
-			var mon1 = getElementsByClassName(monG,'debJMon_Item'+mon)[0];
-			// lert(mon+' g='+monG+' 1='+mon1);
-			if (!mon1) {
-				var mon1 = document.createElement('div');
-				mon1.className = 'debJMon_Item debJMon_Item'+mon;
-				mon1.title = mon;
-				monG.appendChild(mon1);
-			}
-			mon1.innerHTML = str;
+	//*******************************//
+	function alertErro(e,s) {
+		if(typeof(e)=='string') {
+			var x=e;
+			e=s;
+			s=x;
 		}
+		alert('dev: "'+s+'" ERRO=<'+erro(e)+'>');
+	}
+	//*******************************//
+	function erro(e) {
+		//objNav(e);
+		//http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Reference:Global_Objects:Error
+		if (typeof(e)=='string' || typeof(e)=='undefined') {
+			//return (e+' (string)');
+			e = new Error(''+e);
+		}
+		return 'Erro='
+			+e.name
+			+(browse.ie?' ('+e.number+')':'')
+			+' '+e.message
+			+' '+(browse.ie?' '+e.description:'')
+			+(!browse.ie?(''+e.stack).replace('\n','\n\n'):'')
+		;
+		//return 'erro='+troca(''+e.stack,'@','\n');
+	}
+
+	//*********************************
+	var _debJ = 0;
+	//*********************************
+	//texto e opcionalmente nome monitor
+	function debJ(str,mon) {
+		var jan = browse.getId('debJ');
+		if (vazio(jan)) {
+			//lert('criar div para debug J');
+			var css = document.createElement('style');
+			css.innerHTML = 'DIV.debJ {border: 4px double #C83800;overflow: auto;'
+				+'padding: 5px 10px;position:fixed;'
+				+'width: 500px;left: -490px;height: 300px;bottom: -290px;'
+				+'background-color: #00A068;}'
+				+'DIV.debJ:hover {left: 0; bottom: 0;}'
+			;
+			document.body.appendChild(css);
+			var jan = document.createElement('div');
+			jan.className = 'debJ';
+			jan.id = 'debJ';
+			//no caso de touch 
+			jan.addEventListener('click',function(ev){var o=targetEvent(ev);setCSS(o,'left','0');setCSS(o,'bottom','0');},true);
+			jan.innerHTML = '<div  class="debJMon"></div>';
+			document.body.appendChild(jan);
+		}
+		if (!mon) {
+			jan.innerHTML = ((''+str).indexOf('<')!=-2?'<p>'+(_debJ++)+' '+troca(html(str),'\n','<br>')+'</p>':str) 
+				+'<hr>'+ jan.innerHTML;
+			return;
+		}
+		//procura por monitor dentro da janela
+		var monG = getElementsByClassName(jan,'debJMon')[0];
+		var mon1 = getElementsByClassName(monG,'debJMon_Item'+mon)[0];
+		// lert(mon+' g='+monG+' 1='+mon1);
+		if (!mon1) {
+			var mon1 = document.createElement('div');
+			mon1.className = 'debJMon_Item debJMon_Item'+mon;
+			mon1.title = mon;
+			monG.appendChild(mon1);
+		}
+		mon1.innerHTML = str;
+	}
 
 	//funcoes DEBUG
+	//**************************//
+	function objNav(ob,jan) {
+		if (typeof(jan)!='undefined') {
+			//this.filtro = o;
+			this.o = ob;
+			this.jan = jan;
+			//metodos
+			this.mostra = mostra;
+			this.filtrar = filtrar;
+			this.pula = pula;
+			this.mItem = mItem;
+			this.item = item;
+			//this.mostra();
+		} else {
+			init(ob);
+		}
 		//**************************//
-		function objNav(ob,jan) {
-			if (typeof(jan)!='undefined') {
-				//this.filtro = o;
-				this.o = ob;
-				this.jan = jan;
-				//metodos
-				this.mostra = mostra;
-				this.filtrar = filtrar;
-				this.pula = pula;
-				this.mItem = mItem;
-				this.item = item;
-				//this.mostra();
-			} else {
-				init(ob);
+		function mItem(prop,z) {
+			var r='';
+			var t = typeof(z);
+			if (t=='function' && (''+z).length>40) {
+				z = ''+z;
+				z = z.substring(0,40)+'...(+'+z.length+')';
 			}
-			//**************************//
-			function mItem(prop,z) {
-				var r='';
-				var t = typeof(z);
-				if (t=='function' && (''+z).length>40) {
-					z = ''+z;
-					z = z.substring(0,40)+'...(+'+z.length+')';
-				}
-				if (!this.tp[t]) {
-					this.tp[t] = 0;
-				}
-				this.tp[t]++;
-				if (!this.filtro || t==this.filtro) {
-					r += '<tr><td><font size=2 color=darkgreen><b>'+t+'</b></font> '
-					+'<a href=javascript:este.pula("'+prop+'");>'+prop+'</a>: '
-					+'<font size=2>'+(t=='string' || t=='function'?html(''+z):z)
-					;
-				}
-				if (t=='function' && ''+prop=='item') {
-					//lert('item...');
-					r += this.item();
-				}
-				return r;
+			if (!this.tp[t]) {
+				this.tp[t] = 0;
 			}
-			//**************************//
-			function item() {
-				//lert('item');
-				var r = '';
-				for (var i=0;i<this.o.length;i++) {
-					r += this.mItem('item_'+i+'',this.o.item(i));
-				}
-				return r;
-			}
-			//**************************//
-			function pula(o) {
-				var ds;
-				if (o.substring(0,5)=='item_') {
-					ds = this.o.item(1*o.substring(6));
-				} else {
-					ds = this.o[o];
-				}
-				objNav(ds);
-			}
-			//**************************//
-			function init(o) {
-				if (vazio(o)) {
-					this.tit = 'objeto VAZIO...';
-				} else {
-					this.tit = (o.name?' '+o.name:'')
-						+(o.tagName?' '+o.tagName:'')
-						+' '+o
-					;
-				}
-				var r = '<html><head><title>'
-					+this.tit+' - objNav </title></head>'
-				+'<script language="JavaScript" '
-				+'src="/js/funcoes.js"></script>'
-				+'<body><table border=1><tr><td>'
-				+'<font size=3>Objeto: <font color=red>'+o
-				+'<tr><td id=dad>'
-				+'</table>'
-				+'<scr'+''+'ipt>var este1;'
-				+' function objNavInit() {'
-				//+'  lert("teste o"+este);'
-				+'  este.mostra();'
-				//+'  este=new objNav();'
-				//+'  //lert(objNav);'
-				+' }'
-				+' setTimeout("objNavInit();",1000);'
-				+'</scr'+''+'ipt>'
-				+'</body>'
-				+'</html>'
+			this.tp[t]++;
+			if (!this.filtro || t==this.filtro) {
+				r += '<tr><td><font size=2 color=darkgreen><b>'+t+'</b></font> '
+				+'<a href=javascript:este.pula("'+prop+'");>'+prop+'</a>: '
+				+'<font size=2>'+(t=='string' || t=='function'?html(''+z):z)
 				;
-				//lert('objnav: ');
-				//lert(objNav);
-				//objA(window.document.objNav);
-				var w = window.open('about:blank','_blank',
-					'width=600,height=700,resizable=yes,scrollbars=yes,status=1'
-				);
-				//lert(window);
-				try {
-					w.document.write(r);
-					//w.objNav = objNav;
-					//objNavAlvo = o;
-					//var zzz;
-					w.este = new objNav(o,w);
-				} catch (e) {
-					alertErro(e);
-				}
 			}
-			//**************************//
-			function filtrar(f) {
-				if (typeof(f)!='string') {
-					alert('filtro por chave');
-					return;
-				}
-				this.filtro = f;
-				this.mostra();
+			if (t=='function' && ''+prop=='item') {
+				//lert('item...');
+				r += this.item();
 			}
-			//**************************//
-			function mostra() {
-				this.tp = new Array;
-				var o = this.o;
-				var filtro = this.filtro;
-				var i=0,z;
-				var r = '';
-				for(var prop in o) {
-					try {
-						z = o[prop];
-						//z = objNavR(prop);
-						//z = eval('este.o.'+prop);
-					} catch (e) {
-						z = '?erro:'+e;
-						//objA(o);
-						//alertErro(e);
-						//break;
-					}
-					r += this.mItem(prop,z);
-					i++;
-					if (i>200) break;
-				}
-				//mostra totais por tipo
-				var r1 = '<tr><td colspan=2><b>'+i
-				+' (limite 200) </b>';
-				r1 += '(<b><a href=javascript:este.filtrar("");>'
-				+'Todos</a></b>='+i+') ';
-				for(var prop in this.tp) {
-					var z = this.tp[prop];
-					r1 += '(<b><a href=javascript:este.filtrar("'+prop+'");>'
-					+prop+'</a></b>='+z+') ';
-				}
-				r1 += '<br><b>Chave</b>: '
-				+'<input size=10 onChange=este.filtrar(this)>';
-				r = '<table border=1>'+r1+r+'</table>FIM...';
-				//var w = window.open('about:blank','_blank',
-				// 'width=400,height=700,resizable=yes,scrollbars=yes,status=0'
-				//);
-				//w.document.write(r);
-				var ds=browse.getId('dad',this.jan.document);
-				ds.innerHTML = r;
-	   
-				return r;
+			return r;
+		}
+		//**************************//
+		function item() {
+			//lert('item');
+			var r = '';
+			for (var i=0;i<this.o.length;i++) {
+				r += this.mItem('item_'+i+'',this.o.item(i));
+			}
+			return r;
+		}
+		//**************************//
+		function pula(o) {
+			var ds;
+			if (o.substring(0,5)=='item_') {
+				ds = this.o.item(1*o.substring(6));
+			} else {
+				ds = this.o[o];
+			}
+			objNav(ds);
+		}
+		//**************************//
+		function init(o) {
+			if (vazio(o)) {
+				this.tit = 'objeto VAZIO...';
+			} else {
+				this.tit = (o.name?' '+o.name:'')
+					+(o.tagName?' '+o.tagName:'')
+					+' '+o
+				;
+			}
+			var r = '<html><head><title>'
+				+this.tit+' - objNav </title></head>'
+			+'<script language="JavaScript" '
+			+'src="/js/funcoes.js"></script>'
+			+'<body><table border=1><tr><td>'
+			+'<font size=3>Objeto: <font color=red>'+o
+			+'<tr><td id=dad>'
+			+'</table>'
+			+'<scr'+''+'ipt>var este1;'
+			+' function objNavInit() {'
+			//+'  lert("teste o"+este);'
+			+'  este.mostra();'
+			//+'  este=new objNav();'
+			//+'  //lert(objNav);'
+			+' }'
+			+' setTimeout("objNavInit();",1000);'
+			+'</scr'+''+'ipt>'
+			+'</body>'
+			+'</html>'
+			;
+			//lert('objnav: ');
+			//lert(objNav);
+			//objA(window.document.objNav);
+			var w = window.open('about:blank','_blank',
+				'width=600,height=700,resizable=yes,scrollbars=yes,status=1'
+			);
+			//lert(window);
+			try {
+				w.document.write(r);
+				//w.objNav = objNav;
+				//objNavAlvo = o;
+				//var zzz;
+				w.este = new objNav(o,w);
+			} catch (e) {
+				alertErro(e);
 			}
 		}
 		//**************************//
-		function objA(o,filtro) {
+		function filtrar(f) {
+			if (typeof(f)!='string') {
+				alert('filtro por chave');
+				return;
+			}
+			this.filtro = f;
+			this.mostra();
+		}
+		//**************************//
+		function mostra() {
+			this.tp = new Array;
+			var o = this.o;
+			var filtro = this.filtro;
+			var i=0,z;
 			var r = '';
-			var i=0,tp=new Array(),z;
 			for(var prop in o) {
 				try {
 					z = o[prop];
+					//z = objNavR(prop);
+					//z = eval('este.o.'+prop);
 				} catch (e) {
 					z = '?erro:'+e;
+					//objA(o);
+					//alertErro(e);
+					//break;
 				}
-				var t = typeof(z);
-				if (!tp[t]) tp[t] = 0;
-				tp[t]++;
-				if (!filtro || t==filtro) {
-					r += ''+t.substring(0,2)+': '
-					+prop+' = '+z+'\n';
-				}
+				r += this.mItem(prop,z);
 				i++;
 				if (i>200) break;
 			}
+			//mostra totais por tipo
+			var r1 = '<tr><td colspan=2><b>'+i
+			+' (limite 200) </b>';
+			r1 += '(<b><a href=javascript:este.filtrar("");>'
+			+'Todos</a></b>='+i+') ';
+			for(var prop in this.tp) {
+				var z = this.tp[prop];
+				r1 += '(<b><a href=javascript:este.filtrar("'+prop+'");>'
+				+prop+'</a></b>='+z+') ';
+			}
+			r1 += '<br><b>Chave</b>: '
+			+'<input size=10 onChange=este.filtrar(this)>';
+			r = '<table border=1>'+r1+r+'</table>FIM...';
+			//var w = window.open('about:blank','_blank',
+			// 'width=400,height=700,resizable=yes,scrollbars=yes,status=0'
+			//);
+			//w.document.write(r);
+			var ds=browse.getId('dad',this.jan.document);
+			ds.innerHTML = r;
+   
 			return r;
 		}
-		//**************************//
-		function obj(o,filtro,lim) {
-			lim = (lim?lim:200);
-			var r = '<html><body><table border=1>';
-			var i=0,tp=new Array(),z;
-	  
-			for(var prop in o) {
-				try {
-					z = o[prop];
-				} catch (e) {
-					z = '?erro:'+e;
-				}
-				var t = typeof(z);
-				if (!tp[t]) tp[t] = 0;
-				tp[t]++;
-				if (!filtro || t==filtro) {
-					r += '<tr><td>'+t.substring(0,2)+': '
-					+prop+'<td>'+(t=='string'?html(''+z):z);
-				}
-				i++;
-				if (i>lim) break;
+	}
+	//**************************//
+	function objA(o,filtro) {
+		var r = '';
+		var i=0,tp=new Array(),z;
+		for(var prop in o) {
+			try {
+				z = o[prop];
+			} catch (e) {
+				z = '?erro:'+e;
 			}
-			r += "<tr><td>Total (limite "+lim+")<td>"+i
-			+'<tr><td><b>Tipos:</b><td>';
-			for(var prop in tp) {
-				var z = tp[prop];
-				r += '(<b>'+prop+'</b>='+z+') ';
+			var t = typeof(z);
+			if (!tp[t]) tp[t] = 0;
+			tp[t]++;
+			if (!filtro || t==filtro) {
+				r += ''+t.substring(0,2)+': '
+				+prop+' = '+z+'\n';
 			}
-			r += '</table>';
-			var w = window.open('about:blank','_blank',
-			'width=400,height=700,resizable=yes,scrollbars=yes,status=0'
-			);
-			w.document.write(r+'</body></html>');
-	  
-			return r;
+			i++;
+			if (i>200) break;
 		}
+		return r;
+	}
+	//**************************//
+	function obj(o,filtro,lim) {
+		lim = (lim?lim:200);
+		var r = '<html><body><table border=1>';
+		var i=0,tp=new Array(),z;
+  
+		for(var prop in o) {
+			try {
+				z = o[prop];
+			} catch (e) {
+				z = '?erro:'+e;
+			}
+			var t = typeof(z);
+			if (!tp[t]) tp[t] = 0;
+			tp[t]++;
+			if (!filtro || t==filtro) {
+				r += '<tr><td>'+t.substring(0,2)+': '
+				+prop+'<td>'+(t=='string'?html(''+z):z);
+			}
+			i++;
+			if (i>lim) break;
+		}
+		r += "<tr><td>Total (limite "+lim+")<td>"+i
+		+'<tr><td><b>Tipos:</b><td>';
+		for(var prop in tp) {
+			var z = tp[prop];
+			r += '(<b>'+prop+'</b>='+z+') ';
+		}
+		r += '</table>';
+		var w = window.open('about:blank','_blank',
+		'width=400,height=700,resizable=yes,scrollbars=yes,status=0'
+		);
+		w.document.write(r+'</body></html>');
+  
+		return r;
+	}
 	//fim func DEBUG
 
 	//**************************//

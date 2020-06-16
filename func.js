@@ -60,7 +60,7 @@ if(!String.prototype.localToNumber){
 		if (!String.prototype._value_dec) {
 			var a = (2324423.3).format(1);
 			String.prototype._value_dec = a.substring(a.length-2,a.length-1);
-			String.prototype._value_mil = a=='.'?',':'.';
+			String.prototype._value_mil = String.prototype._value_dec=='.'?',':'.';
 			//lert('dec='+String.prototype._value_dec+' mil='+String.prototype._value_mil);
 		}
 		try {

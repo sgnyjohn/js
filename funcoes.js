@@ -42,7 +42,7 @@ if (true) {
 		var vDm = domObj.innerHTML;
 		var ti = ms(),nv=0;
 		if (im) {
-			oDm.innerHTML = '<img src=\"/imagens/loading.gif\">';
+			oDm.innerHTML = '<img style="display: block;margin:0 auto;" src="/imagens/loading.gif">';
 		} else {
 			var to;
 			inc();
@@ -736,6 +736,7 @@ if (true) {
 		var sNum = function(x){return x.localToNumber();};
 		var vImg = '⬍⬆⬇'
 		var runSort = false;
+		var oOrd;
 		setTimeout(init);
 		//*****************************************
 		function init() {
@@ -785,7 +786,8 @@ if (true) {
 			}
 			
 			var col = 1*ob.getAttribute('pos');
-			var oOrd = vOrd[col];
+			oOrd = vOrd[col];
+			oOrd.oClick = ob;
 			
 			//sinaliza ordenando.
 			runSort = new running(ob);
@@ -795,18 +797,17 @@ if (true) {
 			} catch (e) {
 				alertDev('erro '+erro(e));
 			}
-			
-			runSort.end();
-			runSort = false;
-			
-			//desmarca ordem por outras colunas
-			aeval(vOrd,function(x){x.dom.innerHTML=vImg.substring(0,1);});
-			ob.innerHTML = vImg.substring(oOrd.ord+1,oOrd.ord+2)			
-			
 		}
 		//*****************************************
-		function run(oOrd) {
-			
+		function runEnd() {
+			runSort.end();
+			runSort = false;
+			//desmarca ordem por outras colunas
+			aeval(vOrd,function(x){x.dom.innerHTML=vImg.substring(0,1);});
+			oOrd.oClick.innerHTML = vImg.substring(oOrd.ord+1,oOrd.ord+2)			
+		}
+		//*****************************************
+		function run() {
 			//verify field type of column
 			if (!oOrd.func) {
 				oOrd.func = sNum;
@@ -819,40 +820,45 @@ if (true) {
 				}
 				//lert('col num? '+(valueSort[col] == sNum));
 			}
-
 			//ordem atual da coluna
 			oOrd.ord++;
 			if (oOrd.ord>=oOrd.op.length) {
 				oOrd.ord = -1;
 			}
-			
-			//sort
-			var cont = true;
-			while (cont) {
-				cont = false;
-				//pega lista de linha toda vez, muda
-				var t =obj.getElementsByTagName('tr');
-				//bjNav(t[1]);
-				//lert('t='+t.length);
-				for (var l=2;l<t.length;l++) {
-					var v2 = val(oOrd.pos,t[l]);
-					var v1 = val(oOrd.pos,t[l-1]);
-					//trocar
-					if (oOrd.ord==-1 || oOrd.op.substring(oOrd.ord,oOrd.ord+1)=='a') {
-						var f = v2<v1;
-					} else {
-						var f = v2>v1;
-					}
-					//swap
-					if (f) {
-						t[l-1].parentNode.insertBefore(t[l],t[l-1]);
-						cont = true;
-					}
+			setTimeout(runTask,100);
+		}
+		//*****************************************
+		// sort task - Bubble sort.
+		// toDo - Quicksort
+		function runTask() {
+			var cont = false;
+			//pega lista de linha toda vez, muda
+			var t =obj.getElementsByTagName('tr');
+			//bjNav(t[1]);
+			//lert('t='+t.length);
+			for (var l=2;l<t.length;l++) {
+				var v2 = val(oOrd.pos,t[l]);
+				var v1 = val(oOrd.pos,t[l-1]);
+				//trocar
+				if (oOrd.ord==-1 || oOrd.op.substring(oOrd.ord,oOrd.ord+1)=='a') {
+					var f = v2<v1;
+				} else {
+					var f = v2>v1;
+				}
+				//swap
+				if (f) {
+					t[l-1].parentNode.insertBefore(t[l],t[l-1]);
+					cont = true;
 				}
 			}
+			if (!cont) {
+				runEnd();
+			} else {
+				setTimeout(runTask,22);
+			} 
 		}
-		
-	}
+	} //fim tabelaSort
+	
 	//***********************************************
 	//monta  banco de dados estilo tabela com estrutura 'fixa', mas
 	//		permite campo others cujo conteúdo será v[nomeCampo]=valor

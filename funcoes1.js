@@ -139,7 +139,7 @@ function graphLine(V,Op) {
 	}
 	//***************************
 	function cab() {
-		return '<svg  width="100%" viewBox="0 0 16000 9000"><style>'+st()+'</style>';
+		return '<svg  style="width:100%;" viewBox="0 0 16000 9000"><style>'+st()+'</style>';
 	}
 	//***************************
 	function st() {
@@ -163,7 +163,11 @@ function graphLine(V,Op) {
 	this.toDom = function() {
 		// https://willianjusten.com.br/manipulando-svg-com-js/
 		// container, tags svg não aceita eventos, 
-		svg = domObj({svg:1,tag:'svg',width:op.width
+		svg = domObj({svg:1,tag:'svg'
+			,style:(op.width=='100%'
+				?'max-height:80%;max-width:95%;height:auto;width:auto;' //chrome svg
+				:'width:'+op.width)
+			+';'
 			,viewBox:'0 0 16000 9000',targ:op.dst
 			,ev_mousemove: mousemove
 		});

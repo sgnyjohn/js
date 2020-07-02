@@ -145,6 +145,19 @@ if (true) {
 		var idx = {};
 		var objAtivo=0;
 		var lin; //linha menu 
+		/************************
+		// crome width 100%
+		//  https://stackoverflow.com/questions/56391300/svg-does-not-scale-correctly-in-chrome
+		function clickAj(ev) {
+			for (var i=0;i<cnt.childNodes.length;i++) {
+				var o = cnt.childNodes.item(i);
+				alert(o.style.cssText);
+				if (o.style.cssText) {
+					o.style.cssText += ' ';
+				}
+			}
+		}
+		*/
 		//************************
 		function click(ev) {
 			cnt.innerHTML = '';
@@ -166,6 +179,7 @@ if (true) {
 					alert('erro add obj tab '+e+' '+i+'='+a);
 				}
 			});
+			//setTimeout(clickAj,200);
 		}
 		//************************
 		this.css = function() {

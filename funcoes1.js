@@ -15,6 +15,216 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+
+//********************************************
+//********************************************
+function graphLine(V,Op) {
+	if (!V.length) {
+		Op = V;
+		V = Op.data;
+	}
+	var vt = V;
+	var op;
+	var doc = document;
+	var ty = 9000;
+	var tx = 16000;
+	var mx=[],mi=[],df=[];
+	var lnEv;
+	var ctr,mEv,svg;
+	init(Op);
+	//***************************
+	function mousemove(ev) {
+		mEv = ev;
+		if (ctr!=ev.target) {
+			//criar novo objeto
+			ctr = ev.target;
+			var ln = 1*ev.target.getAttribute('grafline');
+			if (ln<1) {
+				return;
+			}
+			new (function() {
+				//objeto enquanto mEv element =
+				var el = ctr;
+				var ta='';
+				var tx = new contextDiv('legenda');
+				function setText() {
+					var ln = 1*el.getAttribute('grafline');
+					var p = el.getBoundingClientRect();
+					var d = Math.floor((mEv.x-p.left)/((p.right-p.left)/vt.length)+0.5);
+					var t = (op.labelData[ln]
+						? op.labelData[ln](vt[d],d)
+						: op.label[0]+': <b>'+vt[d][0]+'</b><br><br>'
+							+op.label[ln]+': <b>'+vt[d][ln]+'</b>'
+						//+'<br><br>'+p.left+' '+p.right+'<br>'+ev.x+' x '+ev.y
+						)
+					;
+					if (t!=ta) {
+						tx.text(t);
+						ta = t;
+						tx.show(mEv);
+					}
+				}
+				setText();
+				var nv=0;
+				//if (!el.style.strokeK) el.style.strokeK = el.style.stroke;
+				setTimeout(faz);
+				function faz() {
+					//mesmo objeto?
+					if (el==mEv.target) {
+						//if (nv==0) tx.show(ev);
+						nv++;
+						//troca cor
+						//el.style.stroke = (nv%2==0?'#f90':'');
+						el.style['stroke-opacity'] = (nv%2==1?0.4:1);
+						//text
+						setText();
+						//repete
+						setTimeout(faz,250);
+					} else {
+						//outro objeto, volta cor original e termina
+						//el.style.stroke = el.style.strokeK;
+						el.style['stroke-opacity'] = 1;
+						tx.hide();
+					}
+				}
+				//alert('='+ev.target+'='+a);
+			})();
+		}
+	}
+	//***************************
+	function eixos() {
+		//lert('mx='+mx+' mi='+mi);
+		//var ln = 'fill="none" stroke="rgb(0,69,134)" stroke-width="10"';
+		var tx=16000;
+		var ty=9000;
+		var x=0,y=400;
+		var r = replacePos("<rect class='moldura' width='@' height='@' />",[tx,ty]);
+		if (op.title) {
+			if (typeof(op.title)=='string') op.title = [op.title];
+			for (var i=0;i<op.title.length;i++) {
+				r += replacePos("<text class='head@' x='@' y='@' text-anchor='middle'>@</text>"
+					,[i,tx/2,y,op.title[i]]
+				);
+				y += 300;
+			}
+		}
+		r += "<svg  x='300' y='"+y+"' width='15400' height='"+(ty-y-400)+"'>"
+				+"<rect class='moldura' fill='none'  x='0' y='0' width='100%' height='100%' />"
+				+"<svg  x='200' y='150' width='15000' height='7600'>"
+		;
+		ty = 7600;
+		tx = 15000;
+		for (var c=1;c<vt[0].length;c++) {
+			var ca = op.scales?c:0;
+			var ln = '';
+			for (var i=0;i<vt.length;i++) {
+				var d = (df[ca]-df[c])/2;
+				var d = 0;
+				if (true) {
+					//ln += ' '+(tx-i/(vt.length-1)*tx)+','+(ty-(mx[ca]*1.05-vt[i][c]-d)/df[ca]*ty );
+					ln += ' '+(i/(vt.length-1)*tx)+','+((mx[ca]-vt[i][c]-d)/df[ca]*ty);
+				} else {
+					ln += ' '+(tx-i/(vt.length-1)*tx)+','+((vt[i][c]-mi[ca])/df[ca]*ty);
+				}
+			}
+			//lert(c+' '+op.color[c-1]+' '+ln);
+			r += ('<polyline grafline='+c+' style="stroke:'+op.color[c-1]+';" class="line" points="'+ln.substring(1)+'"/>');
+		}
+		r += "</svg>"
+			//+'<text id=tx x=14200 y=7400 width=100 fill=red stroke=blue height=100>legenda</text>'
+			+"</svg>"
+		;
+		//lert(r);
+		return r;
+	}
+	//***************************
+	function cab() {
+		return '<svg  width="100%" viewBox="0 0 16000 9000"><style>'+st()+'</style>';
+	}
+	//***************************
+	function st() {
+		return '<![CDATA['
+			+'text{font:normal 120px Verdana, Helvetica, Arial, sans-serif}'
+			+'text.head0{font-weight:bold;font-size:350px}'
+			+'text.head1{font-weight:bold;font-size:250px}'
+			+'text.head2{font-weight:bold;font-size:170px}'
+			+'path,polyline{fill:none;stroke:#0004f0;stroke-width:50;}'
+			+'.line{fill:none;stroke-width:50;}'
+			+'.moldura{fill:none;stroke:#f04000;stroke-width:20;}'
+			+op.style
+			+']]>'
+		;
+	}
+	//***************************
+	function rodap() {
+		return '</svg>';
+	}
+	//***************************
+	this.toDom = function() {
+		// https://willianjusten.com.br/manipulando-svg-com-js/
+		// container, tags svg não aceita eventos, 
+		svg = domObj({svg:1,tag:'svg',width:op.width
+			,viewBox:'0 0 16000 9000',targ:op.dst
+			,ev_mousemove: mousemove
+		});
+
+		var s = domObj({tag:'style','':st(),targ:svg});
+
+		svg.innerHTML += eixos();
+
+		
+		return svg;
+	}
+	//***************************
+	this.toHtml = function () {
+		return cab()+eixos()+rodap();
+	}
+	//***************************
+	function init(Op) {
+		op  = mergeOptions({height:'320px',width:'100%'
+			,labelX:true //show label x axis
+			,scales:false //scale for serie
+			,color: ['#f00000','#00ff00','#0000ff','#00ffff','#ff00ff','#ffff00']
+			,label:[]
+			,labelData:[]
+			,style:''
+		},Op);
+		//calcula mx,mi por série e geral;
+		aeval(vt,function(v,i) {
+			for (var c=1;c<v.length;c++) {
+				mx[0]=Math.max(mx[0]?mx[0]:-99999,v[c]);
+				mi[0]=Math.min(mi[0]?mi[0]:999999,v[c]);
+							
+				mx[c]=Math.max(mx[c]?mx[c]:-99999,v[c]);
+				mi[c]=Math.min(mi[c]?mi[c]:999999,v[c]);
+
+			}
+		});
+		//alert(typeof(op.min));
+		//personal min
+		if (typeof(op.min)=='number') {
+			mi[0] = op.min;
+		} else if (typeof(op.min)=='object') {
+			aeval(op.min,function(v,i) {mi[i+1] = v;});
+		}
+		//personal max
+		if (typeof(op.max)=='number') {
+			mx[0] = op.max;
+		} else if (typeof(op.max)=='object') {
+			aeval(op.max,function(v,i) {mx[i+1] = v;});
+		}
+		//dif
+		aeval(mi,function(v,i){ df[i] = (mx[i]-mi[i])*1.1; });
+		
+		if (op.dst) {
+			setTimeout(this.toDom);
+		}
+
+
+	}
+}
+
+
 //****************************************************
 // words
 function word() {
@@ -179,18 +389,97 @@ function graphBarH(mat,Op) {
 // matriz [[rotulo,valor],...]
 function graphBar(mat,Op) {
 	var v1 = mat;
-	//calcula mx,mi;
-	var mx = -9999,mi=9999;aeval(v1,function(v,i) {
-		mx=Math.max(mx,v[1]);
-		mi=Math.min(mi,v[1]);
+	//calcula mx,mi por série e geral;
+	var mx=[],mi=[],df=[];
+	aeval(v1,function(v,i) {
+		for (var c=1;c<v.length;c++) {
+			mx[0]=Math.max(mx[0]?mx[0]:-99999,v[c]);
+			mi[0]=Math.min(mi[0]?mi[0]:999999,v[c]);
+			df[0]=(mx[0]-mi[0])*1.02;
+						
+			mx[c]=Math.max(mx[c]?mx[c]:-99999,v[c]);
+			mi[c]=Math.min(mi[c]?mi[c]:999999,v[c]);
+			//var d = mx[c]-mi[c];
+			//df[c]=Math.ceil(mx[c]+d*0.1)-Math.floor(mi[c]-d*0.1);
+			df[c]=(mx[c]-mi[c])*1.02;
+		}
 	});
+	this.color = ['f00','0f0','00f','0ff','f0f','ff0'];
 	//dif 
-	var df = mx-mi;
-	df = Math.ceil(mx+df*0.1)-Math.floor(mi-df*0.1);
+	//var df = mx-mi;
+	//df = Math.ceil(mx+df*0.1)-Math.floor(mi-df*0.1);
 	// opcões padrão
-	var op={height:'320px',width:'100%',label:true};
+	var op={height:'320px',width:'100%'
+		,label:true //show label x axis
+		,scales:false //scale for serie
+		,min:20 //bar size % if min value
+	};
 	for (var i in Op) {
 		op[i] = Op[i];
+	}
+	//*******************************
+	this.toDom = function(dst) {
+		var r = domObj({tag:'table',class:'graphBar'
+			,style:'width:'+op.width+';'
+				+'border-collapse:collapse;'
+				+'border-spacing:0;'
+			,targ:dst 
+		});
+		this.scalePorSerie = false;
+		var l = domObj({targ:r,tag:'tr',style:'height:'+op.height+';'});
+		var pxE = 100/(v1.length*(v1[0].length-1))*0.1;
+		var pxG = 100/(v1.length*(v1[0].length-1))*0.8;
+		//linha
+		for(var i=0;i<v1.length;i++) {
+			//var rs = (v1[i][1]-mi)/df*100;
+			//lert(v1[i]);
+			for (var c=1;c<v1[i].length;c++) {
+				//var rs = v1[i][c]/mx[op.scales?c:0]*100;
+				var ca = op.scales?c:0;
+				//lert('('+v1[i][c]+'-'+mi[ca]+')/'+df[ca]+'*(100-'+op.min+')+'+op.min);
+				var rs = (v1[i][c]-mi[ca])/df[ca]*(100-op.min)+op.min;
+				domObj({targ:l,tag:'td',class:'br'
+					,style:'width:'+pxE+'%;'
+				});
+				var d = domObj({targ:l,tag:'td',class:'bar'
+					,title:v1[i][c]+'\n\n'+htmlToTxt(v1[i][0])
+					,style:'vertical-align: bottom;width:'+pxG+'%;'
+				
+				});
+				domObj({tag:'rect'
+					,fill:'#'+this.color[c-1]
+					,width:'100%',height:'100%'
+					,targ:domObj({targ:d,tag:'svg'
+						,width:'100%',height:rs+'%'
+						,xmlns:'http://www.w3.org/2000/svg'
+					})
+				});
+			}
+		}
+		//label
+		l = domObj({tag:'tr',targ:r});
+		for(var i=0;i<v1.length;i++) {
+			//domObj({targ:l,tag:'td',style:'width:'+(100/v1.length*0.1)+'%;'
+			//	,colspan:(v1[0].length-1)
+			//});
+			domObj({targ:l,tag:'td'
+				,style:'text-align:center;'
+				,'':op.label?'<p style="margin:0 3px;background-color:#eaeaea;">'+v1[i][0]+'</p>':''
+				,colspan:((v1[0].length-1)*2)
+			});
+		}
+
+		//reatribui srv para ajuste 
+		setTimeout(function(x) {
+			var v = r.getElementsByTagName('svg');
+			//lert('v='+v.length);
+			for (var i=0;i<v.length;i++) {
+				//lert(v[i].parentNode.innerHTML);
+				v[i].parentNode.innerHTML += ' ';
+			}
+		},100);
+
+		return r;
 	}
 	//*******************************
 	this.getHtml = function() {
@@ -199,16 +488,18 @@ function graphBar(mat,Op) {
 		;
 		//linha
 		for(var i=0;i<v1.length;i++) {
-			var rs = (v1[i][1]-mi)/df*100;
-			var rs = (v1[i][1])/mx*100;
+			var rs = (v1[i][1]-mi[0])/df[0]*100;
+			//var rs = (v1[i][1])/mx[0]*100;
+			var is = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABHNCSVQICAgIfAhkiAAAAA1JREFUCFtj+MLA8B8ABNQB9EPwtFAAAAAASUVORK5CYII=';
 			r += '<td class="br" style="width:'+(100/v1.length*0.1)+'%;">'
 				+'<td class="bar" title="'+v1[i][1]+'\n\n'+htmlToTxt(v1[i][0])+'"'
 				+' style="width:'+(100/v1.length*0.7)+'%;'
-				+'background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABHNCSVQICAgIfAhkiAAAAA1JREFUCFtj+MLA8B8ABNQB9EPwtFAAAAAASUVORK5CYII=);'
+				+'background-image:url('+is+');'
 				+'background-size:100% '+rs+'%;'
 				+'background-position:bottom;'
 				+'background-repeat: repeat-x;'
 				+'">'
+				//+'<img src=\"'+is+'\">'				
 			;
 		}
 		//label
@@ -774,7 +1065,7 @@ var browseDataO=false;
 				c = document.createElement('DIV');
 				c.id = ed;
 				c.className = c.id;
-				c.style.cssText = 'z-index:500;';
+				c.style.cssText = 'z-index:-500;';
 				document.body.appendChild(c);
 			}
 			//se 2 é string, preenche

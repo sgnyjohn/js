@@ -1,4 +1,4 @@
-/* 
+/*  .querySelectorAll
 Copyright (c) 2002/2011 Signey John
 
 This program is free software: you can redistribute it and/or modify
@@ -32,6 +32,62 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 if (true) {
 
+	//***********************************************
+	var _contextDiv;
+	function contextDiv(htmlORdom) {
+		var f = _contextDiv;
+		if (!f) {
+			_contextDiv = document.createElement('div');
+			f = _contextDiv;
+			f.style.cssText = 'z-index:500;position:fixed;overflow: auto;'//position:absolute;'
+				+'background:#f0f0f0;border:2px solid blue;'
+				+'top:0;left:0;'
+				+'padding:4px 8px;'
+			;
+			document.body.appendChild(f);
+		}
+		if (htmlORdom) {
+			text(htmlORdom);
+		}
+		this.text = text;
+		function text(htmlORdom) {
+			f.innerHTML = '';
+			if (typeof(htmlORdom)=='string') {
+				f.innerHTML = htmlORdom;
+			} else {
+				f.appendChild(htmlORdom);
+			}
+		}
+		this.show = function(ev) {
+			//screenX: 2679 screenY: 292
+			var nx = ev.x-browse.getTX(f);
+			if (nx<0) nx=ev.x;
+			var ny = ev.y-browse.getTY(f);
+			if (ny<0) ny=ev.y;
+			styleSet(f,'left',nx);
+			styleSet(f,'top',ny);
+			browse.mostra(f);
+		}
+		this.hide = function() {
+			browse.esconde(f);
+		}
+	}
+
+	//***********************************************
+	function replacePos(str,arr) {
+		var v = str.split('@');
+		if (arr.length!=v.length-1) {
+			alert('replacePos: tamanho array incompatível com substituições');
+			return;
+		}
+		r = v[0];
+		for (var i=1;i<v.length;i++) {
+			r += arr[i-1]+v[i];
+		}
+		return r;
+	}
+		
+		
 	//***********************************************
 	function running(domObj,tpImage) {
 		var im = tpImage;
@@ -103,7 +159,13 @@ if (true) {
 			}
 			var o = vt[objAtivo].obj;
 			//lert('ev='+ev.target.value+' o='+o);
-			aeval(o.length?o:[o],function(a){cnt.appendChild(a);});
+			aeval(o.length?o:[o],function(a,i){
+				try {
+					cnt.appendChild(a);
+				} catch (e) {
+					alert('erro add obj tab '+e+' '+i+'='+a);
+				}
+			});
 		}
 		//************************
 		this.css = function() {
@@ -131,6 +193,7 @@ if (true) {
 			this.css();
 			var r = domObj({tag:'table',class:op.id});
 			//lert('sh vt='+vt);
+			if (op.tab) objAtivo=1*op.tab;
 			if (op.ped&&op.ped.getJ(op.id))
 				objAtivo = 1*op.ped.getJ(op.id);
 			lin = domObj({tag:'tr',targ:r});
@@ -670,22 +733,45 @@ if (true) {
 		p.doc=(p.doc?p.doc:document);
 		p.tag=(p.tag?p.tag:'p');
 		//p.targ=(p.targ?p.targ:p.doc.body);
-		var ret=p.doc.createElement(p.tag);
+		//lert(p.svg);
+		if (p.svg) {
+			var uSvg = 'http://www.w3.org/2000/svg';
+			//uSvg = 'org.w3c.dom.svg';
+			var ret=p.doc.createElementNS(uSvg,p.tag);
+		} else {
+			var ret=p.doc.createElement(p.tag);
+		}
 		for (var i in p) {
 			//lert('dfsf='+i);
 			if (i=='innerHTML'||i=='') {
-				ret.innerHTML = p[i];
+				var oo = typeof(p[i])=='object';
+				//lert('oo='+oo);
+				if (oo && p[i].tagName) {
+					ret.appendChild(p[i]);
+				} else if (oo && typeof(p[i].length)=='number') {
+					aeval(p[i],function(v){ret.appendChild(v);});
+				} else {
+					ret.innerHTML = ''+p[i];
+				}
 			} else if (equals(i,'ev_')) {
 				var ev = substrAt(i,'_');
 				//lert('domObj.evento '+ev+'\n'+p[i]);
 				ret.addEventListener(ev,p[i]);
-			} else if ('-doc-tag-targ-'.indexOf('-'+i+'-')==-1) {
-				ret.setAttribute(i,p[i]);
+			} else if ('-doc-tag-targ-svg-'.indexOf('-'+i+'-')==-1) {
+				if (false && p.svg) {
+					ret.setAttributeNS(uSvg,i,p[i]);
+				} else {
+					ret.setAttribute(i,p[i]);
+				}
 			}
 		}
 		if (p.targ) {
 			p.targ.appendChild(ret);
 		}
+		/*if (p.svg) {
+			objNav(ret);alert('svg');
+		}
+		*/
 		return ret;
 	}
 	//***********************************************
@@ -1141,6 +1227,11 @@ if (true) {
 			return troca(''+reg[field],'\n','<br>');
 		}
 		//*********************************************
+		// show in lists 
+		this.showHeader = function(field) { //,fieldName) {
+			return troca(''+camposN[field],'_',' ');
+		}		
+		//*********************************************
 		// gera objetos html 
 		// 	targ = target dom destino
 		//	limit = limita nro regs
@@ -1165,7 +1256,7 @@ if (true) {
 			var l = doc.createElement('tr');l.className='head';tb.appendChild(l);
 			for (var i=0;i<camposN.length;i++) {
 				var c = doc.createElement('th');
-				c.innerHTML = camposN[i];
+				c.innerHTML = eu.showHeader(i);
 				l.appendChild(c);
 			}
 			// data
@@ -1509,7 +1600,8 @@ if (true) {
 		//		separado do nome de campos e bloco dados por linha vazia
 		//		cabeçalho arquivo pode conter campo 'delimiter' this.dlCol
 		this.setTxt = function(tx) {
-			var x = palavraA(trimm(tx),this.dlRow);
+			//var x = palavraA(trimm(tx),this.dlRow);
+			var x = trimm(tx).split(this.dlRow);
 			
 			//possui fileHead
 			if (trimm(x[0])==':') {
@@ -3972,6 +4064,7 @@ if (true) {
 	//**************************//
 	//**************************//
 	var browse = new (function() {
+		var eu = this;
 		this.NS6 = false;
 		this.NS4 = false;
 		this.IE4 = false;
@@ -3997,10 +4090,12 @@ if (true) {
 			}
 		}
 		this.ie = this.IE4;
-		this.ie6 = document.documentElement &&
-			( document.documentElement.clientWidth 
-			|| document.documentElement.clientHeight)
-		;
+		setTimeout(function() {
+			eu.ie6 = document.documentElement 
+				&& 	( document.documentElement.clientWidth 
+					|| document.documentElement.clientHeight)
+			;}
+		,0);
 		//this.moz = this.IE6
 		this.moz = navigator.userAgent.toLowerCase().indexOf("gecko")!=-1;
 		this.fir = navigator.userAgent.toLowerCase().indexOf("firefox")!=-1

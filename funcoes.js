@@ -1,4 +1,4 @@
-/*  .querySelectorAll
+/* .querySelectorAll
 Copyright (c) 2002/2011 Signey John
 
 This program is free software: you can redistribute it and/or modify
@@ -31,6 +31,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 if (true) {
+
+	function q(strQuerySelectorAll,func) {
+		var v = document.querySelectorAll(strQuerySelectorAll);
+		aeval(v,func);
+	}
+
 
 	//***********************************************
 	var _contextDiv;
@@ -1005,7 +1011,7 @@ if (true) {
 		// pivot calc like
 		this.pivot = function(Ds) {
 			var bd = this;
-			alert('regs='+bd.count()+' '+[1,2,3,4]);
+			//lert('regs='+bd.count()+' '+[1,2,3,4]);
 			var ds = Ds; //destino
 			var rs; //resultado
 			var sf,sc,sl,sd; //selects
@@ -3383,7 +3389,7 @@ if (true) {
 				r += ' '+v;
 			}
 		});
-		ob.className = r.trimm();
+		ob.className = trimm(r);
 	}
 	function classOn(ob,estilo) {
 		classAddDel(ob,estilo,true);

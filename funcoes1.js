@@ -149,7 +149,7 @@ function graphLine(V,Op) {
 			+'text.head1{font-weight:bold;font-size:250px}'
 			+'text.head2{font-weight:bold;font-size:170px}'
 			+'path,polyline{fill:none;stroke:#0004f0;stroke-width:50;}'
-			+'.line{fill:none;stroke-width:50;}'
+			+'.line{fill:none;stroke-width:50;xstroke-dasharray:50 50 100 50;}'
 			+'.moldura{fill:none;stroke:#f04000;stroke-width:20;}'
 			+op.style
 			+']]>'

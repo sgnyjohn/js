@@ -1302,7 +1302,7 @@ if (true) {
 				l = doc.createElement('tr');tb.appendChild(l);
 				var c = doc.createElement('td');
 				c.setAttribute('colspan',''+vlr[r].length);
-				c.innerHTML = '<h1>stop limit '+limit+'</h1>';
+				c.innerHTML = '<h1>stop limit '+limit+' / '+format(vlr.length,0)+'</h1>';
 				l.appendChild(c);
 			}
 			//adiciona ao dst
@@ -2453,13 +2453,16 @@ if (true) {
 			return v[k];
 		}
 		//************************
-		this.text = function() {
+		this.text = function(o) {
 			var r = '';
 			aeval(v,function(v,k) {
 				if (!vazio(v)) {
 					r += k+':'+v+';';
 				}
 			});
+			if (o && o.style) {
+				o.style.cssText = r;
+			}
 			return r;
 		}
 	}

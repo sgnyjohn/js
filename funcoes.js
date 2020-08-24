@@ -46,6 +46,7 @@ if (true) {
 			return this;
 		} else if (typeof(a)=='function') {
 			aeval(this.v,a);
+			return this;
 		} else {
 			alert('p1 typeof='+typeof(a)+' sem funcao!');
 		}

@@ -32,9 +32,23 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 if (true) {
 
-	function q(strQuerySelectorAll,func) {
-		var v = document.querySelectorAll(strQuerySelectorAll);
-		aeval(v,func);
+	function q(a) {
+		if (typeof(a)=='string') {
+			a = document.querySelectorAll(a);
+		}
+		if (typeof(a)=='object') {
+			if (this==window) {
+				var r = new q(a);
+				r.q = q;
+				return r;
+			}
+			this.v = a.length?a:[a];
+			return this;
+		} else if (typeof(a)=='function') {
+			aeval(this.v,a);
+		} else {
+			alert('p1 typeof='+typeof(a)+' sem funcao!');
+		}
 	}
 
 

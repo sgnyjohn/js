@@ -15,23 +15,55 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-/*
- * alguns acreditam em fadas, outros num reino de freiras descalças... 
- * não importa, só há salvação sob domínios do escrito, da lei, para TODOS.
- * 
- * a parte superior para +longe está muito estreita, 
- * a parte inferior da tela do computador fica borrada.
- * 
- * " possível irrelevância das massas
- * ...
- * É muito mais difícil lutar contra a irrelevância do que contra a exploração. " Harari
- * 
- * https://www.youtube.com/watch?v=zNoLeZi5gpk&t=41m18s
- * 
- */
 
 if (true) {
 
+	var Dev = false;
+	
+	//***********************************************
+	function Url(s) {
+		var eu = this;
+		var urlO = trimm(s);
+		init();
+		//*******************************************
+		function init() {
+			var u = urlO;
+			var p = u.indexOf('://');
+			if (p==-1 || p>10) {
+				var urlA = new Url(''+window.location);
+				//só protocol e host
+				u = urlA.protocol+'://'+urlA.host
+					+(urlA.portDefault==urlA.port?'':':'+urlA.port)
+					+(urlO.charAt(0)=='/'?'':urlA.dir)
+					+urlO
+				;
+			}
+			var v=palavraA(u,'/');
+			//http://fsdfs/ 3
+			eu.protocol = leftAt(v[0],':');
+			eu.portDefault = (eu.protocol=='http'?80:(eu.protocol=='https'?443:-1));
+			eu.host = v[2];
+			if (eu.host.indexOf(':')!=-1) {
+				eu.port = 1*substrAt(eu.host,':');
+				eu.host = leftAt(eu.host,':');
+			} else {
+				eu.port = eu.portDefault;
+			}
+			//assume-se que está num dir...
+			eu.dir = '/'+substrAt(substrAt(''+window.location,'://'),'/');
+			eu.arg = '';
+			if (eu.dir.indexOf('?')!=-1) {
+				eu.arg = substrAt(eu.dir,'?');
+				eu.dir = leftAt(eu.dir,'?');
+			}
+			eu.arq = '';
+			if (eu.dir.charAt(eu.dir.length)!='/') {
+				eu.arq = substrRat(eu.dir,'/');
+				eu.dir = leftRat(eu.dir,'/');
+			}
+		}
+	}
+	//***********************************************
 	function q(a) {
 		if (typeof(a)=='string') {
 			a = document.querySelectorAll(a);
@@ -431,7 +463,10 @@ if (true) {
 			if (this.readyState != 4) {
 				return;
 			} else if (this.status!=200) {
-				eu.error = 'status: '+this.status+'\nurl: '+op[this.pos].url;
+				eu.error = 'httpStatus: '+this.status
+					+'\readyState: '+this.readyState
+					+'\nurl: '+op[this.pos].url
+				;
 				//lert(pos.url+' '+eu.error);
 				end(true);	
 				return;			
@@ -624,7 +659,7 @@ if (true) {
 				}
 				
 				var l = domObj({tag:'tr',targ:r});
-				domObj({'':prop,tag:'td',targ:l});
+				domObj({'':typeof(z)+': <b>'+prop+'</b>',tag:'td',targ:l});
 				domObj({tag:'td',targ:l}).appendChild(objDebug(z));
 
 				i++;
@@ -841,6 +876,7 @@ if (true) {
 	// p1 é objeto dom table ou id de table
 	// p2 vetor strings para cada coluna com as possíveis ordens 'ad','d','da',''
 	function tabelaSort(id,Ord) {
+		var eu = this;
 		var vOrd = (Ord?Ord:[]);
 		var obj = id;
 		//var sAt = -1;
@@ -858,7 +894,7 @@ if (true) {
 		var vImg = '⬍⬆⬇'
 		var runSort = false;
 		var oOrd;
-		setTimeout(init);
+		init();
 		//*****************************************
 		function init() {
 			var rows = obj.getElementsByTagName('tr');
@@ -907,7 +943,12 @@ if (true) {
 			}
 			
 			var col = 1*ob.getAttribute('pos');
+			eu.sort(col);
+		}
+		this.sort = function(col) {
+			//lert(''+vOrd[col].col.innerHTML);
 			oOrd = vOrd[col];
+			ob = oOrd.col.querySelector('sup');
 			oOrd.oClick = ob;
 			
 			//sinaliza ordenando.
@@ -952,6 +993,7 @@ if (true) {
 		// sort task - Bubble sort.
 		// toDo - Quicksort
 		function runTask() {
+			//lert('runTask');
 			var cont = false;
 			//pega lista de linha toda vez, muda
 			var t =obj.getElementsByTagName('tr');
@@ -1634,7 +1676,7 @@ if (true) {
 		// 		se 1a linha = ':' assume cabeçalho arquivo no padrão eml
 		//		separado do nome de campos e bloco dados por linha vazia
 		//		cabeçalho arquivo pode conter campo 'delimiter' this.dlCol
-		this.setTxt = function(tx) {
+		this.setTxt = function(tx,funcFilter) {
 			//var x = palavraA(trimm(tx),this.dlRow);
 			var x = trimm(tx).split(this.dlRow);
 			
@@ -1664,7 +1706,7 @@ if (true) {
 				aeval(x,function(e,i) { x[i] = e.split(eu.dlCol); });
 			}
 			//lert(x[0]);
-			this.setMatriz(x);
+			this.setMatriz(x,funcFilter);
 		}
 		//*********************************************
 		// GET valor de um campo pelo nome, ret padrão, se number mov ponteiro mv ou reg nro
@@ -1739,7 +1781,7 @@ if (true) {
 		//*********************************************
 		// recebe matriz ou csv com 1a linha nome campos
 		//		* ver setTxt
-		this.setMatriz = function(vet) {
+		this.setMatriz = function(vet,funcFilter) {
 			if (typeof(vet)=='string') {
 				this.setTxt(vet);
 				return;
@@ -1752,7 +1794,9 @@ if (true) {
 			}
 			//dados na um em diante
 			for (var i=1;i<vet.length;i++) {
-				valores[valores.length] = troca(vet[i],'\\n','\n');
+				if (!funcFilter || funcFilter(vet[i])) {
+					valores[valores.length] = troca(vet[i],'\\n','\n');
+				}
 			}
 			nr = valores.length;
 		}

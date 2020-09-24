@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 //********************************************
+// svg graph line
 //********************************************
 function graphLine(V,Op) {
 	if (!V.length) {
@@ -31,6 +32,7 @@ function graphLine(V,Op) {
 	var mx=[],mi=[],df=[];
 	var lnEv;
 	var ctr,mEv,svg;
+	var labelLine = true;
 	init(Op);
 	//***************************
 	function mousemove(ev) {
@@ -98,7 +100,9 @@ function graphLine(V,Op) {
 		var tx=16000;
 		var ty=9000;
 		var x=0,y=400;
+		//moldura 1
 		var r = replacePos("<rect class='moldura' width='@' height='@' />",[tx,ty]);
+		//titulos
 		if (op.title) {
 			if (typeof(op.title)=='string') op.title = [op.title];
 			for (var i=0;i<op.title.length;i++) {
@@ -108,12 +112,14 @@ function graphLine(V,Op) {
 				y += 300;
 			}
 		}
+		//moldura 2
 		r += "<svg  x='300' y='"+y+"' width='15400' height='"+(ty-y-400)+"'>"
 				+"<rect class='moldura' fill='none'  x='0' y='0' width='100%' height='100%' />"
 				+"<svg  x='200' y='150' width='15000' height='7600'>"
 		;
 		ty = 7600;
 		tx = 15000;
+		//linhas
 		for (var c=1;c<vt[0].length;c++) {
 			var ca = op.scales?c:0;
 			var ln = '';

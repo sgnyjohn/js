@@ -13,6 +13,22 @@
 <script>
 var divR;
 var __xx_xxzzzz_ = function(){return eval(arguments[0])};
+function addDom(tit,ob) {
+	var x = document.getElementsByTagName('td')[3];
+	var rf = x.firstChild;
+	//lert(rf+' '+ob);
+	if (!rf) {
+		rf = domObj({tag:'p','':'----- fim -----'});
+		x.appendChild(rf);
+	}
+	x.insertBefore(domObj({tag:'hr'}),rf);
+	x.insertBefore(domObj({
+		tag:'p'
+		,style:'font-size:150%;'
+		,'':html(tit)
+	}),rf);
+	x.insertBefore(ob,rf);
+}
 function verEval(ob) {
 	var v = document.getElementsByTagName('textarea');
 	var al = v[1];
@@ -36,7 +52,7 @@ function verEval(ob) {
 					x.appendChild(domObj({
 						tag:'p'
 						,style:'font-size:150%;'
-						,'':troca(ex,'\n','<br>')
+						,'':html(ex)
 					}));
 					x.appendChild(xx);
 				}
@@ -71,11 +87,14 @@ var x=12345679;
 x *= 9;
 x
 
+domObj({tag:'table','':'<tr><td style="border:20px solid;"><h1>window.navigator</h1>'})
+
 objDebug(window.navigator)
 
-objNav(window);
+//objNav(window);
 
-domObj({tag:'table','':'<tr><td style="border:20px solid;">teste'})
+//document.addEventListener('keyup',function(ev){addDom('evento keyup='+ms(),objDebug(ev));}) 
+
 
 </textarea>
 

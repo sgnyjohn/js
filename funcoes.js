@@ -65,6 +65,7 @@ if (true) {
 	}
 	//***********************************************
 	function q(a) {
+		//alert('erro,não implementado');return;
 		if (typeof(a)=='string') {
 			a = document.querySelectorAll(a);
 		}

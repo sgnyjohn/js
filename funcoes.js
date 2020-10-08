@@ -19,6 +19,155 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 if (true) {
 
 	var Dev = false;
+
+	function getSelectionText() {
+		/*	window.getSelection().toString()
+			and of course a special treatment for ie:
+			document.selection.createRange().htmlText
+		*/
+		var text = "";
+		if (window.getSelection) {
+			text = window.getSelection().toString();
+		} else if (document.selection && document.selection.type != "Control") {
+			text = document.selection.createRange().text;
+		}
+		return text;
+	}
+
+	//***********************************************
+	// .addEventListener('contextmenu', e => {e.preventDefault();})
+	var _contextDiv;
+	function contextDiv(htmlORdom,onClick) {
+		var eu = this;
+		var f = _contextDiv;
+		this.visible = false;
+		if (!f) {
+			_contextDiv = document.createElement('div');f = _contextDiv;
+			f.className = '_contextDiv';
+			var c = '' //z-index:500;position:fixedabsolute;overflow: auto;'//position:absolute;'
+				+'display:none;position:fixed;xz-index:100;opacity:1;'
+				+'background-color:#f0f0f0;border:2px solid blue;'
+				+'top:0;left:0;'
+				//+'padding:4px 8px;'
+			;
+			f.style.cssText = c
+			//addStyleId('div._contextDiv {'+c+'}','_contextDiv');
+			//add in document
+			document.body.appendChild(f);
+		}
+		if (htmlORdom) {
+			text(htmlORdom);
+		}
+		if (onClick) {
+			f.addEventListener('click',onClick);
+		}
+		//*************************
+		this.text = text;
+		function text(htmlORdom) {
+			f.innerHTML = '';
+			if (typeof(htmlORdom)=='string') {
+				f.innerHTML = htmlORdom;
+			} else {
+				f.appendChild(htmlORdom);
+			}
+		}
+		//*************************
+		this.show = function(ev) {
+			eu.visible = true;
+			//screenX: 2679 screenY: 292
+			var nx = ev.x-browse.getTX(f); //ev.x ev.screenX
+			if (nx<0) nx=ev.x;
+			var ny = ev.y-browse.getTY(f);
+			if (ny<0) ny=ev.y;
+			styleSet(f,'left',nx+'px');
+			styleSet(f,'top',ny+'px');
+			//lert(f.style.cssText);
+			browse.mostra(f);
+		}
+		//*************************
+		this.hide = function() {
+			eu.visible = false;
+			browse.esconde(f);
+		}
+	}
+
+
+	//***********************************************
+	function q(a) {
+		//alert('erro,não implementado');return;
+		if (typeof(a)=='string') {
+			a = document.querySelectorAll(a);
+		}
+		if (typeof(a)=='object') {
+			if (this==window) {
+				var r = new q(a);
+				r.q = q;
+				return r;
+			}
+			this.v = a.length?a:[a];
+			return this;
+		} else if (typeof(a)=='function') {
+			aeval(this.v,a);
+			return this;
+		} else {
+			alert('p1 typeof='+typeof(a)+' sem funcao!');
+		}
+		//*******************************************
+		this.add = function(op) {
+			op.targ = this.v[0];
+			var o = domObj(op);
+			return new q(o);
+		}
+	}
+
+
+	//***********************************************
+	function domObj(p) {
+		p.doc=(p.doc?p.doc:document);
+		p.tag=(p.tag?p.tag:'p');
+		//p.targ=(p.targ?p.targ:p.doc.body);
+		//lert(p.svg);
+		if (p.svg) {
+			var uSvg = 'http://www.w3.org/2000/svg';
+			//uSvg = 'org.w3c.dom.svg';
+			var ret=p.doc.createElementNS(uSvg,p.tag);
+		} else {
+			var ret=p.doc.createElement(p.tag);
+		}
+		for (var i in p) {
+			//lert('dfsf='+i);
+			if (i=='innerHTML'||i=='') {
+				var oo = typeof(p[i])=='object';
+				//lert('oo='+oo);
+				if (oo && p[i].tagName) {
+					ret.appendChild(p[i]);
+				} else if (oo && typeof(p[i].length)=='number') {
+					aeval(p[i],function(v){ret.appendChild(v);});
+				} else {
+					ret.innerHTML = ''+p[i];
+				}
+			} else if (equals(i,'ev_')) {
+				var ev = substrAt(i,'_');
+				//lert('domObj.evento '+ev+'\n'+p[i]);
+				ret.addEventListener(ev,p[i]);
+			} else if ('-doc-tag-targ-svg-'.indexOf('-'+i+'-')==-1) {
+				if (false && p.svg) {
+					ret.setAttributeNS(uSvg,i,p[i]);
+				} else {
+					ret.setAttribute(i,p[i]);
+				}
+			}
+		}
+		if (p.targ) {
+			p.targ.appendChild(ret);
+		}
+		/*if (p.svg) {
+			objNav(ret);alert('svg');
+		}
+		*/
+		return ret;
+	}
+
 	
 	//***********************************************
 	function Url(s) {
@@ -61,69 +210,6 @@ if (true) {
 				eu.arq = substrRat(eu.dir,'/');
 				eu.dir = leftRat(eu.dir,'/');
 			}
-		}
-	}
-	//***********************************************
-	function q(a) {
-		//alert('erro,não implementado');return;
-		if (typeof(a)=='string') {
-			a = document.querySelectorAll(a);
-		}
-		if (typeof(a)=='object') {
-			if (this==window) {
-				var r = new q(a);
-				r.q = q;
-				return r;
-			}
-			this.v = a.length?a:[a];
-			return this;
-		} else if (typeof(a)=='function') {
-			aeval(this.v,a);
-			return this;
-		} else {
-			alert('p1 typeof='+typeof(a)+' sem funcao!');
-		}
-	}
-
-
-	//***********************************************
-	var _contextDiv;
-	function contextDiv(htmlORdom) {
-		var f = _contextDiv;
-		if (!f) {
-			_contextDiv = document.createElement('div');
-			f = _contextDiv;
-			f.style.cssText = 'z-index:500;position:fixed;overflow: auto;'//position:absolute;'
-				+'background:#f0f0f0;border:2px solid blue;'
-				+'top:0;left:0;'
-				+'padding:4px 8px;'
-			;
-			document.body.appendChild(f);
-		}
-		if (htmlORdom) {
-			text(htmlORdom);
-		}
-		this.text = text;
-		function text(htmlORdom) {
-			f.innerHTML = '';
-			if (typeof(htmlORdom)=='string') {
-				f.innerHTML = htmlORdom;
-			} else {
-				f.appendChild(htmlORdom);
-			}
-		}
-		this.show = function(ev) {
-			//screenX: 2679 screenY: 292
-			var nx = ev.x-browse.getTX(f);
-			if (nx<0) nx=ev.x;
-			var ny = ev.y-browse.getTY(f);
-			if (ny<0) ny=ev.y;
-			styleSet(f,'left',nx);
-			styleSet(f,'top',ny);
-			browse.mostra(f);
-		}
-		this.hide = function() {
-			browse.esconde(f);
 		}
 	}
 
@@ -171,8 +257,8 @@ if (true) {
 		}
 	}
 
-
 	//***********************************************
+	// add style id 
 	function addStyleId(cssText,id) {
 		var v = document.querySelectorAll('style#'+id);
 		if (v.length!=0) return false;
@@ -798,52 +884,6 @@ if (true) {
 		for (var i = 0;i<o.childNodes.length;i++) {
 			fun(o.childNodes.item(i),i);
 		}
-	}
-	//***********************************************
-	function domObj(p) {
-		p.doc=(p.doc?p.doc:document);
-		p.tag=(p.tag?p.tag:'p');
-		//p.targ=(p.targ?p.targ:p.doc.body);
-		//lert(p.svg);
-		if (p.svg) {
-			var uSvg = 'http://www.w3.org/2000/svg';
-			//uSvg = 'org.w3c.dom.svg';
-			var ret=p.doc.createElementNS(uSvg,p.tag);
-		} else {
-			var ret=p.doc.createElement(p.tag);
-		}
-		for (var i in p) {
-			//lert('dfsf='+i);
-			if (i=='innerHTML'||i=='') {
-				var oo = typeof(p[i])=='object';
-				//lert('oo='+oo);
-				if (oo && p[i].tagName) {
-					ret.appendChild(p[i]);
-				} else if (oo && typeof(p[i].length)=='number') {
-					aeval(p[i],function(v){ret.appendChild(v);});
-				} else {
-					ret.innerHTML = ''+p[i];
-				}
-			} else if (equals(i,'ev_')) {
-				var ev = substrAt(i,'_');
-				//lert('domObj.evento '+ev+'\n'+p[i]);
-				ret.addEventListener(ev,p[i]);
-			} else if ('-doc-tag-targ-svg-'.indexOf('-'+i+'-')==-1) {
-				if (false && p.svg) {
-					ret.setAttributeNS(uSvg,i,p[i]);
-				} else {
-					ret.setAttribute(i,p[i]);
-				}
-			}
-		}
-		if (p.targ) {
-			p.targ.appendChild(ret);
-		}
-		/*if (p.svg) {
-			objNav(ret);alert('svg');
-		}
-		*/
-		return ret;
 	}
 	//***********************************************
 	function objToHtml(o,Op) {

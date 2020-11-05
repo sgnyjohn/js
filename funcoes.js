@@ -19,7 +19,50 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 if (true) {
 
 	var Dev = false;
+	
+	//***********************************************
+	function xhr(Url,Func) {
+		if (this==window) {
+			new xhr(Url,Func);
+			return;
+		}
+		var url = Url;
+		var func = Func;
+		var c = new carregaUrl();
+		setTimeout(open);
+		//*******************************************
+		function open() {
+			c.abre(url,end);
+		}
+		//*******************************************
+		function end(n,b,tx) {
+			var x = document.createElement('div');
+			x.innerHTML = trimm(tx);
+			var r = [];
+			for (var i=0;i<x.childNodes.length;i++) {
+				var o = x.childNodes.item(i);
+				if (!o.className) {
+					//alert(o+' dom object without className!\n\n'+o.innerHTML);
+				} else if (o.className=='xhrAction') {
+					if (o.innerHTML=='logon') {
+						alert('DEFAULT: xhrAction '+o.innerHTML);
+					} else if (o.innerHTML == 'compil') {
+						alert('DEFAULT: xhrAction '+o.innerHTML);
+					} else {
+						alert('ERROR: xhrAction '+o.innerHTML+' not avaiable');
+					}
+				} else {
+					r[r.length] = o;
+				}
+			}
+			x.innerHTML = '';
+			//lert("vai "+func+" == "+r);
+			func(r);
+			return r;
+		}
+	}
 
+	//**********************************************
 	function getSelectionText() {
 		/*	window.getSelection().toString()
 			and of course a special treatment for ie:
@@ -45,13 +88,13 @@ if (true) {
 			_contextDiv = document.createElement('div');f = _contextDiv;
 			f.className = '_contextDiv';
 			var c = '' //z-index:500;position:fixedabsolute;overflow: auto;'//position:absolute;'
-				+'display:none;position:fixed;xz-index:100;opacity:1;'
-				+'background-color:#f0f0f0;border:2px solid blue;'
-				+'top:0;left:0;'
+				+'position:fixed;' //xdisplay:none;xz-index:100;
+				+'background-color:#f0f0f0;' //xborder:2px solid blue;'
+				//+'top:0;left:0;'
 				//+'padding:4px 8px;'
 			;
-			f.style.cssText = c
-			//addStyleId('div._contextDiv {'+c+'}','_contextDiv');
+			f.style.cssText = 'display:none;'; //xborder:4px outset red;';
+			addStyleId('div._contextDiv {'+c+'}','_contextDiv');
 			//add in document
 			document.body.appendChild(f);
 		}
@@ -90,7 +133,6 @@ if (true) {
 			browse.esconde(f);
 		}
 	}
-
 
 	//***********************************************
 	function q(a) {
@@ -736,6 +778,19 @@ if (true) {
 		var doc = op.doc?op.doc:domDoc(o);
 		var z,e,i=0;
 		if ('~object~array~'.indexOf('~'+typeof(o)+'~')!=-1) {
+			//*********************
+			if (!op._vo) {
+				op._vo = {};
+				op._nv = 0;
+			} else if (op._vo[o]) {
+				return domObj({tag:'span','':'duplo='+typeof(op._vo[o])+'='+op._vo[o]});
+			} else if (op._nv>6) {
+				return domObj({tag:'span','':'muitos níveis='+typeof(o)+'='+o});
+			}
+			//evitar loop redundancia referencia objetos (chrome)
+			op._vo[o] = o;
+			op._nv++;
+			//***********
 			var r = doc.createElement('table');
 			r.border=1;
 			for(var prop in o) {
@@ -747,7 +802,14 @@ if (true) {
 				
 				var l = domObj({tag:'tr',targ:r});
 				domObj({'':typeof(z)+': <b>'+prop+'</b>',tag:'td',targ:l});
-				domObj({tag:'td',targ:l}).appendChild(objDebug(z));
+				try {
+					domObj({tag:'td',targ:l}).appendChild(objDebug(z,op));
+					op._nv--;
+				} catch (e) {
+					domObj({tag:'td',targ:l}).appendChild(
+						domObj({tag:'span','':'ERRO '+e+'='+typeof(o)+'='+o})
+					);
+				}
 
 				i++;
 				if (i>op.lim) break;

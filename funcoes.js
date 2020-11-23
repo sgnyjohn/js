@@ -2594,11 +2594,11 @@ if (true) {
 
 	//**************************//
 	function setClass(obj,nome) {
-		classAddDel(ob,nome,true);
+		classAddDel(obj,nome,true);
 	}
 	//**************************//
 	function delClass(obj,nome) {
-		classAddDel(ob,nome,false);
+		classAddDel(obj,nome,false);
 	}
 	//**************************//
 	function style(obj) {

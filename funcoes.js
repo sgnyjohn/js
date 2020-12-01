@@ -214,7 +214,7 @@ if (true) {
 	//***********************************************
 	function Url(s) {
 		var eu = this;
-		var urlO = trimm(s);
+		var urlO = trimm(s);//''+(new URL(s));
 		init();
 		//*******************************************
 		function init() {
@@ -343,6 +343,7 @@ if (true) {
 		//************************
 		function click(ev) {
 			cnt.innerHTML = '';
+			//lert('oa='+objAtivo +'-'+ vt.length);
 			if (ev) {
 				//lert(ev.target.value+' e='+ev.target.getAttribute('value'))
 				classOff(lin.childNodes.item(objAtivo),op.id+'A');
@@ -352,6 +353,7 @@ if (true) {
 			} else if (vt.length<=objAtivo) { //active invalid
 				objAtivo = 0;
 			}
+			//lert('oa='+objAtivo);
 			var o = vt[objAtivo].obj;
 			//lert('ev='+ev.target.value+' o='+o);
 			aeval(o.length?o:[o],function(a,i){

@@ -391,7 +391,7 @@ if (true) {
 			this.css();
 			var r = domObj({tag:'table',class:op.id});
 			//lert('sh vt='+vt);
-			if (op.tab) objAtivo=1*op.tab;
+			if (op.tab) objAtivo = 1*op.tab;
 			if (op.ped&&op.ped.getJ(op.id))
 				objAtivo = 1*op.ped.getJ(op.id);
 			lin = domObj({tag:'tr',targ:r});
@@ -406,8 +406,6 @@ if (true) {
 			}
 			//linha 100%
 			domObj({tag:'td',class:op.id+'V',targ:lin,'x':'sdfsdf'});
-			
-			
 			cnt = domObj({tag:'td',class: op.id+'C'
 				,colspan:vt.length+1
 				,targ:domObj({tag:'tr',targ:r})

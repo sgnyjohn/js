@@ -19,6 +19,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 if (true) {
 
 	var Dev = false;
+
+	//***********************************************
+	function domPos(dom) {
+		return getElementIndex(dom);
+	}	
+	//***********************************************
+	function isNumber(str) {
+		if (typeof(str)=='number') {
+			return true;
+		} else if (typeof(str)=='string') {
+			return str.length!=0 && !isNaN(1*str);
+		}
+		return false;
+	}
 	
 	//***********************************************
 	function xhr(Url,Func) {
@@ -80,9 +94,16 @@ if (true) {
 	//***********************************************
 	// .addEventListener('contextmenu', e => {e.preventDefault();})
 	var _contextDiv;
-	function contextDiv(htmlORdom,onClick) {
+	function contextDiv(htmlORdom,opORonClick) {
 		var eu = this;
-		var f = _contextDiv;
+		this.op = {pW:0.8,pH:0.8};
+		if (typeof(opORonClick)=='object') {
+			this.op = mergeOptions(this.op,opORonClick);
+		} else {
+			this.op.onClick = opORonClick;
+		}
+		var op = this.op;
+		var f = (op.f?op.f:_contextDiv);
 		this.visible = false;
 		if (!f) {
 			_contextDiv = document.createElement('div');f = _contextDiv;
@@ -98,11 +119,11 @@ if (true) {
 			//add in document
 			document.body.appendChild(f);
 		}
-		if (htmlORdom) {
+		if (!op.f && htmlORdom) {
 			text(htmlORdom);
 		}
-		if (onClick) {
-			f.addEventListener('click',onClick);
+		if (op.onClick) {
+			f.addEventListener('click',op.onClick);
 		}
 		//*************************
 		this.text = text;
@@ -113,6 +134,27 @@ if (true) {
 			} else {
 				f.appendChild(htmlORdom);
 			}
+		}
+		//*************************
+		this.center = function(ev) {
+			eu.visible = true;
+			var tw = window.innerWidth;//browse.getTX(document.body);
+			var two = browse.getTX(f);
+			two = (two<1?eu.tw:two);
+			if (two>tw*op.pW) {
+				two = tw*op.pW;
+				styleSet(f,'width',two+'px');
+			}
+			var th = window.innerHeight;//browse.getTY(window);
+			var tho = browse.getTY(f);
+			tho = (tho==0?eu.th:tho);
+			if (tho>th*op.pH) {
+				tho = th*op.pH;
+				styleSet(f,'height',tho+'px');
+			}
+			styleSet(f,'left',(tw-two)/2+'px');
+			styleSet(f,'top',(th-tho)/2+'px');
+			browse.mostra(f);
 		}
 		//*************************
 		this.show = function(ev) {
@@ -129,6 +171,8 @@ if (true) {
 		}
 		//*************************
 		this.hide = function() {
+			eu.tw = browse.getTX(f);
+			eu.th = browse.getTY(f);
 			eu.visible = false;
 			browse.esconde(f);
 		}
@@ -328,7 +372,7 @@ if (true) {
 		var objAtivo=0;
 		var lin; //linha menu 
 		/************************
-		// crome width 100%
+		// chrome width 100%
 		//  https://stackoverflow.com/questions/56391300/svg-does-not-scale-correctly-in-chrome
 		function clickAj(ev) {
 			for (var i=0;i<cnt.childNodes.length;i++) {
@@ -392,7 +436,8 @@ if (true) {
 			var r = domObj({tag:'table',class:op.id});
 			//lert('sh vt='+vt);
 			if (op.tab) objAtivo = 1*op.tab;
-			if (op.ped&&op.ped.getJ(op.id))
+			//zero = false, mesmo string?
+			if (op.ped&&isNumber(op.ped.getJ(op.id)))
 				objAtivo = 1*op.ped.getJ(op.id);
 			lin = domObj({tag:'tr',targ:r});
 			for (var i=0;i<vt.length;i++) {
@@ -1130,7 +1175,7 @@ if (true) {
 	//		permite campo others cujo conteúdo será v[nomeCampo]=valor
 	// pode preencher a partir de: 
 	//		1 - objeto dom table - setTable
-	//		2 - txt csv - setMatriz ou vetor 1a linha cab
+	//		2 - txt csv - addMatriz ou vetor 1a linha cab
 	//		3 - vcard - addVCard
 	function bancoDados(Nome,Doc) {
 		var doc = Doc?Doc:document;
@@ -1779,7 +1824,7 @@ if (true) {
 		// 		se 1a linha = ':' assume cabeçalho arquivo no padrão eml
 		//		separado do nome de campos e bloco dados por linha vazia
 		//		cabeçalho arquivo pode conter campo 'delimiter' this.dlCol
-		this.setTxt = function(tx,funcFilter) {
+		this.addTxt = function(tx,funcFilter) {
 			//var x = palavraA(trimm(tx),this.dlRow);
 			var x = trimm(tx).split(this.dlRow);
 			
@@ -1809,7 +1854,7 @@ if (true) {
 				aeval(x,function(e,i) { x[i] = e.split(eu.dlCol); });
 			}
 			//lert(x[0]);
-			this.setMatriz(x,funcFilter);
+			this.addMatriz(x,funcFilter);
 		}
 		//*********************************************
 		// GET valor de um campo pelo nome, ret padrão, se number mov ponteiro mv ou reg nro
@@ -1883,10 +1928,10 @@ if (true) {
 		}
 		//*********************************************
 		// recebe matriz ou csv com 1a linha nome campos
-		//		* ver setTxt
-		this.setMatriz = function(vet,funcFilter) {
+		//		* ver addTxt
+		this.addMatriz = function(vet,funcFilter) {
 			if (typeof(vet)=='string') {
-				this.setTxt(vet);
+				this.addTxt(vet);
 				return;
 			}
 			//nome campos na linha 0
@@ -3249,9 +3294,10 @@ if (true) {
 		return trimm(r);
 	}
 	//**************************//
+	var acentos  = "áéíóúüàâêôãõñçÁÉÍÓÚÜÀÂÊÔÃÕÑÇäÄ";
+	var acentost = "aeiouuaaeoaoncAEIOUUAAEOAONCaA";
+	//**************************//
 	function tiraAcentos(s) {
-		var acentos  = "áéíóúüàâêôãõñçÁÉÍÓÚÜÀÂÊÔÃÕÑÇäÄ";
-		var acentost = "aeiouuaaeoaoncAEIOUUAAEOAONCaA";
 		var p;
 		for (var i=0;i<s.length;i++) {
 			if ((p=acentos.indexOf(s.substring(i,i+1)))!=-1) {
@@ -3606,6 +3652,20 @@ if (true) {
 	}
 	//**********************
 	function troca(g,a,b) {
+		if (typeof(a)=='object') {
+			if (typeof(b)=='string') {
+				aeval(a,function(v){
+					g = troca(g,v,b);
+				});
+				return g;
+			} else if (typeof(b)=='object') {
+				aeval(a,function(v,i){
+					g = troca(g,v,b[i]);
+				});
+				return g;
+			}
+		}
+			
 		var i=0,p,ta,tb;
   
 		ta = a.length;

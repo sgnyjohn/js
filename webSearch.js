@@ -45,6 +45,12 @@ function webSearch(idDest) {
 		setTimeout(vigia,1000);
 	}
 	//*****************************************
+	function abre(e) {
+		if (confirm('Abrir\n\n'+e)) {
+			window.open(e);
+		}
+	}
+	//*****************************************
 	function clicouContext(e) {
 		var o = targetEvent(e);
 		if (o.tagName=='A') {
@@ -68,9 +74,9 @@ function webSearch(idDest) {
 				objNav(o1)
 				alert('ir='+ur);
 			} else if (vazio(ur) ) {
-				window.open(o1.getAttribute('hr'));
+				abre(o1.getAttribute('hr'));
 			} else {
-				window.open(ur);
+				abre(ur);
 			}
 			return false;
 		}
@@ -99,6 +105,7 @@ function webSearch(idDest) {
 			v[i].setAttribute('href','javascript:nada();');
 			//add paragrafo com atalho completo
 			var t = doc.createElement('p');
+			t.className = 'atalho';
 			t.innerHTML = a;//pd?pd.get('q'):a;
 			var p = v[i];
 			if (p.nextElementSibling) {
@@ -122,6 +129,7 @@ function webSearch(idDest) {
 	//*****************************************
 	// resultado google
 	function respGoogle(tr,ob) {
+		ds.innerHTML = '';
 		//xpd
 		deb('<pre>'+html(troca(tr,'>','>\n'))+'</pre>');
 		var v1 = ob.getElementsByTagName('style');
@@ -135,9 +143,19 @@ function webSearch(idDest) {
 		var rs = ob.getElementsByClassName('xpd');
 		rs = (rs.length==0?ob.getElementsByClassName(cl):rs);
 		//lert('tr='+rs.length+' cl='+cl+'\n st='+'');
+		var er=0;
 		aeval(rs,function(e,i){
-			ds.appendChild(e);
+			try {
+				ds.appendChild(e);
+			} catch (e1) {
+				//objNav(e);
+				//alert(erro(e1));
+				er++;
+			}
 		});
+		if (er!=0) {
+			alert('erros...'+er);
+		}
 
 		trataAtalhos(ds);
 
@@ -221,8 +239,9 @@ function webSearch(idDest) {
 		//browse.getId('q').value = v;
 		tex.value = v;
 		//lert(v+' '+browse.getId('q').value);
-		//lert(' vai ped '+u);
+		alert(' vai ped '+u);
 		p.abre(u,resp);
+		ds.innerHTML = '...';
 		iq = ms();
 		pg++;
 	}

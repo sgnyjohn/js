@@ -1944,6 +1944,17 @@ function estat(Nome) {
 		return r;
 	}
 	//****************************************************
+	this.moda = function() {
+		var mx=-99999,ch;
+		for(var prop in v) {
+			if (mx<v[prop]) {
+				mx = v[prop];
+				ch = prop;
+			}
+		}
+		return ch;
+	}
+	//****************************************************
 	function toTxt() {
 		var v1 = getMatriz();
 		var r = 'palavras: '+v1.length+' ocorrencias: '+vt+'\n';

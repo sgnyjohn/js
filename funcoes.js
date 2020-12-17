@@ -1824,7 +1824,9 @@ if (true) {
 		// 		se 1a linha = ':' assume cabeçalho arquivo no padrão eml
 		//		separado do nome de campos e bloco dados por linha vazia
 		//		cabeçalho arquivo pode conter campo 'delimiter' this.dlCol
-		this.addTxt = function(tx,funcFilter) {
+		this.addTxt = function(tx,op) {
+			if (typeof(op)=='function') 
+				op = {filter:op};
 			//var x = palavraA(trimm(tx),this.dlRow);
 			var x = trimm(tx).split(this.dlRow);
 			
@@ -1854,7 +1856,7 @@ if (true) {
 				aeval(x,function(e,i) { x[i] = e.split(eu.dlCol); });
 			}
 			//lert(x[0]);
-			this.addMatriz(x,funcFilter);
+			this.addMatriz(x,op);
 		}
 		//*********************************************
 		// GET valor de um campo pelo nome, ret padrão, se number mov ponteiro mv ou reg nro
@@ -1929,9 +1931,10 @@ if (true) {
 		//*********************************************
 		// recebe matriz ou csv com 1a linha nome campos
 		//		* ver addTxt
-		this.addMatriz = function(vet,funcFilter) {
+		this.addMatriz = function(vet,op) {
+
 			if (typeof(vet)=='string') {
-				this.addTxt(vet);
+				this.addTxt(vet,op);
 				return;
 			}
 			//nome campos na linha 0
@@ -1942,8 +1945,11 @@ if (true) {
 			}
 			//dados na um em diante
 			for (var i=1;i<vet.length;i++) {
-				if (!funcFilter || funcFilter(vet[i])) {
-					valores[valores.length] = troca(vet[i],'\\n','\n');
+				if (!op.filter || op.filter(vet[i])) {
+					//seta ultimo reg
+					ur = valores.length;
+					valores[ur] = troca(vet[i],'\\n','\n');
+					if (op.onAddReg) op.onAddReg();
 				}
 			}
 			nr = valores.length;
@@ -1983,7 +1989,7 @@ if (true) {
 					alert(erro(e)+' ==> Valor='+Valor+' ty='+typeof(Valor));
 				}
 			} else if ( add && !nulo(valores[ur][pc]) ) {
-				//valor é string a add 
+				//valor é string a += add 
 				valores[ur][pc] += ' '+trimm(''+Valor);
 			} else {
 				//valor qq type

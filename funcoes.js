@@ -18,6 +18,52 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 if (true) {
 
+	//eval 
+	function calcRpn(Tx) {
+		var tx = Tx.trim()+' ';
+		var nr = '';
+		var vt = [];
+		var r = 0;
+		//num
+		var getNum = () => {
+			var r = vt[vt.length-1];
+			vt.splice(vt.length-1,1);
+			return r;
+		}
+		for (var i=0;i<tx.length;i++) {
+			var c = tx.charAt(i);
+			//lert(i+' '+c+' '+vt.length);
+			if (c>='0'&&c<='9') {
+				nr += c;
+			} else if ( c==' ' ) {
+				if (nr.length>0) {0
+					vt[vt.length] = 1*nr;
+					nr = '';
+				}
+			} else if (vt.length<2) {
+				alert('ignorando, caluladora rpn, menos de 1 valor disponível');
+			} else {
+				var n2 = getNum();
+				var n1 = getNum();
+				if (c=='+') {
+					vt[vt.length] = n1+n2;
+				} else if (c=='-') {
+					vt[vt.length] = n1-n2;
+				} else if (c=='/') {
+					vt[vt.length] = n1/n2;
+				} else if (c=='*') {
+					vt[vt.length] = n1*n2;
+				} else if (c=='%') {
+					vt[vt.length] = n1%n2;
+				} else {
+					alert('inválido '+c);
+				}
+			}
+			
+		}
+		return vt[vt.length-1];
+	}
+	
 	var Dev = false;
 	/* substituir por window.devicePixelRatio
 	//***********************************************
@@ -1959,6 +2005,7 @@ if (true) {
 		// recebe matriz ou csv com 1a linha nome campos
 		//		* ver addTxt
 		this.addMatriz = function(vet,op) {
+			if (!op) op = {};
 
 			if (typeof(vet)=='string') {
 				this.addTxt(vet,op);
@@ -3363,6 +3410,7 @@ if (true) {
 	}
 	//********************
 	function cookiePut(nome,vlr,venceDias,domi) {
+		//lert(document.cookie);
 		if (venceDias!=0 && vazio(venceDias)) {
 			venceDias = 120;
 		}
@@ -3377,7 +3425,9 @@ if (true) {
 			+(domi?';domain='+domi:'')
 		;
 		//debJ('dc1='+dc);
+		var r = cookieGet(nome)==vlr;
 		document.cookie = dc;
+		return r;
 	}
 	var cookieSet = cookiePut;
 

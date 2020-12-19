@@ -11,6 +11,7 @@ var jorn = new (function() {
 	var eu = this;
 	var ped = new pedido();
 	var b1,b2,dv,wa,ds,qu,dias,runn,list;
+	var nDias = 1*cookieGet('dias');
 	var oj = {},vj;
 	var dDia = 24*60*60*1000;
 	var bd = new bancoDados('news');
@@ -21,7 +22,7 @@ var jorn = new (function() {
 		//condição
 		var cdc = new strPesq(qu.value);
 		var txVazio = vazio(qu.value);
-		var dti = ms()-1*dias.value*dDia;
+		var dti = ms()-1*nDias*dDia;
 		//lert(txVazio+' '+dti);
 		var Cond = x => {
 			return bd.getNum('di')>dti
@@ -105,8 +106,9 @@ var jorn = new (function() {
 		//objNav(window);
 		var mg = 7;
 		var w = browse.getTX(document.body);
-		if (wa==w) return;
+		//if (wa==w) return;
 		wa = w;
+		//lert(browse.getY(dv)+" resize ") ;
 		var tx = (w-(browse.getTX(b1)+mg*2)*2)*1;
 		setCss(dv,'width',tx+'px');
 		setCss(dv,'left',(w-tx)/2+'px');
@@ -163,7 +165,13 @@ var jorn = new (function() {
 			,name:'dias'
 			,value:cookieGet('dias','')
 			,targ:dv
-			,ev_change:ev=>{cookiePut('dias',ev.target.value);oj.dados();}
+			,ev_change:ev=>{nDias = calcRpn(ev.target.value);
+				ev.target.value = nDias;
+				if (nDias<1) nDias=14;
+				if (cookiePut('dias',nDias)) {
+					oj.dados();
+				}
+			}
 		});
 		runn = domObj({tag:'span',title:'dados arquivos tempo registros',class:'runn',targ:dv});
 		list = domObj({tag:'span',title:'listados',class:'runn',targ:dv});
@@ -245,7 +253,7 @@ var jorn = new (function() {
 				if (dadL.n!=-1) return;
 				dadL.n=0;dadL.np=0;dadL.p=0;dadL.er=0;dadL.ini=ms();
 				//carrega outros dias
-				var dd = 1*dias.value;
+				var dd = nDias;
 				runn.innerHTML = '...';
 				for (var d=0;d<dd;d++) {
 					var dt = ''+leftAt(dataSql(new Date(ms()-d*24*3600000)),' ');
@@ -383,10 +391,12 @@ var jorn = new (function() {
 					if (mJor.visible) {
 						mJor.hide();
 						if (selO!=sel) {
+							alert('fechar sel dif');
 							cookiePut('jor',sel);
+							setTimeout(resize,1000);
+							alert('fechar sel dif1');
 							oj.dados();
 							selO = sel;
-							resize();
 						}
 					} else {
 						selO = sel;
@@ -732,7 +742,8 @@ addStyleId(`
 		background-color:#afafaf;
 		padding:1px 3px;
 		border-radius:2px;	
-		font-size:75%;	
+		font-size:75%;
+		pointer:text;	
 	}
 	.er {
 		color:red;

@@ -19,7 +19,34 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 if (true) {
 
 	var Dev = false;
-
+	/* substituir por window.devicePixelRatio
+	//***********************************************
+	function dpi() {
+		var eu = this;
+		var o = window._div_dpi;
+		if (!o) {
+			o = {}
+			window._div_dpi = o;
+			o.dv = domObj({tag:'div'
+				,style:'height:1in;left:-100%;position:absolute;'
+						+'top:-100%;width:1in;'
+				,targ:document.body
+				,'':'&nbsp;'
+			});
+		}
+		setTimeout(init);
+		function init() {
+			o.w = o.dv.offsetWidth;
+			o.h = o.dv.offsetHeight;
+			if (o.w==0||o.h==0) {
+				document.body.appendChild(o.dv);
+				setTimeout(init,100);
+			}
+		}
+		this.w = () => {return o.w;};
+		this.h = () => {return o.h;};
+	}
+	*/
 	//***********************************************
 	function domPos(dom) {
 		return getElementIndex(dom);
@@ -140,11 +167,11 @@ if (true) {
 			eu.visible = true;
 			var tw = window.innerWidth;//browse.getTX(document.body);
 			var two = browse.getTX(f);
-			two = (two<1?eu.tw:two);
+			two = (two<1?eu.tw:two)*1.05; //para o scroll
 			if (two>tw*op.pW) {
 				two = tw*op.pW;
-				styleSet(f,'width',two+'px');
 			}
+			styleSet(f,'width',two+'px');
 			var th = window.innerHeight;//browse.getTY(window);
 			var tho = browse.getTY(f);
 			tho = (tho==0?eu.th:tho);
@@ -4363,6 +4390,11 @@ if (true) {
 		}
 		//lert("obj criado"+this);
 		//lert("obj criado"+this.getId);
+
+		this.setBodyClassDevice = () => {
+			var c = (window.devicePixelRatio<1.5?'desktop':'mobile');
+			classOn(document.body,c);
+		}
 	 
 		//**************************//
 		//campos uso geral

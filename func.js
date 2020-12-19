@@ -39,7 +39,21 @@ if (!Date.prototype.getDayStr) {
 	}
 }
 
-//String
+//Strings
+
+if(!String.prototype.count) { 
+	String.prototype.count = function(a) {
+		var r = 0;
+		var p = 0;
+		while ( (p=this.indexOf(a,p))!=-1) {
+			r++;
+			p = p+a.length;
+		}
+		return r;
+	}
+}
+
+
 if(!String.prototype.replaceAll){ 
 	String.prototype.replaceAll = function(a,b) {
 		if (a==b) return this;

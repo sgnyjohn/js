@@ -3,33 +3,38 @@
  * dez/2020 - novo
  * 
  * - estat tempo de leitura: clicou ficou lendo, voltou
- * 
- * 
- * 
+ * - link q repete, mesclar no bd.
  * 
  */
 
 var jorn = new (function() {
 	var eu = this;
 	var ped = new pedido();
-	var b1,b2,dv,wa,ds,qu;
+	var b1,b2,dv,wa,ds,qu,dias,runn,list;
 	var oj = {},vj;
+	var dDia = 24*60*60*1000;
 	var bd = new bancoDados('news');
 	//dad add
 	function show() {
 		//di	df	nv	niv	pos	url	tx
 		ds.innerHTML = '';
 		//condição
-		var cd;
-		if (!vazio(qu.value)) {
-			var cdc = new strPesq(qu.value);
-			cd = x => {
-				return cdc.pesq(bd.get('tx')+bd.get('url'));
-			};
-		}
-		var qb = '';
+		var cdc = new strPesq(qu.value);
+		var txVazio = vazio(qu.value);
+		var dti = ms()-1*dias.value*dDia;
+		//lert(txVazio+' '+dti);
+		var Cond = x => {
+			return bd.getNum('di')>dti
+				&& oj.sel(bd.get('jor'))
+				&& ( txVazio || cdc.pesq(bd.get('tx')+bd.get('url')) )
+			;
+		};
+		//var Cond = ()=>{return true;};
+		//conteúdo
+		var qb = '',tlist=0;
 		var mostra = x => {
-			var dt = dataSql(bd.getNum('di')).substring(0,13);
+			tlist++;if (tlist%100==0) list.innerHTML = format(tlist);
+			var dt = dataSql(bd.getNum('di')).substring(0,16);
 			if (dt!=qb) {
 				qb = dt;
 				domObj({tag:'p',class:'qb',targ:ds,'':dt});
@@ -37,7 +42,8 @@ var jorn = new (function() {
 			//"<p class=list><b>"+apelido(n)+"</b> "+(a.df-a.di)/1000/60/60+"hs</p>"
 			domObj({tag:'p'
 				,class:'list'
-				,'':'<b>'+bd.getNum('jor')+'</b> '+(bd.getNum('di')-bd.getNum('di'))/3600000+'hs'
+				,'':'<b>'+oj.getJor(bd.getNum('jor')).nome+'</b> '
+					+'<span title="tempo na capa">'+(bd.getNum('di')-bd.getNum('di'))/3600000+'hs</span>'
 				,targ:ds
 			});
 			domObj({tag:'span'
@@ -48,9 +54,52 @@ var jorn = new (function() {
 			});
 			
 		}
-		bd.eval({cond:cd,func:mostra});
-		ds.appendChild(bd.toDom());
+		//ordena
+		if (bd.count()==0) {
+			alert('no data');
+			return;
+		}
+		bd.sort('di desc,jor');
+		bd.eval({cond:Cond,func:mostra});
+		list.innerHTML = format(tlist);
+
+		//lert('fim show');
+
 	}
+	//clicou em uma url ?
+	function click(ev) {
+		if (ev.ctrlKey) {
+			return;
+		} else if (event.type=='mousedown') {
+			mouset = ms();
+			return;
+		}
+		if (ms()-mouset>250) {
+			return;
+		}
+		if (ev.button!=0) {
+			return;
+		}
+		
+		//bjNav(ev);alert(event.type);
+		var ob = getParentByClassName(targetEvent(ev),'url');
+		if (!ob) return;
+		abre(ob);
+	}
+	// abre url do DOM - e grava estat
+	// op - 1 - não - grava estat de matérias para não mostrar
+	function abre(ob,op) {
+		var url=(op?'-':'')+ob.getAttribute('title');
+		var tx = troca(ob.innerHTML.substring(2),'<br>','~');
+		//grava estatistica
+		var c = new carregaUrl();
+		c.abre('?op=urlOpen&url='+encodeURIComponent(url)
+			+'&tx='+encodeURIComponent(tx)
+		,function(a,b,tx){});
+		if (!op) {
+			window.open(url,'_blank');
+		}
+	}	
 	//resize
 	function resize() {
 		//objNav(window);
@@ -74,6 +123,7 @@ var jorn = new (function() {
 		window.addEventListener('resize',resize);
 		//lert('mre');
 		document.body.innerHTML = '';
+		browse.setBodyClassDevice();
 		b1 = domObj({tag:'a'
 			,class:'botFloat1 botMenu'
 			,'':'<span></span><span></span><span></span>'
@@ -107,6 +157,16 @@ var jorn = new (function() {
 			,targ:dv
 			,ev_change:ev=>{cookiePut('palavra',ev.target.value);show();}
 		});
+		domObj({tag:'span','':' dias:',targ:dv});
+		dias = domObj({tag:'input'
+			,class:'dias',size:4
+			,name:'dias'
+			,value:cookieGet('dias','')
+			,targ:dv
+			,ev_change:ev=>{cookiePut('dias',ev.target.value);oj.dados();}
+		});
+		runn = domObj({tag:'span',title:'dados arquivos tempo registros',class:'runn',targ:dv});
+		list = domObj({tag:'span',title:'listados',class:'runn',targ:dv});
 		ds = domObj({tag:'div'
 			,class:'dest'
 			,targ:document.body
@@ -125,6 +185,10 @@ var jorn = new (function() {
 			var msClick;
 			var dad = {};
 			var dadL = {n:-1};
+			//jor selecionado
+			this.sel = function(cdJor) {
+				return sel.indexOf('~'+cdJor+'~')!=-1;
+			}
 			//getJor
 			this.getJor = n => {
 				return ojv[n];
@@ -135,10 +199,13 @@ var jorn = new (function() {
 					var dd = dad[url];
 					if (!dd.proc && dd.fim!=0) {
 						if (vazio(dd.tx)) {
-							alert('não carregado '+url
+							/*alert('não carregado '+url
 								+' ini='+dd.ini+' fim='+dd.fim
 								+' res='+dd.res+' tx='+dd.tx.length
+								+' status='+dd.status+' '+dd.statusText
 							);
+							*/
+							dadL.er++;
 							dd.proc = true;
 						} else {
 							dd.proc = true;
@@ -154,13 +221,18 @@ var jorn = new (function() {
 					}
 				}
 				dadL.np++;
-				//repeat until end or timeout: 10s
-				if (dadL.np<100 && (dadL.n-dadL.p)>0) {
+				runn.innerHTML = dadL.p+'/'+dadL.n
+					+(dadL.er!=0?'<span class=er>er'+dadL.er+'</span>':'')
+					+' '+format((ms()-dadL.ini)/1000,0)+'s'
+					+' '+format(bd.count())
+				;
+				//repeat until end or timeout: 30s
+				if (dadL.np<300 && dadL.n-dadL.p-dadL.er>0) {
 					setTimeout(dadosProc,100);
 				} else {
-					if (dadL.n-dadL.p!=0) alert('fim recebimento? \npedidos='
-						+dadL.n+' proc='+dadL.p
-						+'\n em '+(ms()/dadL.ini)/1000+'s'
+					if (dadL.n-dadL.p-dadL.er!=0) alert(dadL.n-dadL.p-dadL.er+'fim\nped:'
+						+dadL.n+' \nproc:'+dadL.p+'\ner:'+dadL.p
+						+'\n\n'+(ms()-dadL.ini)/1000+'s'
 					);
 					dadL.n=-1;
 					// end serial process
@@ -168,10 +240,14 @@ var jorn = new (function() {
 				}
 			}
 			//paralel load data
+			this.dados = dados;
 			function dados() {
 				if (dadL.n!=-1) return;
-				dadL.n=0;dadL.np=0;dadL.p=0;dadL.ini=ms();
-				for (var d=1;d<2;d++) {
+				dadL.n=0;dadL.np=0;dadL.p=0;dadL.er=0;dadL.ini=ms();
+				//carrega outros dias
+				var dd = 1*dias.value;
+				runn.innerHTML = '...';
+				for (var d=0;d<dd;d++) {
 					var dt = ''+leftAt(dataSql(new Date(ms()-d*24*3600000)),' ');
 					aeval(trimm(sel,'~').split('~'), i => {
 						//lert(i+' '+typeof(dt));
@@ -179,6 +255,7 @@ var jorn = new (function() {
 							+'/'+dt.substring(8,10)
 							+'-'+ojv[1*i].host
 							+'.csv'
+							//+'&cjor='+i
 						;
 						if (!dad[u]) {
 							dadL.n++;
@@ -188,15 +265,20 @@ var jorn = new (function() {
 								if (dd.fim!=0) {
 									alert('dados: ped url dupla='+u);
 								} else if (tx.length==0) {
-									alert('dados: vazio '+u+' '+objA(b));
+									//lert('dados: vazio '+u+' '+objA(b));
 								}
-								dd.tx = tx;
-								dd.res = a;
-								dd.fim = ms();
+								if (true || a==4) { 
+									dd.tx = tx;
+									dd.res = a;
+									dd.cod = b.httpReq.readyState+' '+b.httpReq.status;
+									dd.codTx = b.httpReq.statusText;
+									dd.fim = ms();
+								}
 							});
 						}
 					});
 				}
+				runn.innerHTML = '.';
 				setTimeout(dadosProc,100);
 			}
 			//atualiz text
@@ -297,14 +379,17 @@ var jorn = new (function() {
 				//mostra e esconde menu jornais
 				var selO = sel;
 				var jor10 = ev => {
+					//lert(mJor.visible+' sel='+sel+' a='+selO);
 					if (mJor.visible) {
 						mJor.hide();
 						if (selO!=sel) {
 							cookiePut('jor',sel);
-							show();
+							oj.dados();
 							selO = sel;
+							resize();
 						}
 					} else {
+						selO = sel;
 						mJor.center();
 					}
 				}
@@ -318,6 +403,8 @@ var jorn = new (function() {
 				atMenu();		
 				setTimeout(resize,100);
 				setTimeout(dados,200);
+				document.body.addEventListener('mouseup',click);
+				document.body.addEventListener('mousedown',click);				
 			});
 		});
 
@@ -595,8 +682,9 @@ addStyleId(`
 		border:1px solid;
 		padding:7px;
 		border-radius:5px;
+		background-color:#B0D0E0;
 	}
-	DIV.pesq INPUT.q {
+	xDIV.pesq INPUT.q {
 		width:94%;
 	}
 	DIV.dest {
@@ -606,8 +694,6 @@ addStyleId(`
 		line-height:190%;
 		font-size:75%;
 		margin:0;
-	}
-	P.jor  {
 		xborder-right:1px solid;
 		margin:3px 3px 0;
 		padding:2px 4px;
@@ -631,7 +717,7 @@ addStyleId(`
 		padding:12px;
 		border-radius:5px;
 	}
-	DIV.jor DIV {
+	DIV.jor {
 		overflow:auto;
 	}
 	DIV.jor TABLE {
@@ -640,7 +726,24 @@ addStyleId(`
 	DIV.jor TD {
 		border:1px solid;
 		min-width:30px;
-	}	
+	}
+	SPAN.runn {
+		margin-left:10px;
+		background-color:#afafaf;
+		padding:1px 3px;
+		border-radius:2px;	
+		font-size:75%;	
+	}
+	.er {
+		color:red;
+	}
+
+	/*****************************
+	/ * tamanho dispositivo */
+	BODY.mobile DIV.dest {
+		margin:0;
+	}
+
 
 
 `,'jornais');

@@ -145,6 +145,20 @@ if (true) {
 					}
 				} else if ( Oper[c] ) {
 					oper(c);
+				} else if ( MemFin[c] ) {
+					var r = MemFin[c];
+					if (typeof(r)=='string') {
+						r = [x=>{},r,0];
+						MemFin[c] = r;
+					}
+					if (vt.length!=0) {
+						//armazena valor
+						r[2] = desempil();
+						return true;
+					}
+					//calcula
+					alert('calculo financeiro não implantado');
+					return false;
 				} else {
 					alert('ignorando ('+nr+')');
 					return false;

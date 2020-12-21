@@ -10,7 +10,7 @@
 var jorn = new (function() {
 	var eu = this;
 	var ped = new pedido();
-	var b1,b2,dv,wa,ds,qu,dias,runn,list;
+	var b1,b2,dv,ds,qu,dias,runn,list;
 	var nDias = 1*cookieGet('dias');
 	var oj = {},vj;
 	var dDia = 24*60*60*1000;
@@ -32,37 +32,53 @@ var jorn = new (function() {
 		};
 		//var Cond = ()=>{return true;};
 		//conteúdo
-		var qb = '',tlist=0;
+		var qb = '',tlist=0,tnlist=0;
 		var mostra = x => {
-			tlist++;if (tlist%100==0) list.innerHTML = format(tlist);
-			var dt = dataSql(bd.getNum('di')).substring(0,16);
-			if (dt!=qb) {
-				qb = dt;
-				domObj({tag:'p',class:'qb',targ:ds,'':dt});
+			
+			if (tlist>=500) {
+				tnlist++;
+			} else {
+				tlist++;
+				var dt = dataSql(bd.getNum('di')).substring(0,16);
+				if (dt!=qb) {
+					qb = dt;
+					domObj({tag:'p',class:'qb',targ:ds,'':dt});
+				}
+				//"<p class=list><b>"+apelido(n)+"</b> "+(a.df-a.di)/1000/60/60+"hs</p>"
+				domObj({tag:'p'
+					,class:'list'
+					,'':'<b>'+oj.getJor(bd.getNum('jor')).nome+'</b> '
+						+'<span title="tempo na capa">'+(bd.getNum('di')-bd.getNum('di'))/3600000+'hs</span>'
+					,targ:ds
+				});
+				domObj({tag:'span'
+					,class:'url'
+					,title:bd.get('url')
+					,'':troca(trimm(bd.get('tx'),'~'),'~~','<br>')
+					,targ:domObj({tag:'div',class:'list',targ:ds,'':'◦ '})
+				});
+
 			}
-			//"<p class=list><b>"+apelido(n)+"</b> "+(a.df-a.di)/1000/60/60+"hs</p>"
-			domObj({tag:'p'
-				,class:'list'
-				,'':'<b>'+oj.getJor(bd.getNum('jor')).nome+'</b> '
-					+'<span title="tempo na capa">'+(bd.getNum('di')-bd.getNum('di'))/3600000+'hs</span>'
-				,targ:ds
-			});
-			domObj({tag:'span'
-				,class:'url'
-				,title:bd.get('url')
-				,'':troca(trimm(bd.get('tx'),'~'),'~~','<br>')
-				,targ:domObj({tag:'div',class:'list',targ:ds,'':'◦ '})
-			});
 			
 		}
 		//ordena
 		if (bd.count()==0) {
 			alert('no data');
-			return;
+			return false;
 		}
 		bd.sort('di desc,jor');
 		bd.eval({cond:Cond,func:mostra});
-		list.innerHTML = format(tlist);
+		list.innerHTML = format(tlist)
+			+(tnlist!=0?' / '+format(tlist+tnlist):'')
+		;
+		//faltou registros
+		if (tnlist>0) {
+			domObj({tag:'p'
+				,class:'tnlist'
+				,'':format(tlist)+' listados - '+format(tnlist)+' não listados'
+				,targ:ds
+			});			
+		}
 
 		//lert('fim show');
 
@@ -107,7 +123,7 @@ var jorn = new (function() {
 		var mg = 7;
 		var w = browse.getTX(document.body);
 		//if (wa==w) return;
-		wa = w;
+		//wa = w;
 		//lert(browse.getY(dv)+" resize ") ;
 		var tx = (w-(browse.getTX(b1)+mg*2)*2)*1;
 		setCss(dv,'width',tx+'px');
@@ -168,9 +184,7 @@ var jorn = new (function() {
 			,ev_change:ev=>{nDias = calcRpn(ev.target.value);
 				ev.target.value = nDias;
 				if (nDias<1) nDias=14;
-				if (cookiePut('dias',nDias)) {
-					oj.dados();
-				}
+				oj.dados();
 			}
 		});
 		runn = domObj({tag:'span',title:'dados arquivos tempo registros',class:'runn',targ:dv});
@@ -391,10 +405,10 @@ var jorn = new (function() {
 					if (mJor.visible) {
 						mJor.hide();
 						if (selO!=sel) {
-							alert('fechar sel dif');
+							//lert('fechar sel dif');
 							cookiePut('jor',sel);
-							setTimeout(resize,1000);
-							alert('fechar sel dif1');
+							setTimeout(resize,100);
+							//lert('fechar sel dif1');
 							oj.dados();
 							selO = sel;
 						}
@@ -747,6 +761,12 @@ addStyleId(`
 	}
 	.er {
 		color:red;
+	}
+	P.tnlist {
+		font-size:170%;
+		border-top: 4px solid red;
+		margin:10px 0;
+		padding:2px 0 0;
 	}
 
 	/*****************************

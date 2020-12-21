@@ -18,53 +18,105 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 if (true) {
 
+	var Dev = false;
+
+
 	//eval 
 	function calcRpn(Tx) {
 		var tx = Tx.trim()+' ';
 		var nr = '';
 		var vt = [];
 		var r = 0;
+		var Const = {
+			'e':()=>{return Math.E;}
+			,'pi':()=>{return Math.PI;}
+		};
+		var Func = {
+			'i':(a)=>{return 1/a;}
+		};
+		
+		var Oper = {
+			'-':(a,b)=>{return a-b;}
+			,'+':(a,b)=>{return a+b;}
+			,'*':(a,b)=>{return a*b;}
+			,'/':(a,b)=>{return a/b;}
+			,'%':(a,b)=>{return a%b;}
+			,'^':(a,b)=>{return Math.pow(a,b);}
+			,'~':(a,b)=>{return Math.pow(a,1/b);}
+		};
 		//num
-		var getNum = () => {
-			var r = vt[vt.length-1];
-			vt.splice(vt.length-1,1);
-			return r;
-		}
-		for (var i=0;i<tx.length;i++) {
-			var c = tx.charAt(i);
-			//lert(i+' '+c+' '+vt.length);
-			if (c>='0'&&c<='9') {
-				nr += c;
-			} else if ( c==' ' ) {
-				if (nr.length>0) {0
-					vt[vt.length] = 1*nr;
-					nr = '';
-				}
-			} else if (vt.length<2) {
-				alert('ignorando, caluladora rpn, menos de 1 valor disponível');
+		var empil = (nr) => {
+			//lert('vt('+vt+') nr='+nr+' '+erro());
+			if (vazio(nr)) {
+				return false;
+			} if (isNumber(nr)) {
+				//lert('é num '+nr);
+				vt[vt.length] = 1*nr;
 			} else {
-				var n2 = getNum();
-				var n1 = getNum();
-				if (c=='+') {
-					vt[vt.length] = n1+n2;
-				} else if (c=='-') {
-					vt[vt.length] = n1-n2;
-				} else if (c=='/') {
-					vt[vt.length] = n1/n2;
-				} else if (c=='*') {
-					vt[vt.length] = n1*n2;
-				} else if (c=='%') {
-					vt[vt.length] = n1%n2;
+				c = nr.toLowerCase();
+				//constantes
+				if (Const[c]) {
+					//lert('const='+c);
+					empil(Const[c]());
+				} else if (Func[c]) {
+					//lert('func='+c);
+					if (vt.length==0) {
+						alert('função '+c+', faltou valor');
+					} else {
+						empil(Func[c](desempil()));
+					}
+				} else if (Oper[c]) {
+					oper(c);
 				} else {
-					alert('inválido '+c);
+					alert('ignorando ('+nr+')');
+					return false;
 				}
 			}
-			
+			return true;
+		}
+		//
+		var oper = (c) => {
+			//lert('oper='+c);
+			if (vt.length<2) {
+				alert('operação '+c+', faltou valor');
+				return false;
+			} else {
+				var v = desempil();
+				empil(Oper[c](desempil(),v));
+			}
+			return true;			
+		}
+		//
+		var desempil = () => {
+			if (vt.length!=0) {
+				var r = vt[vt.length-1];
+				vt.splice(vt.length-1,1);
+				return r;
+			}
+		}
+		//principal
+		for (var i=0;i<tx.length;i++) {
+			var c = tx.charAt(i).toLowerCase();
+			//lert(i+' '+c+' '+vt.length);
+			if ( c==' ' ) {
+				empil(nr);
+				nr='';
+			} else if (isNumber(nr)&&c>='a'&&c<='z') {
+				empil(nr);
+				nr = c;
+			} else if (Oper[c]) {
+				if (nr.length!=0) {
+					empil(nr);
+					nr='';
+				}
+				oper(c);
+			} else {
+				nr += c;
+			}
 		}
 		return vt[vt.length-1];
 	}
-	
-	var Dev = false;
+
 	/* substituir por window.devicePixelRatio
 	//***********************************************
 	function dpi() {

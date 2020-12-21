@@ -20,52 +20,130 @@ if (true) {
 
 	var Dev = false;
 
-
 	//eval 
 	function calcRpn(Tx) {
 		var tx = Tx.trim()+' ';
 		var nr = '';
-		var vt = [];
+		var vt = [],vtv = [];
 		var r = 0;
+		var pDec='.';
 		var Const = {
-			'e':()=>{return Math.E;}
-			,'pi':()=>{return Math.PI;}
+			e:'Constante de Euler e base dos logaritmos naturais, aproximadamente 2.718.'
+			,ln2:'Logaritmo natural de 2, aproximadamente 0.693.'
+			,ln10:'Logaritmo natural de 10, aproximadamente 2.303.'
+			,log2e:'Logaritmo de E na base 2, aproximadamente 1.443.'
+			,log10e:'Logaritmo de E na base 10, aproximadamente 0.434.'
+			,pi:'Relação entre a circunferência de um círculo e o seu diâmetro, aproximadamente 3.14159.'
+			,sqrt1_2:'Raiz quadrada de 1/2; Equivale a 1 dividido pela raiz quadrada de 2, aproximadamente 0.707.'
+			,sqrt2:'Raiz quadrada de 2, aproximadamente 1.414. '
+			,random:[()=>{return Math.random();},'Retorna um número pseudo-aleatório entre 0 e 1.']
 		};
 		var Func = {
 			'i':(a)=>{return 1/a;}
+			,'!':(a)=>{var r=a;while (a-- > 1) r *= a;return r;}
+			,abs:'Retorna o módulo, ou valor absoluto, de um número (|x||x|).'
+			,acos:'Retorna o arco-coseno de um número (arccosx\arccos{x}).'
+			,acosh:'Retorna o arco-coseno hiperbólico de um número.'
+			,asin:'Retorna o arco-seno de um número (arcsinx\arcsin{x}).'
+			,asinh:'Retorna o arco-seno hiperbólico de um número.'
+			,atan:'Retorna o arco-tangente de um número (arctanx\arctan{x}).'
+			,atanh:'Retorna o arco-tangente hiperbólico de um número (arctanx\arctan{x}).'
+			,cbrt:'Retorna a raiz cúbica de um número (x3\root{3}{x}).'
+			,ceil:'Retorna o menor inteiro que é maior ou igual a um número.'
+			,cos:'Retorna o coseno de um número (cosx\cos{x}).'
+			,cosh:'Retorna o coseno hiperbólico de um número .'
+			,exp:'Retorna exe^x, onde x é o argumento, e ee é a constante de Euler (2.718...), a base do logaritmo natural.'
+			,expm1:'Retorna ex-1e^x-1.'
+			,floor:'Retorna o maior inteiro que é menor ou igual a um número.'
+			,fround:'Retorna a mais próxima representação de ponto flutuante de precisão-única de um número.'
+			,imul:'Retorna o resultado de uma multiplicação de inteiro de 32-bit.'
+			,log:'Retorna o logaritmo natural (logex\log_ex ou lnx\ln{x}) de um número.'
+			,log1p:'Retorna o logaritmo natural de 1 + x (loge(1+x)\log_e(1+x) ou ln(1+x)\ln(1+x)) de um número.'
+			,log10:'Retorna o logaritmo de x na base 10 (log10x\log_{10}x).'
+			,log2:'Retorna o logaritmo de x na base 2 (log2x\log_2 x).'
+			,round:'Retorna o valor arrendodado de x, para o valor inteiro mais próximo.'
+			,sign:'Retorna o sinal de x, indicando se é positivo, negativo ou zero.'
+			,sin:'Retorna o seno de um número (sinx\sin x).'
+			,sinh:'Retorna o seno hiperbólico de um número (sinhx\sinh x).'
+			,sqrt:'Retorna a raiz quadrada positiva de um número (x\sqrt x).'
+			,tan:'Retorna a tangente de um número (tanx\tan x).'
+			,tanh:'Retorna a tangente hiperbólica de um número (tanhx\tanh x).'
+			,trunc:'Retorna a parte inteira de x, removendo quaisquer dígitos fracionários. '
 		};
-		
 		var Oper = {
 			'-':(a,b)=>{return a-b;}
 			,'+':(a,b)=>{return a+b;}
 			,'*':(a,b)=>{return a*b;}
 			,'/':(a,b)=>{return a/b;}
-			,'%':(a,b)=>{return a%b;}
-			,'^':(a,b)=>{return Math.pow(a,b);}
-			,'~':(a,b)=>{return Math.pow(a,1/b);}
+			,'%':[(a,b)=>{return a%b;},'Retorna o módulo, o resto da divisão de x por y']
+			,'^':[(a,b)=>{return Math.pow(a,b);},'Retorna a base x elevada à potência y do expoente, ou seja, x^y.']
+			,'~':[(a,b)=>{return Math.pow(a,1/b);},'Retorna a raiz y de x']
+			,pow:'Retorna a base x elevada à potência y do expoente, ou seja, xyx^y.'
+			,atan2:'Retorna o arco-tangente do quociente de seus argumentos.'
+			,hypot:'Retorna a raiz quadrada da soma dos quadrados dos argumentos (x2+y2+…\sqrt{x^2 + y^2 + \dots}).'
+			,max:'Retorna o maior dentre os parâmetros recebidos.'
+			,min:'Retorna o menor dentre os parâmetros recebidos.'
+			,'?':'ajuda'
 		};
+		//aceitará vetores ?
+		var OperV = {
+			hypot:'Retorna a raiz quadrada da soma dos quadrados dos ELEMENTOS (x2+y2+…\sqrt{x^2 + y^2 + \dots}).'
+			,max:'Retorna o maior dentre os ELEMENTOS recebidos.'
+			,min:'Retorna o menor dentre os ELEMENTOS recebidos.'
+		}
+		//financeira
+		var MemFin = {
+			vp:'valor presente'
+			,vf:'valor futuro'
+			,n:'periodos'
+			,i:'taxa'
+			,pmt:'pagamento'
+		}
+		
 		//num
 		var empil = (nr) => {
 			//lert('vt('+vt+') nr='+nr+' '+erro());
 			if (vazio(nr)) {
 				return false;
-			} if (isNumber(nr)) {
+			} else if (isNumber(nr)) {
 				//lert('é num '+nr);
 				vt[vt.length] = 1*nr;
+			} else if (nr.charAt(0)=='[') {
+				try {
+					var r;
+					eval('r='+nr);
+					alert('r='+r);
+					vtv[vtv.length] = r;
+				} catch (e) {
+					alert(nr+' invalid array');
+				}
 			} else {
 				c = nr.toLowerCase();
 				//constantes
 				if (Const[c]) {
-					//lert('const='+c);
-					empil(Const[c]());
+					var r = Const[c];
+					if (typeof(r)=='string') {
+						empil(Math[c.toUpperCase()]);
+					} else if (typeof(r)=='object') {
+						empil(r[0]());
+					} else {
+						empil(r());	
+					}
 				} else if (Func[c]) {
 					//lert('func='+c);
 					if (vt.length==0) {
 						alert('função '+c+', faltou valor');
 					} else {
-						empil(Func[c](desempil()));
+						var r = Func[c];
+						if (typeof(r)=='string') {
+							empil(Math[c](desempil()));
+						} else if (typeof(r)=='object') {
+							empil(r[0](desempil()));
+						} else {
+							empil(r(desempil()));	
+						}
 					}
-				} else if (Oper[c]) {
+				} else if ( Oper[c] ) {
 					oper(c);
 				} else {
 					alert('ignorando ('+nr+')');
@@ -76,13 +154,43 @@ if (true) {
 		}
 		//
 		var oper = (c) => {
-			//lert('oper='+c);
-			if (vt.length<2) {
+			//ajuda ?
+			if (c=='?') {
+				var v = {'Operadores':Oper,'Funções':Func,'Valores':Const,'Vetores [a,b,c...]':OperV,'Financeiras':MemFin};
+				var t = '<h1>ajuda</h1>';
+				aeval(v,(o,c) => {
+					t += '<h2>'+c+'</h2>';
+					aeval(o,(o,c) => {
+						t += '<p><b style="padding:5px 8px;border-radius:3px;color:white;background:#000000;">'+c+'</b> '
+						+(typeof(o)=='object'?o[1]+' <code>'+o[0]+'</code>':o)
+					+'</p>';
+					});
+				});
+				var a = new contextDiv({
+					html:t
+					,click:ev=>{a.hide();}
+				});
+				setTimeout(ev=>{a.center()});
+				return;
+			}
+			//oper vetor?
+			if ('hypot,max,min'.indexOf(c)!=-1 && vtv.length!=0) {
+				var a = vtv[vtv.length-1];
+				vtv.splice(vtv.length-1,1);
+				empil(Math[c].apply(null,a));
+			} else if (vt.length<2) {
 				alert('operação '+c+', faltou valor');
 				return false;
 			} else {
 				var v = desempil();
-				empil(Oper[c](desempil(),v));
+				var r = Oper[c];
+				if (typeof(r)=='string') {
+					empil(Math[c](desempil(),v));
+				} else if (typeof(r)=='object') {
+					empil(r[0](desempil(),v));
+				} else {
+					empil(r(desempil(),v));	
+				}
 			}
 			return true;			
 		}
@@ -101,7 +209,7 @@ if (true) {
 			if ( c==' ' ) {
 				empil(nr);
 				nr='';
-			} else if (isNumber(nr)&&c>='a'&&c<='z') {
+			} else if (isNumber(nr)&&c!=pDec&&(c<'0'||c>'9')) {
 				empil(nr);
 				nr = c;
 			} else if (Oper[c]) {
@@ -218,53 +326,63 @@ if (true) {
 
 	//***********************************************
 	// .addEventListener('contextmenu', e => {e.preventDefault();})
-	var _contextDiv;
-	function contextDiv(htmlORdom,opORonClick) {
+	function contextDiv(Op) {
 		var eu = this;
-		this.op = {pW:0.8,pH:0.8};
-		if (typeof(opORonClick)=='object') {
-			this.op = mergeOptions(this.op,opORonClick);
-		} else {
-			this.op.onClick = opORonClick;
+		if (typeof(Op)!='object'||Op.tagName) {
+			alert('parametro errado: passar objeto com:'
+				+'\nhtml or dom: conteúdo'
+				+'\nclick: envento on click'
+				+'\npW or pH: %/100 max w e h 0.8'
+				+'\ncontainer: add container'
+				+'\nclass: class container'
+			);
+			return;
 		}
-		var op = this.op;
-		var f = (op.f?op.f:_contextDiv);
-		this.visible = false;
-		if (!f) {
-			_contextDiv = document.createElement('div');f = _contextDiv;
+		var op = mergeOptions({pW:0.8,pH:0.8,container:true},Op);
+		this.op = op;
+		
+		var f = op.dom;
+		if (!f||op.container) {
+			f = document.createElement('div');
 			f.className = '_contextDiv';
 			var c = '' //z-index:500;position:fixedabsolute;overflow: auto;'//position:absolute;'
 				+'position:fixed;' //xdisplay:none;xz-index:100;
 				+'background-color:#f0f0f0;' //xborder:2px solid blue;'
+				+'overflow:auto;'
+				+'border-radius:5px;'
+				+'padding:5px 20px;'
+				+'top:0;left:-300%;'
 				//+'top:0;left:0;'
 				//+'padding:4px 8px;'
 			;
-			f.style.cssText = 'display:none;'; //xborder:4px outset red;';
+			f.style.cssText = 'xdisplay:none;'; //xborder:4px outset red;';
 			addStyleId('div._contextDiv {'+c+'}','_contextDiv');
 			//add in document
 			document.body.appendChild(f);
+			if (op.dom) {
+				f.appendChild(op.dom);
+			} else if (op.html) {
+				f.innerHTML = op.html;
+			}
 		}
-		if (!op.f && htmlORdom) {
-			text(htmlORdom);
-		}
-		if (op.onClick) {
-			f.addEventListener('click',op.onClick);
+		if (op.click) {
+			f.addEventListener('click',op.click);
 		}
 		//*************************
 		this.text = text;
-		function text(htmlORdom) {
-			f.innerHTML = '';
-			if (typeof(htmlORdom)=='string') {
-				f.innerHTML = htmlORdom;
-			} else {
-				f.appendChild(htmlORdom);
-			}
+		function text(html) {
+			f.innerHTML = html;
 		}
 		//*************************
 		this.center = function(ev) {
 			eu.visible = true;
 			var tw = window.innerWidth;//browse.getTX(document.body);
 			var two = browse.getTX(f);
+			if (two<1) {
+				browse.mostra(f);
+				setTimeout(eu.center,100);
+				return;
+			}
 			two = (two<1?eu.tw:two)*1.05; //para o scroll
 			if (two>tw*op.pW) {
 				two = tw*op.pW;

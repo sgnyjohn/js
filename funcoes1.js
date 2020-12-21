@@ -48,7 +48,7 @@ function graphLine(V,Op) {
 				//objeto enquanto mEv element =
 				var el = ctr;
 				var ta='';
-				var tx = new contextDiv('legenda');
+				var tx = new contextDiv({html:'legenda'});
 				function setText() {
 					var ln = 1*el.getAttribute('grafline');
 					var p = el.getBoundingClientRect();

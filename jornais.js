@@ -392,7 +392,7 @@ var jorn = new (function() {
 						atMenu(o);
 					}
 				});
-				mJor = new contextDiv(d,{f:d});
+				mJor = new contextDiv({dom:d,container:false});
 				vj = domObj({tag:'table'
 					,targ:domObj({tag:'div',targ:d})
 					,class:'jor'

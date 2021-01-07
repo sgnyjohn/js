@@ -112,7 +112,7 @@ if (true) {
 				try {
 					var r;
 					eval('r='+nr);
-					alert('r='+r);
+					//lert('r='+r);
 					vtv[vtv.length] = r;
 				} catch (e) {
 					alert(nr+' invalid array');
@@ -156,8 +156,10 @@ if (true) {
 						r[2] = desempil();
 						return true;
 					}
-					//calcula
+					//calculo financeira
+					// http://www2.unemat.br/eugenio/serie_de_pagamentos.html
 					alert('calculo financeiro não implantado');
+					// 
 					return false;
 				} else {
 					alert('ignorando ('+nr+')');
@@ -1443,10 +1445,12 @@ if (true) {
 		//vetor de nome de campos
 		var others = false; //name of field others
 		var campos = {}; //[nome]=posicao
+		this.campos = campos;
 		//vetor campos index posição
 		var camposN = Array(); //[]=nome
 		//var valor;this.valor = valor;
 		var valores = Array(); //valores string
+		this.valores = valores;
 		//var valoresProp = Array(); //propriedade dos valores
 		//o q colocar em campo indefinido
 		var Nulo = '';
@@ -1692,6 +1696,7 @@ if (true) {
 				} else if (uniq) {
 					alert('index: error, duplicate value of key '
 						+nomeCampo+'['+vc+' & '+this.get(nomeCampo,'?',''+r[vc])+']'
+						+' rg='+ur+' val='+valores[ur]
 					);
 				} else {
 					r[vc][r[vc].length] = ur;
@@ -2176,9 +2181,8 @@ if (true) {
 					vc[c] = trimm(v[i].childNodes.item(c).textContent);
 				}
 				//lert(vc);
-				valores[valores.length] = vc;
+				eu.addReg(vc);
 			}
-			nr = valores.length;
 		}
 		//*********************************************
 		// recebe matriz ou csv com 1a linha nome campos
@@ -2205,12 +2209,13 @@ if (true) {
 			for (var i=1;i<vet.length;i++) {
 				if (!op.filter || op.filter(vet[i])) {
 					//seta ultimo reg
-					ur = valores.length;
-					valores[ur] = troca(vet[i],'\\n','\n');
+					//ur = valores.length;
+					//valores[ur] = troca(vet[i],'\\n','\n');
+					//lert(typeof(vet[i])+' '+vet[i]+' '+valores);
+					eu.addReg(vet[i]); // ??? troca(vet[i],'\\n','\n')
 					if (op.onAddReg) op.onAddReg();
 				}
 			}
-			nr = valores.length;
 		}
 		//*********************************************
 		// seta valor de um campo pelo nome 
@@ -2255,13 +2260,21 @@ if (true) {
 			}
 		}
 		//*********************************************
-		this.addReg = function(cod) {
-			if (typeof(cod)=='undefined') {
+		this.addReg = function(arrORcod) {
+			if (typeof(arrORcod)=='object') {
+				ur = valores.length;
+				valores[ur] = arrORcod;
+				//atualiza key
+				if (eu.key) {
+					eu.key();
+				}
+				return;
+			} else if (typeof(arrORcod)=='undefined') {
 				//registro auto numerado
 				// 2020-04 ur++;
 				ur = valores.length;
 			} else {
-				ur = cod;
+				ur = arrORcod;
 			}
 			//debJ('bd add Reg  ur='+ur+' '+erro());
 			valores[ur] = Array();
@@ -3477,6 +3490,7 @@ if (true) {
 						//lert('oid='+oId+' '+funcRet);
 						if (typeof(funcRet)=='function') {
 							funcRet(XX,th,XR);
+							//funcRet(XX,eu.httpReq,XR);
 						} else if (typeof(funcRet)=='object') {
 							funcRet.innerHTML = XR;
 						} else if (funcRet.indexOf('()')!=-1) {
@@ -3589,7 +3603,12 @@ if (true) {
 		if (i==-1 || f<=i) {
 			return padrao;
 		} else {
-			return decodeURIComponent(co.substring(i+nome.length+1,f));
+			var r = co.substring(i+nome.length+1,f);
+			if (typeof(padrao)=='number') {
+				//conv para number
+				return isNumber(r)?1*r:padrao;
+			}
+			return decodeURIComponent(r);
 		}
 	}
 	//********************
@@ -3611,6 +3630,11 @@ if (true) {
 		//debJ('dc1='+dc);
 		var r = cookieGet(nome)==vlr;
 		document.cookie = dc;
+		if (cookieGet(nome)!=vlr) {
+			alert('cookiePut: falhou setar cookie...'
+				+document.cookie.length
+			);
+		}
 		return r;
 	}
 	var cookieSet = cookiePut;

@@ -17,7 +17,64 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 if (true) {
-
+	
+	function dev() {
+		//lert(''+window.location);
+		return (''+window.location).indexOf('/dv.')!=-1
+			|| (''+window.location).indexOf('/intranet.')!=-1
+		;
+	}
+	//medir tempo tarefas cronometro
+	function Cron(Nome) {
+		var nome = Nome;
+		var e = [['',ms(),0]];
+		this.ret = function() {
+			return e;
+		}
+		this.txt = function() {
+			var r = nome+'\n';
+			var t = 0;
+			for (var i=0;i<e.length-1;i++) {
+				r += e[i][0]+'\t'+dataSql(e[i][1])
+					+'\t'+format(e[i][2]/1000.0,1)
+					+'\n'
+				;
+				t += e[i][2];
+			}
+			return r+'\ntotal: '+format(t/1000.0,1);
+		}
+		this.ev = function(str) {
+			var t = e.length;
+			e[t-1][0] = str;
+			e[t-1][2] = ms()-e[t-1][1];
+			//novo
+			e[t] = ['',ms(),0];
+		}
+	}
+	
+	
+	//se celular touch transforma title em box
+	function domTitleMobile(ds) {
+		if (true || browse.mobile) {
+			setTimeout(function(ev) {
+				//procura todos dom com attribute title
+				var v = ds.querySelectorAll('[title]');
+				//lert('title'+v.length);
+				aeval(v,function(x){
+					domObj({tag:'sup'
+						,targ:x
+						,class:'inf'
+						,'':'🛈'
+						,style:'padding:1px 3px;cursor:pointer;'
+						,ev_click: function(ev) {
+							alert(x.title);
+						}
+					});
+				});
+			});
+		}
+	}
+	
 	var Dev = false;
 
 	//eval 
@@ -1459,6 +1516,42 @@ if (true) {
 		this.dlCol = '\t';
 		var fileHead;
 		//*********************************************
+		// salva regs to csv
+		this.csvSave = function(file) {
+			if (!file) file = this.csvName;
+			var ad = fs.createWriteStream(file, {});
+			ad.write(this.csvCab()+'\n');
+			this.top();
+			while (this.next()) {
+				ad.write(this.csvLn()+'\n');
+			}
+			ad.close();
+		}
+		//*********************************************
+		// adiciona regs from csv
+		this.csvAdd = function(file) {
+			if (!this.csvName) this.csvName = file;
+			this.addTxt(fs.readFileSync(file)+'');
+		}
+		//*********************************************
+		// retorna string linha cab txt
+		this.csvLn = function() {
+			var r = '';
+			for (var i=0;i<camposN.length;i++) {
+				r += this.dlCol+valores[ur][i];
+			}
+			return r.substring(this.dlCol.length);
+		}
+		//*********************************************
+		// retorna string linha cab txt
+		this.csvCab = function() {
+			var r = '';
+			for (var i=0;i<camposN.length;i++) {
+				r += this.dlCol+camposN[i];
+			}
+			return r.substring(this.dlCol.length);
+		}
+		//*********************************************
 		// eval em todos registros
 		this.eval = function(op) {
 			if (typeof(op)=='function') {
@@ -1663,8 +1756,11 @@ if (true) {
 		}
 		//*********************************************
 		// get row
-		this.getRow = function() {
-			return valores[ur];
+		this.getRow = function(r) {
+			return valores[typeof(r)=='number'?r:ur];
+		}
+		this.getMatriz = function() {
+			return valores;
 		}
 		this.getVetor = this.getRow;
 		//*********************************************
@@ -1975,13 +2071,13 @@ if (true) {
 					var nom = trimm(v.leftRat(' '));
 					if (isNaN(nom)) {
 						//lert(v+' n'+nom+' c'+campos[nom]);
-						nom = campos[nom]; 
-						if (isNaN(nom)) {
+						Nom = campos[nom]; 
+						if (isNaN(Nom)) {
 							alert('bd.sort: field name '+nom+' not exists!');
 							return false;
 						}
 					}
-					ar[i] = [1*nom
+					ar[i] = [1*Nom
 						,v.indexOf(' ')>0 && v.substrRat(' ').toLowerCase()=='desc'?1:-1
 					];
 				});
@@ -3598,12 +3694,16 @@ if (true) {
 	//********************
 	function cookieGet(nome,padrao) {
 		var co = ' '+document.cookie+';';
-		var i = co.indexOf(' '+nome+'=')+1;
+		//lert('cook='+co);
+		var i = co.indexOf(' '+nome+'=');
+		//lert(nome+' '+i);
 		var f = co.indexOf(';',i+nome.length+1);
 		if (i==-1 || f<=i) {
+			cookiePut(nome,padrao);
 			return padrao;
 		} else {
-			var r = co.substring(i+nome.length+1,f);
+			var r = co.substring(i+nome.length+2,f);
+			//lert('ret='+r+' '+co);
 			if (typeof(padrao)=='number') {
 				//conv para number
 				return isNumber(r)?1*r:padrao;
@@ -3628,14 +3728,14 @@ if (true) {
 			+(domi?';domain='+domi:'')
 		;
 		//debJ('dc1='+dc);
-		var r = cookieGet(nome)==vlr;
+		//;var r = cookieGet(nome)==vlr;
 		document.cookie = dc;
-		if (cookieGet(nome)!=vlr) {
+		/*if (cookieGet(nome)!=vlr) {
 			alert('cookiePut: falhou setar cookie...'
 				+document.cookie.length
 			);
-		}
 		return r;
+		*/
 	}
 	var cookieSet = cookiePut;
 
@@ -4599,7 +4699,7 @@ if (true) {
 
 	//**************************//
 	//**************************//
-	var browse = new (function() {
+	var browse = (typeof(document)=='object'?new (function() {
 		var eu = this;
 		this.NS6 = false;
 		this.NS4 = false;
@@ -5000,6 +5100,6 @@ if (true) {
 		function obj_getAbsYIE4(o) {
 			return obj_getAbsYNS6(o);
 		}
-	})();
+	})():false);
 
 }

@@ -4,14 +4,17 @@
  * 
  * - estat tempo de leitura: clicou ficou lendo, voltou
  * - link q repete, mesclar no bd.
- * 
+ * - tempo nas capas definem as noticias do dia
+ * - palavras 3meses X ultima semana
+ * - palavras matérias clicadas e pesquisadas
+ * - download matérias.
  */
 
 var jor = new (function() {
 	var eu = this;
 	var ped = new pedido();
 	var b1,b2,dv,ds,qu,dias,runn,list;
-	var nDias = 1*cookieGet('dias');
+	var nDias = 1*cookieGet('dias','7');
 	var oj = {},vj;
 	var dDia = 24*60*60*1000;
 	var bd = new bancoDados('news');
@@ -49,17 +52,16 @@ var jor = new (function() {
 				domObj({tag:'p'
 					,class:'list'
 					,'':'<b>'+oj.getJor(bd.getNum('jor')).nome+'</b> '
-						+'<span title="tempo na capa '
-								+bd.get('niv')+' '
-								+dataSql(bd.getNum('di'))+' a '+dataSql(bd.getNum('df'))
-								+bd.get('nv')+' '+'">'
+						+'<span title="tempo na capa\n\n'
+								+dataSql(bd.getNum('di'))+'\na\n'+dataSql(bd.getNum('df'))
+								+'\nv('+bd.get('nv')+') niv('+bd.get('niv')+')">'
 							+format((bd.getNum('df')-bd.getNum('di'))/3600000,0)+'hs</span>'
 							//+' '+bd.get('niv')+' '+bd.get('pos')
 					,targ:ds
 				});
 				domObj({tag:'span'
 					,class:'url'
-					,title:bd.get('url')
+					,uref:bd.get('url')
 					,'':'◦ '+troca(trimm(bd.get('tx'),'~ \r\n'),'~~','<br>◦ ')
 					,targ:domObj({tag:'div',class:'list',targ:ds,'xx':'◦ '})
 				});
@@ -75,13 +77,28 @@ var jor = new (function() {
 		if (false) {
 			bd.sort('di desc,niv');
 		} else {
+			var otx = tx=> {
+				//try {
+					var t = tx.length;
+					return tx.substring(Math.floor(t/2),Math.min(t/2+2,t));
+				//} catch (e) {
+				//	alert(tx+' '+erro(e));
+				//}
+			}
 			//di	df	nv	niv	pos	url	tx
 			bd.sort( (a,b) => {
 				//arredonda 5 minutos
 				var a1=Math.floor(a[0]/300000);
 				var b1=Math.floor(b[0]/300000);
 				if (a1==b1) {
-					return fSort(1*a[3],1*b[3]);
+					//se data 5 min igual, por niv
+					if (a[3]==b[3]) {
+						//se niv igual sort char tx 6
+						return fSort(otx(a[6]),otx(b[6]));
+					} else {
+						//sort niv
+						return fSort(1*a[3],1*b[3]);
+					}
 				} else {
 					return fSort(b1,a1);
 				}
@@ -100,7 +117,7 @@ var jor = new (function() {
 			});			
 		}
 
-		//lert('fim show');
+		domTitleMobile(ds);
 
 	}
 	//clicou em uma url ?
@@ -126,7 +143,7 @@ var jor = new (function() {
 	// abre url do DOM - e grava estat
 	// op - 1 - não - grava estat de matérias para não mostrar
 	function abre(ob,op) {
-		var url=(op?'-':'')+ob.getAttribute('title');
+		var url=(op?'-':'')+ob.getAttribute('uref');
 		var tx = troca(ob.innerHTML.substring(2),'<br>','~');
 		//grava estatistica
 		var c = new carregaUrl();
@@ -139,7 +156,7 @@ var jor = new (function() {
 	}	
 	//resize
 	function resize() {
-		//objNav(window);
+		//bjNav(window);
 		var mg = 7;
 		var w = browse.getTX(document.body);
 		//if (wa==w) return;
@@ -199,7 +216,7 @@ var jor = new (function() {
 		dias = domObj({tag:'input'
 			,class:'dias',size:4
 			,name:'dias'
-			,value:cookieGet('dias',14)
+			,value:nDias
 			,targ:dv
 			,ev_change:ev=>{
 				var vn = calcRpn(ev.target.value);
@@ -269,25 +286,33 @@ var jor = new (function() {
 		oj = new (function(){
 			var ojv = [];
 			var mJor;
-			var sel = cookieGet('jor');
+			var sel;
+			//if (sel.charAt(0)!='~') sel = '~';
+			//alert('s='+sel);
 			var msClick;
 			var dad = {};
 			var dadL = {n:-1};
 			//jor selecionado
 			this.sel = function(cdJor) {
-				return sel.indexOf('~'+cdJor+'~')!=-1;
+				//lert('sel='+sel);
+				return sel=='~'||sel.indexOf('~'+cdJor+'~')!=-1;
 			}
 			//getJor
 			this.getJor = n => {
 				return ojv[n];
 			}
-			//serial process data
+			//processa os dados cronologicamente.
 			function dadosProc() {
-				var dp = '';
-				for (url in dad) {
-					var dd = dad[url];
-					if (!dd.proc && dd.fim!=0) {
-						dp += substrRat(url,'/')+'\n';
+				//for (url in dad) {
+				//	var dd = dad[url];
+				for (var i=0;i<dadL.v.length;i++) {
+					var dd = dadL.v[i];
+					var url = dd.url;
+					if (dd.proc) {
+						//já processado, próximo
+					} else if (dd.fim!=0) {
+						//tenta processar ou conclui com erro
+						//dadL.dp += substrRat(url,'/')+'\n';
 						if (vazio(dd.tx)) {
 							dadL.erS += url
 								+' --> '+format(dd.fim-dd.ini)+'ms nt:'+dd.nt
@@ -308,9 +333,11 @@ var jor = new (function() {
 							dd.tx = '';
 							//lert(url+' ok '+dd.tx.length);
 						}
+					} else {
+						//espera na ordem...
+						break;
 					}
 				}
-				//lert(dp);
 				dadL.np++;
 				runn.innerHTML = dadL.p+'/'+dadL.n
 					+(dadL.er!=0?'<span class=er>er'+dadL.er+'</span>':'')
@@ -318,11 +345,12 @@ var jor = new (function() {
 					+' '+format((ms()-dadL.ini)/1000,0)+'s'
 					+' '+format(bd.count())
 				;
-				//repeat until end or timeout: 30s
-				if (dadL.np<300 && dadL.n-dadL.p-dadL.er>0) {
+				//repeat until end or timeout: 60s
+				if (dadL.np<600 && dadL.n-dadL.p-dadL.er>0) {
 					setTimeout(dadosProc,100);
 				} else {
 					//FIM
+					//alert(dadL.dp);
 					if (dadL.er!=0) alert('ERROS:\n\n'
 						+dadL.erS
 					);
@@ -335,12 +363,16 @@ var jor = new (function() {
 			this.dados = dados;
 			function dados() {
 				if (dadL.n!=-1) return;
-				dadL.n=0;dadL.np=0;dadL.p=0;dadL.er=0;dadL.ini=ms(),dadL.erS='';
+				dadL.n=0;dadL.np=0;dadL.p=0;
+				dadL.er=0;dadL.ini=ms();dadL.erS='';dadL.dp='';
+				dadL.v = []; //armazena os pedidos feitos que precisam ser processados
 				nMerge = 0;
 				//carrega outros dias
 				var dd = nDias;
 				runn.innerHTML = '...';
-				for (var d=0;d<dd;d++) {
+				//for (var d=0;d<dd;d++) {
+				// mais antigo 1o
+				for (var d=dd-1;d>=0;d--) {
 					var dt = ''+leftAt(dataSql(new Date(ms()-d*24*3600000)),' ');
 					aeval(trimm(sel,'~').split('~'), i => {
 						//lert(i+' '+typeof(dt));
@@ -352,7 +384,8 @@ var jor = new (function() {
 						;
 						if (!dad[u]) {
 							dadL.n++;
-							dad[u] = {ini:ms(),fim:0,tx:'?',proc:false,jor:i,nt:0};
+							dad[u] = {ini:ms(),fim:0,tx:'?',proc:false,jor:i,nt:0,url:u};
+							dadL.v[dadL.v.length] = dad[u];
 							function carr(a,b,tx) {
 								var httpReq = b.httpReq;
 								var dd = dad[u];
@@ -384,7 +417,7 @@ var jor = new (function() {
 				var t = '';
 				aeval(vj,function(v){
 					var a = v.getAttribute('id');
-					if (sel.indexOf('~'+a+'~')!=-1) {
+					if (sel=='~'||sel.indexOf('~'+a+'~')!=-1) {
 						t += ' | <span>'+v.firstChild.textContent+'</span>';
 						//t += ' | '+v.firstChild.textContent;
 					}
@@ -417,6 +450,11 @@ var jor = new (function() {
 			(new carregaUrl()).abre('?op=bx&aq=jornais.lst', (a,b,tx) => {
 				var t = '';
 				var t1 = '';
+				var selT = '~';
+				if (vazio(tx)||tx.charAt(0)=='<') {
+					//bjNav(this);
+					alert('ERRO:\n\n'+domObj({'':tx}).textContent);
+				}
 				aeval(tx.split('\n'),function(v,i){
 					if (!vazio(v)&&v.charAt(0)!='#') {
 						var o = {};
@@ -434,9 +472,14 @@ var jor = new (function() {
 							+'</span> '
 						;
 						t1 += '<tr id='+ojv.length+'><td title="'+o.url+'">'+o.nome+'<td title="only"><td title="all-">';
+						selT += ojv.length+'~';
 						ojv[ojv.length] = o;
 					}
 				});
+				sel = cookieGet('jor');
+				if (vazio(sel)||sel=='~'||sel.charAt(0)!='~'||sel.charAt(sel.length-1)!='~') {
+					sel = selT;
+				}
 				var d = domObj({tag:'div',class:'jor'
 					,'':'salvar<input type=text><input type=button>'
 					,targ:document.body

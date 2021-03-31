@@ -18,12 +18,24 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 if (true) {
 	
+	//**********************************************
+	//developer
+	function alertDev(a) {
+		if (!dev()) return;
+		if (confirm(a)) {
+			alert(erro());
+		}
+	}
 	function dev() {
 		//lert(''+window.location);
 		return (''+window.location).indexOf('/dv.')!=-1
 			|| (''+window.location).indexOf('/intranet.')!=-1
 		;
 	}
+	function htmlDecode(input) {
+	  var doc = new DOMParser().parseFromString(input, "text/html");
+	  return doc.documentElement.textContent;
+	}	
 	//medir tempo tarefas cronometro
 	function Cron(Nome) {
 		var nome = Nome;
@@ -75,8 +87,6 @@ if (true) {
 		}
 	}
 	
-	var Dev = false;
-
 	//eval 
 	function calcRpn(Tx) {
 		var tx = Tx.trim()+' ';
@@ -417,7 +427,7 @@ if (true) {
 		var f = op.dom;
 		if (!f||op.container) {
 			f = document.createElement('div');
-			f.className = '_contextDiv';
+			f.className = '_contextDiv'+(op.class?' '+op.class:'');
 			var c = '' //z-index:500;position:fixedabsolute;overflow: auto;'//position:absolute;'
 				+'position:fixed;' //xdisplay:none;xz-index:100;
 				+'background-color:#f0f0f0;' //xborder:2px solid blue;'
@@ -447,7 +457,7 @@ if (true) {
 			f.innerHTML = html;
 		}
 		//*************************
-		this.center = function(ev) {
+		this.center = function() {
 			eu.visible = true;
 			var tw = window.innerWidth;//browse.getTX(document.body);
 			var two = browse.getTX(f);
@@ -474,6 +484,11 @@ if (true) {
 		}
 		//*************************
 		this.show = function(ev) {
+			if (!ev) {
+				alertDev('contextDiv.show(event): missing event, use .center()');
+				this.center();
+				return;
+			}
 			eu.visible = true;
 			//screenX: 2679 screenY: 292
 			var nx = ev.x-browse.getTX(f); //ev.x ev.screenX
@@ -639,11 +654,32 @@ if (true) {
 		var oDm = domObj;
 		var vDm = domObj.innerHTML;
 		var ti = ms(),nv=0;
+		var h = {};
 		if (im) {
 			oDm.innerHTML = '<img style="display: block;margin:0 auto;" src="/imagens/loading.gif">';
 		} else {
 			var to;
 			inc();
+		}
+		//o mesmo obj para estat e contadores
+		// chave, sum
+		this.txt = function(ch,n) {
+			var r = '',t=0;
+			for (var k in h) {
+				r += k+' * '+h[k]+'\n';
+				t += h[k];
+			}
+			return r+'\n*TOT * '+t;
+		}
+		//o mesmo obj para estat e contadores
+		// chave, sum
+		this.inc = function(k,n) {
+			if (typeof(n)!='number') n = 1;
+			if (h[k]) {
+				h[k] += n;
+			} else {
+				h[k] = n;
+			}
 		}
 		function inc() {
 			nv++;
@@ -1396,27 +1432,28 @@ if (true) {
 		//*****************************************
 		// ordena
 		function click(ev) {
+			var ob = targetEvent(ev);
+			if (!ob) {
+				return;
+			}
+			obj = getParentByTagName(ob,'table');
 			//running sort?
 			if ( runSort !== false ) {
 				alertDev('ja rodando');
 				return;
 			}
-			var ob = targetEvent(ev);
-			if (!ob) {
-				return;
-			}
+			//sinaliza ordenando.
+			runSort = new running(ob);
 			
 			var col = 1*ob.getAttribute('pos');
 			eu.sort(col);
 		}
 		this.sort = function(col) {
+			//lert('sort');
 			//lert(''+vOrd[col].col.innerHTML);
 			oOrd = vOrd[col];
 			ob = oOrd.col.querySelector('sup');
 			oOrd.oClick = ob;
-			
-			//sinaliza ordenando.
-			runSort = new running(ob);
 			
 			try {
 				run(oOrd);
@@ -1426,11 +1463,43 @@ if (true) {
 		}
 		//*****************************************
 		function runEnd() {
+			//para animação running
+			//lertDev('fim\n'+runSort);//.txt());
 			runSort.end();
 			runSort = false;
 			//desmarca ordem por outras colunas
 			aeval(vOrd,function(x){x.dom.innerHTML=vImg.substring(0,1);});
 			oOrd.oClick.innerHTML = vImg.substring(oOrd.ord+1,oOrd.ord+2)			
+		}
+		//*****************************************
+		function runT() {
+			function getArr(row) {
+				var r = [];
+				for (var i=0;i<row.childNodes.length;i++) {
+					r[i] = row.childNodes.item(i).innerHTML;
+				}
+				//lert(r.length+' '+r);
+				return r;
+			}
+			var vs = [];
+			var tb = obj.getElementsByTagName('tr');
+			for (var l=1;l<tb.length;l++) {
+				if (tb[l].childNodes.length<=oOrd.pos) {
+					break;
+				}
+				var v2 = val(oOrd.pos,tb[l]);
+				vs[l-1] = [v2,getArr(tb[l])];
+			}
+			//sort
+			vs.sort( (a,b) => {
+				return fSort(a[0],b[0],oOrd.ord==0);
+			});
+			for (var l=0;l<vs.length;l++) {
+				for (var i=0;i<tb[l+1].childNodes.length;i++) {
+					tb[l+1].childNodes.item(i).innerHTML = vs[l][1][i];
+				}
+			}
+			runEnd();
 		}
 		//*****************************************
 		function run() {
@@ -1439,7 +1508,10 @@ if (true) {
 				oOrd.func = sNum;
 				var rows = obj.getElementsByTagName('tr');
 				for (var i=1;i<rows.length;i++) {
-					if ( isNaN(rows[i].childNodes.item(oOrd.pos).textContent.localToNumber()) ) {
+					var x = rows[i].childNodes.item(oOrd.pos);
+					if (!x) {
+						break;//alertDev('ln='+i+' ord='+oOrd.pos+' '+x+'\n'+rows[i].innerHTML);
+					} else if ( isNaN(x.textContent.localToNumber()) ) {
 						oOrd.func = sStr;
 						break;
 					}
@@ -1451,12 +1523,14 @@ if (true) {
 			if (oOrd.ord>=oOrd.op.length) {
 				oOrd.ord = -1;
 			}
-			setTimeout(runTask,100);
+			//setTimeout(runTask,100);
+			setTimeout(runT,100);
 		}
-		//*****************************************
+		/*****************************************
 		// sort task - Bubble sort.
 		// toDo - Quicksort
 		function runTask() {
+			runSort.inc('task');
 			//lert('runTask');
 			var cont = false;
 			//pega lista de linha toda vez, muda
@@ -1475,6 +1549,7 @@ if (true) {
 				//swap
 				if (f) {
 					t[l-1].parentNode.insertBefore(t[l],t[l-1]);
+					runSort.inc('swap');
 					cont = true;
 				}
 			}
@@ -1484,6 +1559,7 @@ if (true) {
 				setTimeout(runTask,22);
 			} 
 		}
+		*/
 	} //fim tabelaSort
 	
 	//***********************************************
@@ -1519,13 +1595,27 @@ if (true) {
 		// salva regs to csv
 		this.csvSave = function(file) {
 			if (!file) file = this.csvName;
-			var ad = fs.createWriteStream(file, {});
-			ad.write(this.csvCab()+'\n');
-			this.top();
-			while (this.next()) {
-				ad.write(this.csvLn()+'\n');
+			var adt = file+'.new';
+			var adb = file+'.bak';
+			if (!this.updated) {
+				alert('csv file '+file+' not updated');
+				return;
 			}
-			ad.close();
+			try {
+				var ad = fs.createWriteStream(adt);
+				ad.write(this.csvCab()+'\n');
+				this.top();
+				while (this.next()) {
+					ad.write(this.csvLn()+'\n');
+				}
+				ad.close();
+			} catch (e) {
+				log("ERRO salvando "+adt);
+			} finally {
+				if (fs.existsSync(adb)) fs.rm(adb,(er)=>{console.log(er);});
+				fs.rename(file,adb,(er)=>{console.log(er);});
+				fs.rename(adt,file,(er)=>{console.log(er);});
+			}
 		}
 		//*********************************************
 		// adiciona regs from csv
@@ -1819,6 +1909,7 @@ if (true) {
 		// 	targ = target dom destino
 		//	limit = limita nro regs
 		//	values = substitui dados originais por este vetor compatível
+		//	fields: = (name,i) => {}
 		this.toDom = function(op,Xlimit,XValores) {
 			if (!op || op.tagName) {
 				var r  = {targ:op,limit:Xlimit,values:XValores};
@@ -1838,9 +1929,12 @@ if (true) {
 			// head
 			var l = doc.createElement('tr');l.className='head';tb.appendChild(l);
 			for (var i=0;i<camposN.length;i++) {
-				var c = doc.createElement('th');
-				c.innerHTML = eu.showHeader(i);
-				l.appendChild(c);
+				//alguns campos?
+				if (!op.fields || op.fields(camposN[i],i) ) {
+					var c = doc.createElement('th');
+					c.innerHTML = eu.showHeader(i);
+					l.appendChild(c);
+				}
 			}
 			// data
 			var r;
@@ -1850,9 +1944,12 @@ if (true) {
 				// all cols
 				try {
 					for (var i=0;i<vlr[r].length;i++) {
-						var c = doc.createElement('td');
-						c.innerHTML = eu.showField(vlr[r],i);//troca(vlr[r][i],'\n','<br>');
-						l.appendChild(c);
+						//alguns campos?
+						if (!op.fields || op.fields(camposN[i],i) ) {
+							var c = doc.createElement('td');
+							c.innerHTML = eu.showField(vlr[r],i);//troca(vlr[r][i],'\n','<br>');
+							l.appendChild(c);
+						}
 					}
 				} catch (e) {
 					alert('erro bd.toDom:'+e+' reg:'+r+' vlr[r]:'+vlr[r]
@@ -1871,7 +1968,7 @@ if (true) {
 			//adiciona ao dst
 			if (dst) dst.appendChild(tb);
 			//permite ordenar colunas
-			tabelaSort(tb);
+			new tabelaSort(tb);
 			return tb;
 		}		
 		//*********************************************
@@ -2317,6 +2414,7 @@ if (true) {
 		// seta valor de um campo pelo nome 
 		//		- add = para string, add mais texto
 		this.set = function(Nome,Valor,add) {
+			this.updated = true;
 			//se não existe, cria campo
 			if (typeof(campos[Nome])=='undefined') {
 				if (this.dev) {
@@ -2357,6 +2455,7 @@ if (true) {
 		}
 		//*********************************************
 		this.addReg = function(arrORcod) {
+			this.updated = true;
 			if (typeof(arrORcod)=='object') {
 				ur = valores.length;
 				valores[ur] = arrORcod;
@@ -3145,14 +3244,6 @@ if (true) {
 	}
 	//;setTimeout(alertXXX,100);
 
-
-	//***********************************************
-	function alertDev(tx) {
-		if (Dev) {
-			alert(tx);
-		}
-	}
-
 	//***********************************************
 	function css(ev) {
 		if (!ev && browse.ie) {
@@ -3229,8 +3320,8 @@ if (true) {
 		}
 	}
 	//**************************//
-	var dateSql = dataSql;
-	function dataSql(a) {
+	var dataSql = dateSql;
+	function dateSql(a,semHora) {
 		//getDay = dia semana.
 		var d = vazio(a)?new Date():a;
 		//bjNav(a);
@@ -3241,9 +3332,10 @@ if (true) {
 			d = new Date(a);
 		}
 		return takeYear(d)+'-'+strZero(d.getMonth()+1,2)
-		+'-'+strZero(d.getDate(),2)+' '
-		+strZero(d.getHours(),2)+':'
-		+strZero(d.getMinutes(),2)+':'+strZero(d.getSeconds(),2);
+			+'-'+strZero(d.getDate(),2)
+			+(semHora?'':' '+strZero(d.getHours(),2)+':'
+				+strZero(d.getMinutes(),2)+':'+strZero(d.getSeconds(),2)
+			);
 	}
 	//**************************//
 	function takeYear(theDate) {

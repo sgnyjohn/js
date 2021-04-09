@@ -2865,10 +2865,15 @@ if (true) {
 	//*******************************************
 	function aeval(arr,func) {
 		var nv = 0;
-		if (arr.length) {
+		if (typeof(arr.length)=='number') {
 			for (var i=0;i<arr.length;i++) {
 				func(arr[i],i);
 			}
+		} else if (false && typeof(arr.forEach)=='function') {
+			alert('fore');
+			arr.forEach((v,i)=>{
+				func(v,i);
+			});
 		} else {
 			for (i in arr) {
 				func(arr[i],i,nv++);
@@ -4482,7 +4487,7 @@ if (true) {
 			} else if (typeof(a)=='string') {
 				return trimm(a)=='';
 			} else if (typeof(a)=='number') {
-				return isNaN(a);
+				return isNaN(a) || !isFinite(a);
 			} else if (typeof(a)=='object') {
 				return a == {};
 			} else {

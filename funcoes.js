@@ -18,18 +18,92 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 if (true) {
 	
+	var _c = console.log;
+
+	//**********************************************
+	// carrega script e init objeto com param
+	function require(url,param,callb) {
+	}
+
+	//**********************************************
+	// carrega script e init objeto com param
+	function op(Prefix) {
+		var eu = this;
+		this.ok = false;
+		var prefix=Prefix?Prefix+'.':'';
+		var vOp = global('vOp',{});
+		init();
+		// get OP - remov cookies
+		this.get = (ch,df) => {
+			var r = vOp[prefix+ch];
+			if (typeof(r)=='undefined') return df;
+			return r;
+		}
+		// set OP - remov cookies
+		this.set = (ch,vl) => {
+			vOp[prefix+ch]=vl;
+			(new carregaUrl()).abre('?op=op&'+prefix+ch+'='+encodeURIComponent(vl)
+				,(a,b,tx)=>{}
+			);
+		}
+		// load OK
+		this.ok = () => {
+			return vOp.__loaded__;
+		}
+		// load OP
+		function init() {
+			if (vOp.__loaded__) return;
+			(new carregaUrl()).abre('?op=op',(a,b,tx)=>{
+				//lert('op='+tx);
+				var v = tx.split('\n');
+				aeval(v,(vl)=>{
+					var p = vl.indexOf('=');
+					if (p>0) {
+						var ch = trimm(vl.substring(0,p));
+						vOp[ch] = trimm(vl.substring(p+1));
+					}
+				});
+				vOp.__loaded__ = true;
+			});
+		}
+	}
+
+	//**********************************************
+	// load script path default or not
+	function loadScript(s) {
+		if (s.charAt('0')!='/') s = '/js/'+s;
+		var cache = global('loadScript');
+		if (cache[s]) return; //loaded
+		var scr = document.createElement('script');
+		scr.src = s;
+		document.body.appendChild(scr);
+	}
+	//**********************************************
+	// return object global or new default
+	var _global = {};
+	function global(s,df) {
+		if (typeof(_global[s])=='undefined') {
+			_global[s] = df?df:{};
+		}
+		return _global[s];
+	}
 	//**********************************************
 	//developer
-	function alertDev(a) {
+	alertDev = deb;
+	function deb(a,ob) {
 		if (!dev()) return;
-		if (confirm(a)) {
-			alert(erro());
+		if (ob) {
+			objNav(ob);
+			if (confirm(a)) {
+				alert(erro());
+			}
 		}
+		console.log(dataSql()+'\t'+a);
 	}
 	function dev() {
 		//lert(''+window.location);
 		return (''+window.location).indexOf('/dv.')!=-1
-			|| (''+window.location).indexOf('/intranet.')!=-1
+			//|| (''+window.location).indexOf('/intranet.')!=-1
 		;
 	}
 	function htmlDecode(input) {
@@ -39,35 +113,36 @@ if (true) {
 	//medir tempo tarefas cronometro
 	function Cron(Nome) {
 		var nome = Nome;
-		var e = [['',ms(),0]];
+		var dec = (a)=>{return format(a,3)};
+		//no chromium/chrome faz diferença: 1 casa a mais
+		//var ms = ()=>{return (new Date()).getTime()};
+		var ms = ()=>{return window.performance.now()};
+		var e = [];
 		this.ret = function() {
 			return e;
 		}
-		this.txt = function() {
+		this.txt = function(reset) {
 			var r = nome+'\n';
 			var t = 0;
-			for (var i=0;i<e.length-1;i++) {
-				r += e[i][0]+'\t'+dataSql(e[i][1])
-					+'\t'+format(e[i][2]/1000.0,1)
+			for (var i=0;i<e.length;i++) {
+				var tm = (i==e.length-1?ms():e[i+1][1])-e[i][1];
+				//eb('tm='+tm+' '+e);
+				r += e[i][0]//+'\t'+dataSql(e[i][1])
+					+'\t'+dec(tm)
 					+'\n'
 				;
-				t += e[i][2];
+				t += tm;
 			}
-			return r+'\ntotal: '+format(t/1000.0,1);
+			if (reset!==false) e = [];
+			return r+'\ntotal: '+dec(t);
 		}
 		this.ev = function(str) {
-			var t = e.length;
-			e[t-1][0] = str;
-			e[t-1][2] = ms()-e[t-1][1];
-			//novo
-			e[t] = ['',ms(),0];
+			e[e.length] = [str,ms()];
 		}
 	}
-	
-	
 	//se celular touch transforma title em box
 	function domTitleMobile(ds) {
-		if (true || browse.mobile) {
+		if (browse.mobile) {
 			setTimeout(function(ev) {
 				//procura todos dom com attribute title
 				var v = ds.querySelectorAll('[title]');
@@ -458,7 +533,11 @@ if (true) {
 		}
 		//*************************
 		this.center = function() {
-			eu.visible = true;
+			if (this.visible) {
+				this.hide();
+				return;
+			}
+			this.visible = true;
 			var tw = window.innerWidth;//browse.getTX(document.body);
 			var two = browse.getTX(f);
 			if (two<1) {
@@ -484,6 +563,10 @@ if (true) {
 		}
 		//*************************
 		this.show = function(ev) {
+			if (this.visible) {
+				this.hide();
+				return;
+			}
 			if (!ev) {
 				alertDev('contextDiv.show(event): missing event, use .center()');
 				this.center();
@@ -502,9 +585,11 @@ if (true) {
 		}
 		//*************************
 		this.hide = function() {
-			eu.tw = browse.getTX(f);
-			eu.th = browse.getTY(f);
-			eu.visible = false;
+			this.visible = false;
+			styleSet(f,'width');//lert('retirou width');
+			styleSet(f,'height');
+			this.tw = browse.getTX(f);
+			this.th = browse.getTY(f);
 			browse.esconde(f);
 		}
 	}
@@ -1476,7 +1561,8 @@ if (true) {
 			function getArr(row) {
 				var r = [];
 				for (var i=0;i<row.childNodes.length;i++) {
-					r[i] = row.childNodes.item(i).innerHTML;
+					var c = row.childNodes.item(i);
+					r[i] = [c.innerHTML,c.getAttribute('title')];
 				}
 				//lert(r.length+' '+r);
 				return r;
@@ -1496,7 +1582,8 @@ if (true) {
 			});
 			for (var l=0;l<vs.length;l++) {
 				for (var i=0;i<tb[l+1].childNodes.length;i++) {
-					tb[l+1].childNodes.item(i).innerHTML = vs[l][1][i];
+					tb[l+1].childNodes.item(i).innerHTML = vs[l][1][i][0];
+					tb[l+1].childNodes.item(i).setAttribute('title',vs[l][1][i][1]);
 				}
 			}
 			runEnd();
@@ -1651,8 +1738,8 @@ if (true) {
 			}
 			eu.top();
 			while (eu.next()) {
-				if (!op.cond || op.cond()) {
-					op.func(ur);
+				if (!op.cond || op.cond(this)) {
+					op.func(this);
 				}
 			}
 		}
@@ -1840,9 +1927,12 @@ if (true) {
 		//*********************************************
 		// get Arr
 		this.getArr = function(arr) {
-			var r = [];
-			aeval(arr,function(v,i) {r[i]=eu.get('v')});
-			return r;
+			if (typeof(arr)=='object') {
+				var r = [];
+				aeval(arr,function(v,i) {r[i]=eu.get(v)});
+				return r;
+			}
+			return eu.getRow();
 		}
 		//*********************************************
 		// get row
@@ -2228,7 +2318,7 @@ if (true) {
 		//sem parametro retorna atual
 		this.reg = function(r) {
 			var ret =  ur;
-			if (typeof r === 'number') {
+			if (typeof r == 'number') {
 				ur = r;
 			}
 			return ret;
@@ -2392,6 +2482,23 @@ if (true) {
 				this.addTxt(vet,op);
 				return;
 			}
+			//compara estruturas
+			
+			if (camposN.length!=0) {
+				var er='';
+				aeval(camposN,(a,i) => {
+					if (i<vet[0].length && a!=vet[0][i].trim()) {
+						er += '\n'+i+':'+a+'!='+vet[0][i]+':';
+					}
+				});
+				if (er.length!=0) {
+					alert('ERRO addTxt, struct db different '+er
+						+'\n\n'+erro()
+					);
+					return false;
+				}
+			}
+			
 			//nome campos na linha 0
 			for (var i=0;i<vet[0].length;i++) {
 				var n = trimm(vet[0][i]);
@@ -2406,7 +2513,7 @@ if (true) {
 					//valores[ur] = troca(vet[i],'\\n','\n');
 					//lert(typeof(vet[i])+' '+vet[i]+' '+valores);
 					eu.addReg(vet[i]); // ??? troca(vet[i],'\\n','\n')
-					if (op.onAddReg) op.onAddReg();
+					if (op.onAddReg) op.onAddReg(vet[i]);
 				}
 			}
 		}
@@ -2442,8 +2549,7 @@ if (true) {
 						Valor.mergeTo(valores[ur][pc]);
 					}
 				} catch (e) {
-					objNav(Valor);
-					alert(erro(e)+' ==> Valor='+Valor+' ty='+typeof(Valor));
+					alertDev(erro(e)+' ==> Valor='+Valor+' ty='+typeof(Valor),Valor);
 				}
 			} else if ( add && !nulo(valores[ur][pc]) ) {
 				//valor é string a += add 
@@ -2943,6 +3049,10 @@ if (true) {
 			//lert('vr='+vr[i]);
 		}
 		//###################################
+		this.txt = function() {
+			return a;
+		}
+		//###################################
 		this.valid = function() {
 			var r=false;
 			aeval(this.v,function(x) {if (x.length>2) r=true;});
@@ -3242,14 +3352,6 @@ if (true) {
 	//***********************************************
 	function nada() {}
 	//***********************************************
-	function alertXXX(tx) {
-		var v = document.getElementsByTagName('script');
-		objNav(v[0]);
-		alert('foi');
-	}
-	//;setTimeout(alertXXX,100);
-
-	//***********************************************
 	function css(ev) {
 		if (!ev && browse.ie) {
 			ev = event;
@@ -3301,7 +3403,7 @@ if (true) {
 			if (str.indexOf(' ')==-1) {
 				var h = [0,0,0,0];
 			} else {
-				var h = palavraA(substrAt(str,' '),':');
+				var h = palavraA(substrAt(str,' ')+':0:0:0',':');
 				if (h[2].indexOf('.')!=-1) {
 					h[3] = substrAt(h[2],'.');
 					h[2] = leftAt(h[2],'.');
@@ -3327,6 +3429,7 @@ if (true) {
 	//**************************//
 	var dataSql = dateSql;
 	function dateSql(a,semHora) {
+		//fuso d.setTime( d.getTime() + d.getTimezoneOffset()*60*1000 );
 		//getDay = dia semana.
 		var d = vazio(a)?new Date():a;
 		//bjNav(a);
@@ -3459,13 +3562,7 @@ if (true) {
 		this.httpReq = xmlhttp;
 		//*********************************
 		function deb(s,ob) {
-			if (!eu.debug) {
-				return;
-			}
-			if (ob) {
-				objNav(ob);
-			}
-			alert(s);
+			if (eu.debug) window.deb(s,ob);
 		}
 		//*********************************
 		//executa os javaScript do obj
@@ -4536,6 +4633,7 @@ if (true) {
 	//*********************************
 	//texto e opcionalmente nome monitor
 	function debJ(str,mon) {
+		if (!dev()) return;
 		var jan = browse.getId('debJ');
 		if (vazio(jan)) {
 			//lert('criar div para debug J');
@@ -4576,6 +4674,7 @@ if (true) {
 	//funcoes DEBUG
 	//**************************//
 	function objNav(ob,jan) {
+		var limite=800;
 		if (typeof(jan)!='undefined') {
 			//this.filtro = o;
 			this.o = ob;
@@ -4709,11 +4808,11 @@ if (true) {
 				}
 				r += this.mItem(prop,z);
 				i++;
-				if (i>200) break;
+				if (i>limite) break;
 			}
 			//mostra totais por tipo
 			var r1 = '<tr><td colspan=2><b>'+i
-			+' (limite 200) </b>';
+			+' (limite '+limite+') </b>';
 			r1 += '(<b><a href=javascript:este.filtrar("");>'
 			+'Todos</a></b>='+i+') ';
 			for(var prop in this.tp) {

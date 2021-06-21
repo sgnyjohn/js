@@ -31,66 +31,54 @@ function graphLine(V,Op) {
 	var tx = 16000;
 	var mx=[],mi=[],df=[];
 	var lnEv;
-	var ctr,mEv,svg;
+	var ctr,ctrD,svg;
 	var labelLine = true;
 	init(Op);
 	//***************************
 	function mousemove(ev) {
-		mEv = ev;
-		if (ctr!=ev.target) {
-			//criar novo objeto
-			ctr = ev.target;
-			var ln = 1*ev.target.getAttribute('grafline');
-			if (ln<1) {
-				return;
+		//mEv = ev;
+		if (ctr) {
+			if (ctr==ev.target) return;
+			//outro objeto, volta cor original e termina
+			ctr.style['stroke-opacity'] = 1;
+			ctrD.hide();			
+		}
+		//criar novo objeto
+		ctr = ev.target;
+		var ta='';
+		if (!ctrD) ctrD = new contextDiv({html:'legenda'});
+		var ln = 1*ctr.getAttribute('grafline');
+		if (ctr.getAttribute('class')=='yScale') {
+			//alert('scale');
+			var t = op.yScale[ln].label;
+		} else if (ln<1) {
+			return;
+		} else {
+			var p = ctr.getBoundingClientRect();
+			//(i/(vt.length-1)*tx)
+			var d = Math.floor((ev.x-p.left)/((p.right-p.left)/vt.length)+0.5);
+			var t = (op.labelData[ln]
+				? op.labelData[ln](vt[d],d)
+				: op.label[0]+': <b>'+vt[d][0]+'</b><br><br>'
+					+op.label[ln]+': <b>'+vt[d][ln]+'</b>'
+				//+'<br><br>'+p.left+' '+p.right+'<br>'+ev.x+' x '+ev.y
+				)
+			;
+		}
+		if (t!=ta) {
+			ctrD.text(t);
+			ta = t;
+			ctrD.show(ev);
+		}
+		var nv=0;
+		setTimeout(faz);
+		function faz() {
+			//mesmo objeto?
+			if (ctr==ev.target) {
+				nv++;
+				ctr.style['stroke-opacity'] = (nv%2==1?0.4:1);
+				setTimeout(faz,250);
 			}
-			new (function() {
-				//objeto enquanto mEv element =
-				var el = ctr;
-				var ta='';
-				var tx = new contextDiv({html:'legenda'});
-				function setText() {
-					var ln = 1*el.getAttribute('grafline');
-					var p = el.getBoundingClientRect();
-					var d = Math.floor((mEv.x-p.left)/((p.right-p.left)/vt.length)+0.5);
-					var t = (op.labelData[ln]
-						? op.labelData[ln](vt[d],d)
-						: op.label[0]+': <b>'+vt[d][0]+'</b><br><br>'
-							+op.label[ln]+': <b>'+vt[d][ln]+'</b>'
-						//+'<br><br>'+p.left+' '+p.right+'<br>'+ev.x+' x '+ev.y
-						)
-					;
-					if (t!=ta) {
-						tx.text(t);
-						ta = t;
-						tx.show(mEv);
-					}
-				}
-				setText();
-				var nv=0;
-				//if (!el.style.strokeK) el.style.strokeK = el.style.stroke;
-				setTimeout(faz);
-				function faz() {
-					//mesmo objeto?
-					if (el==mEv.target) {
-						//if (nv==0) tx.show(ev);
-						nv++;
-						//troca cor
-						//el.style.stroke = (nv%2==0?'#f90':'');
-						el.style['stroke-opacity'] = (nv%2==1?0.4:1);
-						//text
-						setText();
-						//repete
-						setTimeout(faz,250);
-					} else {
-						//outro objeto, volta cor original e termina
-						//el.style.stroke = el.style.strokeK;
-						el.style['stroke-opacity'] = 1;
-						tx.hide();
-					}
-				}
-				//alert('='+ev.target+'='+a);
-			})();
 		}
 	}
 	//***************************
@@ -112,17 +100,35 @@ function graphLine(V,Op) {
 				y += 300;
 			}
 		}
+		//lh='';
 		//moldura 2
 		r += "<svg  x='300' y='"+y+"' width='15400' height='"+(ty-y-400)+"'>"
 				+"<rect class='moldura' fill='none'  x='0' y='0' width='100%' height='100%' />"
 				+"<svg  x='200' y='150' width='15000' height='7600'>"
 		;
+		//novos limites 
 		ty = 7600;
 		tx = 15000;
-		//linhas
+		//scale y
+		for (var c=0;c<op.yScale.length;c++) {
+			var vl = op.yScale[c].y;
+			if (vl>=mx[0] || vl<=mi[0]) continue;
+			var pf = ((mx[0]-vl-(df[0]-df[1]))/df[0]*ty);
+			var pf = ((mx[0]-vl)/df[0]*ty);
+			var lh='<polyline grafline='+c+' style="stroke:#000000;" class="yScale"'
+				+' points="'
+						+		 (0/(vt.length-1)*tx)					+','+pf
+						+' '+(vt.length/(vt.length-1)*tx)	+','+pf
+				+'"/>'
+			;
+			r += lh;
+		}
+		//lert(mx[0]+' lh='+lh);
+		//linhas - para cada coluna dados, uma linha
 		for (var c=1;c<vt[0].length;c++) {
 			var ca = op.scales?c:0;
 			var ln = '';
+			//adiciona todos os pontos da linha cujos dados estão na coluna
 			for (var i=0;i<vt.length;i++) {
 				var d = (df[ca]-df[c])/2;
 				var d = 0;
@@ -134,7 +140,9 @@ function graphLine(V,Op) {
 				}
 			}
 			//lert(c+' '+op.color[c-1]+' '+ln);
-			r += ('<polyline grafline='+c+' style="stroke:'+op.color[c-1]+';" class="line" points="'+ln.substring(1)+'"/>');
+			r += '<polyline grafline='+c+' style="stroke:'+op.color[c-1]
+				+';" class="line" points="'+ln.substring(1)+'"/>'
+			;
 		}
 		r += "</svg>"
 			//+'<text id=tx x=14200 y=7400 width=100 fill=red stroke=blue height=100>legenda</text>'
@@ -156,6 +164,7 @@ function graphLine(V,Op) {
 			+'text.head2{font-weight:bold;font-size:170px}'
 			+'path,polyline{fill:none;stroke:#0004f0;stroke-width:50;}'
 			+'.line{fill:none;stroke-width:50;xstroke-dasharray:50 50 100 50;}'
+			+'.yScale{fill:none;stroke-width:20;}'
 			+'.moldura{fill:none;stroke:#f04000;stroke-width:20;}'
 			+op.style
 			+']]>'
@@ -198,15 +207,18 @@ function graphLine(V,Op) {
 			,label:[]
 			,labelData:[]
 			,style:''
+			,mxInit: -999999
+			,miInit: 999999
+			,yScale: []
 		},Op);
 		//calcula mx,mi por série e geral;
 		aeval(vt,function(v,i) {
 			for (var c=1;c<v.length;c++) {
-				mx[0]=Math.max(mx[0]?mx[0]:-99999,v[c]);
-				mi[0]=Math.min(mi[0]?mi[0]:999999,v[c]);
+				mx[0]=Math.max(mx[0]?mx[0]:op.mxInit,v[c]);
+				mi[0]=Math.min(mi[0]?mi[0]:op.miInit,v[c]);
 							
-				mx[c]=Math.max(mx[c]?mx[c]:-99999,v[c]);
-				mi[c]=Math.min(mi[c]?mi[c]:999999,v[c]);
+				mx[c]=Math.max(mx[c]?mx[c]:op.mxInit,v[c]);
+				mi[c]=Math.min(mi[c]?mi[c]:op.miInit,v[c]);
 
 			}
 		});
@@ -1873,14 +1885,24 @@ function tabela(Doc,dest,classe) {
 
 //****************************************************
 function estat(Nome) {
+	var eu=this;
 	var nome = Nome;
-	var v = new Array();
+	var v = {};
 	this.inc = inc;
 	this.inc1 = inc1;
 	this.toHtml = toHtml;
 	this.toTxt = toTxt;
 	this.getMatriz = getMatriz;
-	var vt = 0; //total geral
+	var vt = 0;
+	this.length=0; //total geral
+	/****************************************************
+	this.getVetorPerc = function() {
+		var r = {};
+		for (c in v) {
+			r[c] = v[c]/vt*100.0;
+		}
+		return r;
+	}*/	
 	//****************************************************
 	this.toGraphBar = function(Op) {
 		var Horiz = (''+Op.type).indexOf('co')==-1; //if not column is bar
@@ -1928,7 +1950,7 @@ function estat(Nome) {
 	function getMatriz() {
 		var v1 = new Array(),i=0;
 		for(var prop in v) {
-			v1[i++] = new Array(prop,v[prop]);
+			v1[i++] = new Array(prop,v[prop],v[prop]/vt*100);
 		}
 		v1.sort(function(a,b){return fSort(a[0],b[0])});
 		return v1;
@@ -1981,6 +2003,7 @@ function estat(Nome) {
 	//****************************************************
 	function inc(ch,vl) {
 		vt += vl;
+		eu.length++;
 		if (!v[ch]) {
 			v[ch]=vl;
 		} else {

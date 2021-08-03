@@ -20,6 +20,188 @@ if (true) {
 	
 	var _c = console.log;
 
+
+	//################################
+	//################################
+	function strPesq(o) {
+		// validar portugues pt 
+		//  	/^[a-záàâãéèêíïóôõöúçñ ]+$/i
+		//ou	/^[A-Za-záàâãéèêíïóôõöúçñÁÀÂÃÉÈÍÏÓÔÕÖÚÇÑ ]+$/
+		
+		//vetor acentos
+		////áàâãéêíóôõúüñç
+		var va = {'a' : 'á,à,â,ã'
+			,'e' : 'é,ê'
+			,'i' : 'í'
+			,'o' : 'ó,ô,õ'
+			,'u' : 'ú,ü'
+			,'c' : 'ç'
+		};
+		/*for (var x in va) {
+			//lert(x);
+			//va[x] = troca(escape(va[x]),'%','\\u00');
+			//lert(va[x]);
+		}
+		*/
+		var a = trimm(o);
+		a = trocaTudo(a,'  ',' ');
+		//a = trocaTudo(a,'- ','-');
+		//a = trocaTudo(a,' -','-');
+		a = trocaTudo(a,'| ','|');
+		a = trocaTudo(a,' |','|');
+		//lert(a);
+		var v = a.toLowerCase().split(' ');
+		this.v = v;
+		//if (referrer.search(new RegExp("Ral", "i")) == -1) { ...
+		var vr = Array();
+		var vrNot = Array();
+		for (var i=0;i<v.length;i++) {
+			v[i] = trimm(v[i]);
+			vrNot[i] = v[i].charAt(0)=='-'; //negativo, não?
+			if (vrNot[i]) v[i] = v[i].substring(1);
+			vr[i] = new RegExp(rExpr(v[i]),'i');
+			//vri[i] = new RegExp(v[i],'i');
+			//ok vr[i] = /d[iu]as/i;
+			//vr[i] = /histo\u0301ria/i; //ok com acento?
+			// ********* na realidade a acentuação fica a letra original + algo... Histo%C3%8C%C2%81ria
+			//vr[i] = /historia/i; //ok so sem acento
+			//lert('vr='+vr[i]);
+		}
+		//###################################
+		this.txt = function() {
+			return a;
+		}
+		//###################################
+		this.valid = function() {
+			var r=false;
+			aeval(this.v,function(x) {if (x.length>2) r=true;});
+			return r?NaN:"consulta inválida '"+a+"'";
+		}
+		//###################################
+		function rExpr(t) {
+			//áàâãéêíóôõúüñç
+			var r = '';
+			for (var i=0;i<t.length;i++) {
+				var c = t.charAt(i);
+				if ( va[c] ) {
+					c = '['+c+','+va[c]+']';
+				}
+				r += c;
+			}
+			//lert(r);
+			return r;
+		}
+		//###################################
+		this.pesqMark = function(tx) {
+			for (var i=0;i<vr.length;i++) {
+				var v = tx.match(vr[i]);
+				alert(v.length+' v='+v);
+			}
+		}
+		//###################################
+		// negrita tx
+		// todo - + de uma palavra, mudar a 1a q ocorre 1o
+		this.negr = function(tx) {
+			var p = 0;
+			while ( 1 ) {
+				var x=false;
+				for (var i=0;i<v.length;i++) {
+					var m = tx.substring(p).match(vr[i]);
+					//var pn = tx.indexOf(eu.oPesq.v[i],p);
+					var pn = m?p+m.index:-1;
+					if (m && pn != -1) {
+						tx = tx.substring(0,pn)
+							+'<b class="negr">'
+							+tx.substring(pn,pn+v[i].length)+'</b>'
+							+tx.substring(pn+v[i].length)
+						;
+						p = pn+25+v[i].length;
+						x = true;
+					}
+				}
+				if (!x) {
+					break;
+				}
+			}
+			return tx;
+		}
+		//################################
+		this.pesqi = function(s) {
+			for (var i=0;i<v.length;i++) {
+				if ( ! s.match(vri[i]) ) {
+					return false;
+				}
+			}
+			return true;
+		}
+		//################################
+		this.pesqm = function(s) {
+			var s1 = tiraAcentos(s).toLowerCase();
+			for (var i=0;i<v.length;i++) {
+				if ( s1.indexOf(v[i]) == -1 ) {
+					return false;
+				}
+			}
+			return true;
+		}
+		//################################
+		this.pesq = function(s) {
+			//var s = s1.toLowerCase();
+			for (var i=0;i<vr.length;i++) {
+				//if (s.indexOf(v[i])==-1) {
+				//if ( '!/'+v[i]+'/i'.test(s) ) {
+				//if ( ! s.search(vr[i]) ) {
+				// nao func if ( s.indexOf(vr[i]) == -1 ) {
+				//if (		( !vrNot[i] && !s.match(vr[i]) )
+				//		|| 	( vrNot[i] && s.match(vr[i]) ) {
+				//lert('i='+i);
+				//if ( vrNot[i] == s.match(vr[i]) ) {
+				if ( vrNot[i] == vr[i].test(s) ) {
+					return false;
+				}
+			}
+			//vr[0].exec(s);
+			//alert(vr[0].lastIndex);
+			//objNav(s.match(vr[0]));
+			//alert(typeof(s.match(vr[0])));
+			return true;
+		}
+	}
+
+
+
+	//**********************************************
+	function clickCancel(ev) {
+		return !vazio(window.getSelection().toString()) //seleção
+			|| ev.ctrlKey //cssEdit
+			|| ev.button>1 //so 0 e 1 (central)
+		;
+	}
+	
+	//**********************************************
+	// separa dir, nome, ext
+	function Arq(path) {
+		var eu = this;
+		eu.path = path;
+		(()=>{
+			var p = path.lastIndexOf('/');
+			if (p==-1) {
+				eu.dir = '';
+				eu.nom = path;
+			} else {
+				eu.dir = path.substring(0,p);
+				eu.nom = path.substring(p+1);
+			}
+			p = path.lastIndexOf('.');
+			if (p==-1) {
+				eu.ext='';
+				eu.nomb = eu.nom;
+			} else {
+				eu.nomb = path.substring(0,p);
+				eu.ext = path.substring(p+1);
+			}
+		})();
+	}
 	//**********************************************
 	// carrega script e init objeto com param
 	function require(url,param,callb) {
@@ -486,6 +668,7 @@ if (true) {
 	// .addEventListener('contextmenu', e => {e.preventDefault();})
 	function contextDiv(Op) {
 		var eu = this;
+		var visible = false;
 		if (typeof(Op)!='object'||Op.tagName) {
 			alert('parametro errado: passar objeto com:'
 				+'\nhtml or dom: conteúdo'
@@ -529,30 +712,39 @@ if (true) {
 		//*************************
 		this.text = text;
 		function text(html) {
-			f.innerHTML = html;
+			if (html) f.innerHTML = html;
+			return f.innerHTML;
+		}
+		//*************************
+		this.visible = function() {
+			return visible;
 		}
 		//*************************
 		this.center = function() {
-			if (this.visible) {
-				this.hide();
+			if (visible) {
+				eu.hide();
 				return;
 			}
-			this.visible = true;
 			var tw = window.innerWidth;//browse.getTX(document.body);
 			var two = browse.getTX(f);
-			if (two<1) {
+			if (two<1 && !eu.recalc) {
+				//precisa calc tamanho
+				//eb('recalc='+two);
+				eu.recalc = true;
 				browse.mostra(f);
 				setTimeout(eu.center,100);
 				return;
 			}
-			two = (two<1?eu.tw:two)*1.05; //para o scroll
+			visible = true;
+			eu.recalc = false;
+			two = (two<1?eu.two:two)*1.05; //para o scroll
 			if (two>tw*op.pW) {
 				two = tw*op.pW;
 			}
 			styleSet(f,'width',two+'px');
 			var th = window.innerHeight;//browse.getTY(window);
 			var tho = browse.getTY(f);
-			tho = (tho==0?eu.th:tho);
+			tho = (tho==0?eu.tho:tho);
 			if (tho>th*op.pH) {
 				tho = th*op.pH;
 				styleSet(f,'height',tho+'px');
@@ -563,16 +755,16 @@ if (true) {
 		}
 		//*************************
 		this.show = function(ev) {
-			if (this.visible) {
-				this.hide();
-				return;
-			}
-			if (!ev) {
-				alertDev('contextDiv.show(event): missing event, use .center()');
-				this.center();
+			if (visible) {
+				eu.hide();
 				return;
 			}
 			eu.visible = true;
+			if (!ev) {
+				alertDev('contextDiv.show(event): missing event, use .center()');
+				eu.center();
+				return;
+			}
 			//screenX: 2679 screenY: 292
 			var nx = ev.x-browse.getTX(f); //ev.x ev.screenX
 			if (nx<0) nx=ev.x;
@@ -585,11 +777,15 @@ if (true) {
 		}
 		//*************************
 		this.hide = function() {
-			this.visible = false;
+			visible = false;
+			//guarda ultimo tamanho
+			eu.two = browse.getTX(f);
+			eu.tho = browse.getTY(f);
+			//zeras tamanhos
 			styleSet(f,'width');//lert('retirou width');
 			styleSet(f,'height');
-			this.tw = browse.getTX(f);
-			this.th = browse.getTY(f);
+			//esconde
+			//eb('esconde '+f+' '+erro());
 			browse.esconde(f);
 		}
 	}
@@ -3009,136 +3205,6 @@ if (true) {
 		return  new Date(t).toLocaleString();
 
 	}
-
-
-	//################################
-	//################################
-	function strPesq(o) {
-		// validar portugues pt 
-		//  	/^[a-záàâãéèêíïóôõöúçñ ]+$/i
-		//ou	/^[A-Za-záàâãéèêíïóôõöúçñÁÀÂÃÉÈÍÏÓÔÕÖÚÇÑ ]+$/
-		
-		//vetor acentos
-		////áàâãéêíóôõúüñç
-		var va = {'a' : 'á,à,â,ã'
-			,'e' : 'é,ê'
-			,'i' : 'í'
-			,'o' : 'ó,ô,õ'
-			,'u' : 'ú,ü'
-			,'c' : 'ç'
-		};
-		for (var x in va) {
-			//lert(x);
-			//va[x] = troca(escape(va[x]),'%','\\u00');
-			//lert(va[x]);
-		}
-		var a = trimm(trocaTudo(o,'  ',' '));
-		//lert(a);
-		var v = palavraA(a.toLowerCase(),' ');
-		this.v = v;
-		//if (referrer.search(new RegExp("Ral", "i")) == -1) { ...
-		var vr = Array();
-		var vri = Array();
-		for (var i=0;i<v.length;i++) {
-			vr[i] = new RegExp(rExpr(v[i]),'i');
-			vri[i] = new RegExp(v[i],'i');
-			//ok vr[i] = /d[iu]as/i;
-			//vr[i] = /histo\u0301ria/i; //ok com acento?
-			// ********* na realidade a acentuação fica a letra original + algo... Histo%C3%8C%C2%81ria
-			//vr[i] = /historia/i; //ok so sem acento
-			//lert('vr='+vr[i]);
-		}
-		//###################################
-		this.txt = function() {
-			return a;
-		}
-		//###################################
-		this.valid = function() {
-			var r=false;
-			aeval(this.v,function(x) {if (x.length>2) r=true;});
-			return r?NaN:"consulta inválida '"+a+"'";
-		}
-		//###################################
-		function rExpr(t) {
-			//áàâãéêíóôõúüñç
-			var r = '';
-			for (var i=0;i<t.length;i++) {
-				var c = t.charAt(i);
-				if ( va[c] ) {
-					c = '['+c+','+va[c]+']';
-				}
-				r += c;
-			}
-			//lert(r);
-			return r;
-		}
-		//###################################
-		// negrita tx
-		// todo - + de uma palavra, mudar a 1a q ocorre 1o
-		this.negr = function(tx) {
-			var p = 0;
-			while ( 1 ) {
-				var x=false;
-				for (var i=0;i<v.length;i++) {
-					var m = tx.substring(p).match(vr[i]);
-					//var pn = tx.indexOf(eu.oPesq.v[i],p);
-					var pn = m?p+m.index:-1;
-					if (m && pn != -1) {
-						tx = tx.substring(0,pn)
-							+'<b class="negr">'
-							+tx.substring(pn,pn+v[i].length)+'</b>'
-							+tx.substring(pn+v[i].length)
-						;
-						p = pn+25+v[i].length;
-						x = true;
-					}
-				}
-				if (!x) {
-					break;
-				}
-			}
-			return tx;
-		}
-		//################################
-		this.pesqi = function(s) {
-			for (var i=0;i<v.length;i++) {
-				if ( ! s.match(vri[i]) ) {
-					return false;
-				}
-			}
-			return true;
-		}
-		//################################
-		this.pesqm = function(s) {
-			var s1 = tiraAcentos(s).toLowerCase();
-			for (var i=0;i<v.length;i++) {
-				if ( s1.indexOf(v[i]) == -1 ) {
-					return false;
-				}
-			}
-			return true;
-		}
-		//################################
-		this.pesq = function(s) {
-			//var s = s1.toLowerCase();
-			for (var i=0;i<v.length;i++) {
-				//if (s.indexOf(v[i])==-1) {
-				//if ( '!/'+v[i]+'/i'.test(s) ) {
-				//if ( ! s.search(vr[i]) ) {
-				// nao func if ( s.indexOf(vr[i]) == -1 ) {
-				if ( ! s.match(vr[i]) ) {
-					return false;
-				}
-			}
-			//vr[0].exec(s);
-			//alert(vr[0].lastIndex);
-			//objNav(s.match(vr[0]));
-			//alert(typeof(s.match(vr[0])));
-			return true;
-		}
-	}
-
-
 	//**************************//
 	function seVazio(v,r) {
 		if (vazio(v)) return r;

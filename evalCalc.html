@@ -13,6 +13,41 @@
 <script>
 var divR;
 var __xx_xxzzzz_ = function(){return eval(arguments[0])};
+
+function tab(ob) {
+	var v = document.getElementsByTagName('textarea');
+	var al = v[1];
+	var ev = trimm(v[0].value);
+	if (ev.charAt(0)!='@') {
+		alert('converte txt para CSV, transoforma linhas em celulas e linhas com nro colunas fixas'
+			+'\n\nfalta cab txt'
+			+'\n\nexemplo de 1a linha: "@ncol 9" para 9 colunas');
+	}
+	
+	var ds='';
+	var p=0;
+	var ncol=9;
+	aeval(ev.split('\n'),(l)=>{
+		l = trimm(l);
+		if (!vazio(l)) {
+			if (p==0&&l.charAt(0)=='@') {
+				if (leftAt(l,' ')=='@ncol') {
+					ncol = 1*trimm(substrAt(l,' '))-1;
+				}
+			} else if (p==ncol) {
+				ds += l+'\n';
+				p=0;
+			} else {
+				ds += l+'\t';
+				p++;
+			}
+		}
+	});
+	al.value=ds;
+  return;
+}
+
+
 function addDom(tit,ob) {
 	var x = document.getElementsByTagName('td')[3];
 	var rf = x.firstChild;
@@ -101,6 +136,7 @@ objDebug(window.navigator)
 <td style="width:4%;text-align:center;">
 	<input onclick="javascript:verEval(this);" name=clear title=clear type=button value=">">
 	<input onclick="javascript:verEval();" type=button value=">>">
+	<input title="transforma colado em tabela" onclick="javascript:tab();" type=button value="tab">
 
 <td style="width:48%;text-align:center;">result<br>
 <textarea style="width:95%;height:90%;"  rows=20 onchange="javascript:verEval();">

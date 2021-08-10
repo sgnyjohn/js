@@ -20,6 +20,7 @@ if (true) {
 	
 	var _c = console.log;
 
+	var planetas = '☿ Mercúrio	♀ Vênus	⊕ Terra	♂ Marte	♃ Júpiter	♄ Saturno	♅ Urano	♆ Netuno';
 
 	//################################
 	//################################
@@ -272,6 +273,17 @@ if (true) {
 	//**********************************************
 	//developer
 	alertDev = deb;
+	var dev = true;
+	try {
+		dev = (''+window.location).indexOf('/dv.')!=-1
+				|| (''+window.location).indexOf('_debug=1')!=-1
+		;
+	} catch (e) {}
+	if (dev) {
+		dev = ()=>{return true;};
+	} else {
+		dev = ()=>{return false;};
+	}
 	function deb(a,ob) {
 		if (!dev()) return;
 		if (ob) {
@@ -281,12 +293,6 @@ if (true) {
 			}
 		}
 		console.log(dataSql()+'\t'+a);
-	}
-	function dev() {
-		//lert(''+window.location);
-		return (''+window.location).indexOf('/dv.')!=-1
-			//|| (''+window.location).indexOf('/intranet.')!=-1
-		;
 	}
 	function htmlDecode(input) {
 	  var doc = new DOMParser().parseFromString(input, "text/html");

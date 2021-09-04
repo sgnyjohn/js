@@ -19,6 +19,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 if (true) {
 	
 	var _c = console.log;
+	
+	//é evento
+	function isEvent(o) {
+		return (new Event('click')) instanceof o;
+	}
+	
 
 	var planetas = '☿ Mercúrio	♀ Vênus	⊕ Terra	♂ Marte	♃ Júpiter	♄ Saturno	♅ Urano	♆ Netuno';
 
@@ -217,6 +223,16 @@ if (true) {
 		var vOp = global('vOp',{});
 		init();
 		// get OP - remov cookies
+		this.getArr = () => {
+			var r = {};
+			aeval(vOp,(vl,k)=>{
+				if (k.equals(prefix)) {
+					r[k.substring(prefix.length)] = vl;
+				}
+			});
+			return r;
+		}
+		// get OP - remov cookies
 		this.get = (ch,df) => {
 			var r = vOp[prefix+ch];
 			if (typeof(r)=='undefined') return df;
@@ -237,7 +253,7 @@ if (true) {
 		function init() {
 			if (vOp.__loaded__) return;
 			(new carregaUrl()).abre('?op=op',(a,b,tx)=>{
-				//lert('op='+tx);
+				//lert('op prf='+prefix+' '+tx);
 				var v = tx.split('\n');
 				aeval(v,(vl)=>{
 					var p = vl.indexOf('=');
@@ -253,11 +269,12 @@ if (true) {
 
 	//**********************************************
 	// load script path default or not
-	function loadScript(s) {
+	function loadScript(s,funcLoad) {
 		if (s.charAt('0')!='/') s = '/js/'+s;
 		var cache = global('loadScript');
 		if (cache[s]) return; //loaded
 		var scr = document.createElement('script');
+		scr.addEventListener('load',funcLoad);
 		scr.src = s;
 		document.body.appendChild(scr);
 	}
@@ -694,11 +711,12 @@ if (true) {
 			f.className = '_contextDiv'+(op.class?' '+op.class:'');
 			var c = '' //z-index:500;position:fixedabsolute;overflow: auto;'//position:absolute;'
 				+'position:fixed;' //xdisplay:none;xz-index:100;
-				+'background-color:#f0f0f0;' //xborder:2px solid blue;'
+				+'background-color:var(--corFd);'//#f0f0f0;' //xborder:2px solid blue;'
 				+'overflow:auto;'
-				+'border-radius:5px;'
-				+'padding:5px 20px;'
+				+'border-radius:7px;'
+				+'padding:5px 10px;'
 				+'top:0;left:-300%;'
+				+'border:5px solid dark;'
 				//+'top:0;left:0;'
 				//+'padding:4px 8px;'
 			;
@@ -1881,6 +1899,20 @@ if (true) {
 		this.dlCol = '\t';
 		var fileHead;
 		//*********************************************
+		// CARREGA csv FROM url
+		this.csvLoad = function(url) {
+			(new carregaUrl()).abre(url
+				,(a,b,tx) => {
+					if (b.httpReq.status!=200) {
+						eu.sErro = 'bd.csvLoad() erro='+b.httpReq.status+' '+url;
+						deb(eu.sErro);
+					} else {
+						eu.addTxt(tx);
+					}
+				}
+			);
+		}
+		//*********************************************
 		// salva regs to csv
 		this.csvSave = function(file) {
 			if (!file) file = this.csvName;
@@ -2613,7 +2645,9 @@ if (true) {
 		//*********************************************
 		// GET valor de um campo pelo nome, ret padrão, se number mov ponteiro mv ou reg nro
 		this.getNum = function(Nome,pdr,mv) {
-			return 1*this.get(Nome,pdr,mv);
+			var r = 1*this.get(Nome,pdr,mv);
+			if (isNaN(r)) return 0;
+			return r;
 		}
 		//*********************************************
 		// GET valor de um campo pelo nome, ret padrão, se number mov ponteiro mv ou reg nro
@@ -4370,6 +4404,7 @@ if (true) {
 	//***************************************************
 	// retorna o parent que possui o attributo setado
 	function getParentByClassName(o,cl) {
+		if (isEvent(o)) o = o.target;
 		var nomeAtr = 'className';
 		//obj é evento?
 		//lert(o.target+'&&'+o.type);
@@ -4635,6 +4670,7 @@ if (true) {
 	}
 	//***************************************************
 	function getParentByTagName(o,nome,limit) {
+		if (isEvent(o)) o = o.target;
 		nome = nome.toUpperCase();
 		//while ((o=o.parentNode) && o.tagName.toUpperCase()!=nome);
 		while (o) {

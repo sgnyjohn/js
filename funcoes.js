@@ -268,6 +268,21 @@ if (true) {
 	}
 
 	//**********************************************
+	// load stylesheet
+	function loadCss(url,funcLoad) {
+		var cache = global('loadCss');
+		if (cache[url]) return; //loaded
+		var st = domObj({tag:'link'
+			,targ:document.getElementsByTagName('head')[0]
+			,rel: 'stylesheet'
+			,type: 'text/css'
+			,href: url
+			,media:'all'
+		});
+		st.addEventListener('load',funcLoad);
+	}
+
+	//**********************************************
 	// load script path default or not
 	function loadScript(s,funcLoad) {
 		if (s.charAt('0')!='/') s = '/js/'+s;

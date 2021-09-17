@@ -20,11 +20,12 @@ if (true) {
 	
 	var _c = console.log;
 	
+	//################################
 	//é evento
 	function isEvent(o) {
+		//return (''+ev).toLowerCase().indexOf('event')!=-1;
 		return (new Event('click')) instanceof o;
 	}
-	
 
 	var planetas = '☿ Mercúrio	♀ Vênus	⊕ Terra	♂ Marte	♃ Júpiter	♄ Saturno	♅ Urano	♆ Netuno';
 
@@ -3240,10 +3241,6 @@ if (true) {
 
 
 	//################################
-	function isEvent(ev) {
-		return (''+ev).toLowerCase().indexOf('event')!=-1;
-	}
-	//################################
 	//retorna data formatada tipo facebook
 	function dataRecente(d) {
 		if (typeof(d)=='object') {
@@ -3598,9 +3595,9 @@ if (true) {
 		var v = ob.getElementsByTagName('script');
 		for (var i=0;i<v.length;i++) {
 			debJ('eval js: '+v[i].textContent);
-			with (document) {
+			//with (document) {
 				eval(v[i].textContent);
-			}
+			//}
 		}
 	}
 
@@ -3779,13 +3776,12 @@ if (true) {
 				this.httpReq.setRequestHeader('Cookie', this.cookie);
 			}
 			
-			//cab
-			if (false) {
+			/* /cab
 				for (var ci=0;ci<vHead.length;ci++) {
 					this.httpReq.setRequestHeader(vHead[ci][0],vHead[ci][1]);
 					alert(this.method+' set head='+vHead[ci][0]+' == '+vHead[ci][1]);
 				}
-			}
+			*/
 
 			//guarda EU
 			eu = this;
@@ -4723,16 +4719,6 @@ if (true) {
 	function nulo(a) {
 		return ( typeof(a)=='undefined' || a==null );
 	}
-
-	//*******************************//
-	function alertErro(e,s) {
-		if(typeof(e)=='string') {
-			var x=e;
-			e=s;
-			s=x;
-		}
-		alert('dev: "'+s+'" ERRO=<'+erro(e)+'>');
-	}
 	//*******************************//
 	function erro(e) {
 		//objNav(e);
@@ -5420,5 +5406,136 @@ if (true) {
 			return obj_getAbsYNS6(o);
 		}
 	})():false);
+	
+
+//****************************************************
+function estat(Nome) {
+	var eu=this;
+	var nome = Nome;
+	var v = {};
+	this.inc = inc;
+	this.inc1 = inc1;
+	this.toHtml = toHtml;
+	this.toTxt = toTxt;
+	this.getMatriz = getMatriz;
+	var vt = 0;
+	this.length=0; //total geral
+	/****************************************************
+	this.getVetorPerc = function() {
+		var r = {};
+		for (c in v) {
+			r[c] = v[c]/vt*100.0;
+		}
+		return r;
+	}*/	
+	//****************************************************
+	this.toGraphBar = function(Op) {
+		var Horiz = (''+Op.type).indexOf('co')==-1; //if not column is bar
+		var ord = (''+Op.sort).indexOf('va')!=-1; //if not value is label
+		var desc = (''+Op.sort).indexOf('asc')==-1; //if not asc is desc
+		var v1 = getMatriz();
+		//ordena descendente
+		if (ord) {
+			//ordena valor
+			v1.sort(function(a,b){return fSort(a[1],b[1],desc)});
+		} else {
+			//ordena chave
+			v1.sort(function(a,b){return fSort(a[0],b[0],desc)});
+		}
+		//calcula total
+		var t = 0; aeval(v1,function(v,i) { t+=v[1]; });
+		//label
+		var lb = [];
+		//calcula
+		for(var i=0;i<v1.length;i++) {
+			var rs = Math.floor(v1[i][1]/t*1000+0.5)/10;
+			if (Horiz) {
+				lb[i] = '<b>'+v1[i][1]+'</b>&nbsp;'
+					+format(rs,1)+'%'
+				;
+			} else {
+				v1[i][0] += '<br><b>'+v1[i][1]+'</b>'
+					+'<br>'+format(rs,1)+'%'
+				;
+			}
+		}		
+		//grafico
+		Op.title = nome;
+		if (Horiz) {
+			Op['label'] = lb;
+			return (new graphBarH(v1,Op)).getHtml();
+		}
+		return (new graphBar(v1,Op)).getHtml();
+	}	
+	//****************************************************
+	this.getVetor = function() {
+		return v;
+	}	
+	//****************************************************
+	function getMatriz() {
+		var v1 = new Array(),i=0;
+		for(var prop in v) {
+			v1[i++] = new Array(prop,v[prop],v[prop]/vt*100);
+		}
+		v1.sort(function(a,b){return fSort(a[0],b[0])});
+		return v1;
+	}
+	//****************************************************
+	this.toOptions = function() {
+		var r = '';
+		var v1 = getMatriz();
+		v1.sort(function(a,b){return fSort(a[0],b[0])});
+		for(var i=0;i<v1.length;i++) {
+			r += '<option>'+v1[i][0]+' ('+format(v1[i][1],0)+')';
+		}
+		return r;
+	}
+	//****************************************************
+	this.moda = function() {
+		var mx=-99999,ch;
+		for(var prop in v) {
+			if (mx<v[prop]) {
+				mx = v[prop];
+				ch = prop;
+			}
+		}
+		return ch;
+	}
+	//****************************************************
+	function toTxt() {
+		var v1 = getMatriz();
+		var r = 'palavras: '+v1.length+' ocorrencias: '+vt+'\n';
+		v1.sort(function(a,b){return fSort(b[1],a[1])});
+		for(var i=0;i<v1.length;i++) {
+			r += v1[i][0]+'\t'+format(v1[i][1],0)+'\t'+format(v1[i][1]/vt*100,2)+'\n';
+		}
+		return r;
+	}
+	//****************************************************
+	function toHtml() {
+		var v1 = getMatriz();
+		v1.sort(function(a,b){return fSort(b[1],a[1])});
+		var r = '<table border=1>';
+		for(var i=0;i<v1.length;i++) {
+			r += '<tr><td>'+v1[i][0]+'<td>'+format(v1[i][1],0);
+		}
+		return r+'</table>';
+	}
+	//****************************************************
+	function inc1(ch) {
+		inc(ch,1);
+	}
+	//****************************************************
+	function inc(ch,vl) {
+		vt += vl;
+		eu.length++;
+		if (!v[ch]) {
+			v[ch]=vl;
+		} else {
+			v[ch]+=vl;
+		}
+	}
+}
+	
 
 }

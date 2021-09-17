@@ -128,7 +128,7 @@ function graphLine(V,Op) {
 		for (var c=1;c<vt[0].length;c++) {
 			var ca = op.scales?c:0;
 			var ln = '';
-			//adiciona todos os pontos da linha cujos dados est„o na coluna
+			//adiciona todos os pontos da linha cujos dados est√£o na coluna
 			for (var i=0;i<vt.length;i++) {
 				var d = (df[ca]-df[c])/2;
 				var d = 0;
@@ -177,7 +177,7 @@ function graphLine(V,Op) {
 	//***************************
 	this.toDom = function() {
 		// https://willianjusten.com.br/manipulando-svg-com-js/
-		// container, tags svg n„o aceita eventos, 
+		// container, tags svg n√£o aceita eventos, 
 		svg = domObj({svg:1,tag:'svg'
 			,style:(op.width=='100%'
 				?'max-height:80%;max-width:95%;height:auto;width:auto;' //chrome svg
@@ -211,7 +211,7 @@ function graphLine(V,Op) {
 			,miInit: 999999
 			,yScale: []
 		},Op);
-		//calcula mx,mi por sÈrie e geral;
+		//calcula mx,mi por s√©rie e geral;
 		aeval(vt,function(v,i) {
 			for (var c=1;c<v.length;c++) {
 				mx[0]=Math.max(mx[0]?mx[0]:op.mxInit,v[c]);
@@ -265,7 +265,7 @@ function contador(className) {
 	var doc;
 	this.vin = 0; //valor inicio
 	this.din = new Date(2020,0,1,0,0,0); //data valor inicio
-	this.vfi = 000031491940070.0; //valor fim
+	this.vfi = 31491940070.0; //valor fim
 	this.dfi = new Date(2020,0,10,17,4,0); //data valor fim
 	var incr;
 	var vla,vlaa; //str valor atual
@@ -367,7 +367,7 @@ function graphBarH(mat,Op) {
 	//dif 
 	var df = mx-mi;
 	df = Math.ceil(mx+df*0.1)-Math.floor(mi-df*0.1);
-	// opcıes padr„o
+	// opc√µes padr√£o
 	var op={height:'320px',width:'100px'};
 	for (var i in Op) {
 		op[i] = Op[i];
@@ -411,7 +411,7 @@ function graphBarH(mat,Op) {
 // matriz [[rotulo,valor],...]
 function graphBar(mat,Op) {
 	var v1 = mat;
-	//calcula mx,mi por sÈrie e geral;
+	//calcula mx,mi por s√©rie e geral;
 	var mx=[],mi=[],df=[];
 	aeval(v1,function(v,i) {
 		for (var c=1;c<v.length;c++) {
@@ -430,7 +430,7 @@ function graphBar(mat,Op) {
 	//dif 
 	//var df = mx-mi;
 	//df = Math.ceil(mx+df*0.1)-Math.floor(mi-df*0.1);
-	// opcıes padr„o
+	// opc√µes padr√£o
 	var op={height:'320px',width:'100%'
 		,label:true //show label x axis
 		,scales:false //scale for serie
@@ -573,10 +573,10 @@ function calendMes(nome,nomeLocTex,nomeLocHoje) {
 	this.fer[1.0] = 'Ano Novo';
 	this.fer[21.03] = 'Tiradentes';
 	this.fer[1.04] = 'Trabalho';
-	this.fer[7.08] = 'IndependÍncia';
-	this.fer[12.09] = 'CrianÁa';
+	this.fer[7.08] = 'Independ√™ncia';
+	this.fer[12.09] = 'Crian√ßa';
 	this.fer[2.10] = 'Finados';
-	this.fer[15.10] = 'Rep˙blica';
+	this.fer[15.10] = 'Rep√∫blica';
 	this.fer[25.11] = 'Natal';
  
 	this.set(this.dataF(new Date()));
@@ -649,7 +649,7 @@ function calendMes(nome,nomeLocTex,nomeLocHoje) {
 	//**************************//
 	function calendMes_Click(d) {
 		if (typeof(this.click)=='undefined') {
-			alert('Sete '+this.nome+'.click com a funÁ„o que '
+			alert('Sete '+this.nome+'.click com a fun√ß√£o que '
 			+'recebera a data clicada neste formato '+d);
 			return;
 		}
@@ -974,7 +974,7 @@ var browseDataO=false;
 			return true;
 		}
 		if (!ValChar(v,'0123456789/')) {
-			return ('ERRO, formato da data È: dd/mm/aaaa,\n use somente n˙meros e "/"');
+			return ('ERRO, formato da data √©: dd/mm/aaaa,\n use somente n√∫meros e "/"');
 		}
 		v = palavraA(v,'/');
 		if (typeof(v[1])=='undefined') { 
@@ -1001,7 +1001,7 @@ var browseDataO=false;
 		}		
 	}
 
-	// controle de subRelatÛrios
+	// controle de subRelat√≥rios
 	function subItem(spa,id) {
 		var d = browse.getId(id,getParentByTagName(spa,'table'));
 		//alert(spa.parentNode.parentNode+' '+d);
@@ -1048,7 +1048,7 @@ var browseDataO=false;
 			,new Array('Html','chtml','t')
 		);
 		
-		//mÈtodos externos
+		//m√©todos externos
 		this.mostra = mostra;
 		this.carrega = carrega;
 		this.limpa = limpa;
@@ -1082,7 +1082,7 @@ var browseDataO=false;
 		function dialog(ev,ht) {
 			var ed = 'editor_dialogo';
 			var c = browse.getId(ed);
-			//se n„o existe div dialogo cria
+			//se n√£o existe div dialogo cria
 			if (vazio(c)) {
 				c = document.createElement('DIV');
 				c.id = ed;
@@ -1090,7 +1090,7 @@ var browseDataO=false;
 				c.style.cssText = 'z-index:-500;';
 				document.body.appendChild(c);
 			}
-			//se 2 È string, preenche
+			//se 2 √© string, preenche
 			if (vazio(ev) || typeof(ht)=='string') {
 				if (dialogoAberto) {
 					c.innerHTML = '';
@@ -1163,7 +1163,7 @@ var browseDataO=false;
 			//objNav(window);
 			oDiv = browse.getId(nome+'Div');
 			if (vazio(oDiv)) {
-				alert('campoHtml.init(): '+nome+'Div id n„o enconrado...');
+				alert('campoHtml.init(): '+nome+'Div id n√£o enconrado...');
 				return;
 			}
 			oDiv.className += ' editorHtml';
@@ -1211,7 +1211,7 @@ var browseDataO=false;
 				+'<p onclick="javascript:'+nome+'.limpa();"'
 					+'>Apagar Tudo</p>'
 				+'<p onclick="javascript:'+nome+'.html();"'
-					+'>'+(!htm?'Ver cÛdigo HTML':'VisualizaÁ„o Normal')+'</p>'
+					+'>'+(!htm?'Ver c√≥digo HTML':'Visualiza√ß√£o Normal')+'</p>'
 			;
 			mPop.abre(o,null,ev);
 		}
@@ -1294,11 +1294,11 @@ var browseDataO=false;
 			}
 			mPop = new menuPopUp(nome+'Pop','titulo ?');
 			browse.getId(nome+'Pop').innerHTML = ''
-				+'<p onclick='+nome+'.tag(this,"p");>Par·grafo</p>'
-				+'<p onclick='+nome+'.tag(this,"h1");>TÌtulo 1</p>'
-				+'<p onclick='+nome+'.tag(this,"h2");>TÌtulo 2</p>'
-				+'<p onclick='+nome+'.tag(this,"h3");>TÌtulo 3</p>'
-				+'<p onclick='+nome+'.tag(this,"div");>Divis„o</p>'
+				+'<p onclick='+nome+'.tag(this,"p");>Par√°grafo</p>'
+				+'<p onclick='+nome+'.tag(this,"h1");>T√≠tulo 1</p>'
+				+'<p onclick='+nome+'.tag(this,"h2");>T√≠tulo 2</p>'
+				+'<p onclick='+nome+'.tag(this,"h3");>T√≠tulo 3</p>'
+				+'<p onclick='+nome+'.tag(this,"div");>Divis√£o</p>'
 				+'<p onclick='+nome+'.tag(this,"li");>Lista</p>'
 				+'<p onclick='+nome+'.tag(this,"li");>Lista Numerada</p>'
 			;
@@ -1351,7 +1351,7 @@ var browseDataO=false;
 					sel = oIf.contentWindow.getSelection();
 				}
 				if (vazio(sel)) {
-					//prov·vel modo txt
+					//prov√°vel modo txt
 					return false;
 				}
 				var o = sel.focusNode;
@@ -1407,7 +1407,7 @@ var browseDataO=false;
 			}
 			//pedir parametro
 			if (ev==null) {
-				//N√O pedir parametro
+				//N√ÉO pedir parametro
 				//lert('setar '+c+' par='+par);
 			} else if (c=='createlink') {
 				p = 'http://www.sf.net';
@@ -1438,7 +1438,7 @@ var browseDataO=false;
 				"undo=Desfaz"
 				,"redo=Refaz"
 				,"bold=Negrito"
-				,"italic=It·lico"
+				,"italic=It√°lico"
 				,"underline=Sublinhado"
 				,"forecolor=Cor da Fonte"
 				,"hilitecolor=Cor do Fundo"
@@ -1446,7 +1446,7 @@ var browseDataO=false;
 				,"justifycenter=Alinha no Centro"
 				,"justifyright=Alinha a Direita"
 				,"insertorderedlist=Numerar" 
-				,"insertunorderedlist=TÛpicos" 
+				,"insertunorderedlist=T√≥picos" 
 				,"outdent=Aumenta margem Esquerda"
 				,"indent=Diminui margem Esquerda"
 				,"createlink=Cria Link" 
@@ -1547,7 +1547,7 @@ var browseDataO=false;
 				}
 				var p1 = ht1.indexOf(fim,p+ini.length);
 				if (p1 == -1) {
-					alert('n„o achei fim='+fim+' para inicio='+ini);
+					alert('n√£o achei fim='+fim+' para inicio='+ini);
 					return ht;
 				}
 				ht = ht.substring(0,p)+tr+ht.substring(p1+fim.length);
@@ -1595,7 +1595,7 @@ var browseDataO=false;
 			if (oCm) {
 				oCm.value = ht;
 			} else {
-				alert('n„o achei o campo pra preencher...');
+				alert('n√£o achei o campo pra preencher...');
 			}
 		}
 		//***********************************************
@@ -1624,7 +1624,7 @@ var browseDataO=false;
 					}
 				}
 				if (m=='?') {
-					alert('Setar modo "'+Modo+'" È inv·lido...'+x);
+					alert('Setar modo "'+Modo+'" √© inv√°lido...'+x);
 					return;
 				}
 			}
@@ -1670,7 +1670,7 @@ var browseDataO=false;
 			return;
 		}
 		//***********************************************
-		//retorna valor e seta edit·vel o iframe
+		//retorna valor e seta edit√°vel o iframe
 		function mostra() {
 			//define o modo conforme o valor
 			var modosPrim = new Array();
@@ -1686,7 +1686,7 @@ var browseDataO=false;
 					}
 				}
 				if (!modo) {
-					alert('n„o achei modo='+m+' para '+valor);
+					alert('n√£o achei modo='+m+' para '+valor);
 					modo = este.modos[0];
 
 				}
@@ -1701,15 +1701,15 @@ var browseDataO=false;
 				try {
 					oCm = document.__formul['_'+nome+'_'];
 				} catch (e) {
-					//lert('n„o encontrei cmp '+'_'+nome+'_');
+					//lert('n√£o encontrei cmp '+'_'+nome+'_');
 				}
 			}
 			
-			//tornar edit·vel
+			//tornar edit√°vel
 			try {
 				oIf.contentWindow.document.designMode = 'on';
 			} catch (e) {
-				if (confirm('ERRO tornando edit·vel...\n\nTentar novamente em 2 segundos? ')) {
+				if (confirm('ERRO tornando edit√°vel...\n\nTentar novamente em 2 segundos? ')) {
 					//ebJ('e='+e);
 					setTimeout(nome+'.mostra();',2000);
 					return;
@@ -1883,134 +1883,6 @@ function tabela(Doc,dest,classe) {
 	}
 }
 
-//****************************************************
-function estat(Nome) {
-	var eu=this;
-	var nome = Nome;
-	var v = {};
-	this.inc = inc;
-	this.inc1 = inc1;
-	this.toHtml = toHtml;
-	this.toTxt = toTxt;
-	this.getMatriz = getMatriz;
-	var vt = 0;
-	this.length=0; //total geral
-	/****************************************************
-	this.getVetorPerc = function() {
-		var r = {};
-		for (c in v) {
-			r[c] = v[c]/vt*100.0;
-		}
-		return r;
-	}*/	
-	//****************************************************
-	this.toGraphBar = function(Op) {
-		var Horiz = (''+Op.type).indexOf('co')==-1; //if not column is bar
-		var ord = (''+Op.sort).indexOf('va')!=-1; //if not value is label
-		var desc = (''+Op.sort).indexOf('asc')==-1; //if not asc is desc
-		var v1 = getMatriz();
-		//ordena descendente
-		if (ord) {
-			//ordena valor
-			v1.sort(function(a,b){return fSort(a[1],b[1],desc)});
-		} else {
-			//ordena chave
-			v1.sort(function(a,b){return fSort(a[0],b[0],desc)});
-		}
-		//calcula total
-		var t = 0; aeval(v1,function(v,i) { t+=v[1]; });
-		//label
-		var lb = [];
-		//calcula
-		for(var i=0;i<v1.length;i++) {
-			var rs = Math.floor(v1[i][1]/t*1000+0.5)/10;
-			if (Horiz) {
-				lb[i] = '<b>'+v1[i][1]+'</b>&nbsp;'
-					+format(rs,1)+'%'
-				;
-			} else {
-				v1[i][0] += '<br><b>'+v1[i][1]+'</b>'
-					+'<br>'+format(rs,1)+'%'
-				;
-			}
-		}		
-		//grafico
-		Op.title = nome;
-		if (Horiz) {
-			Op['label'] = lb;
-			return (new graphBarH(v1,Op)).getHtml();
-		}
-		return (new graphBar(v1,Op)).getHtml();
-	}	
-	//****************************************************
-	this.getVetor = function() {
-		return v;
-	}	
-	//****************************************************
-	function getMatriz() {
-		var v1 = new Array(),i=0;
-		for(var prop in v) {
-			v1[i++] = new Array(prop,v[prop],v[prop]/vt*100);
-		}
-		v1.sort(function(a,b){return fSort(a[0],b[0])});
-		return v1;
-	}
-	//****************************************************
-	this.toOptions = function() {
-		var r = '';
-		var v1 = getMatriz();
-		v1.sort(function(a,b){return fSort(a[0],b[0])});
-		for(var i=0;i<v1.length;i++) {
-			r += '<option>'+v1[i][0]+' ('+format(v1[i][1],0)+')';
-		}
-		return r;
-	}
-	//****************************************************
-	this.moda = function() {
-		var mx=-99999,ch;
-		for(var prop in v) {
-			if (mx<v[prop]) {
-				mx = v[prop];
-				ch = prop;
-			}
-		}
-		return ch;
-	}
-	//****************************************************
-	function toTxt() {
-		var v1 = getMatriz();
-		var r = 'palavras: '+v1.length+' ocorrencias: '+vt+'\n';
-		v1.sort(function(a,b){return fSort(b[1],a[1])});
-		for(var i=0;i<v1.length;i++) {
-			r += v1[i][0]+'\t'+format(v1[i][1],0)+'\t'+format(v1[i][1]/vt*100,2)+'\n';
-		}
-		return r;
-	}
-	//****************************************************
-	function toHtml() {
-		var v1 = getMatriz();
-		v1.sort(function(a,b){return fSort(b[1],a[1])});
-		var r = '<table border=1>';
-		for(var i=0;i<v1.length;i++) {
-			r += '<tr><td>'+v1[i][0]+'<td>'+format(v1[i][1],0);
-		}
-		return r+'</table>';
-	}
-	//****************************************************
-	function inc1(ch) {
-		inc(ch,1);
-	}
-	//****************************************************
-	function inc(ch,vl) {
-		vt += vl;
-		eu.length++;
-		if (!v[ch]) {
-			v[ch]=vl;
-		} else {
-			v[ch]+=vl;
-		}
-	}
-}
 //***********************************************
 function htmlTxt(obj) {
 	var nl='\n',r = '';
@@ -2112,7 +1984,7 @@ function menuPopUp(nome,tit,vOp,ops,est) {
 	if (""+vOp=="undefined") {
 		return;
 	}
-	//cria divis„o conforme array
+	//cria divis√£o conforme array
 	document.write(
 	'<DIV ID="'+this.nome+'" class='+est
 	+' STYLE="'+st+'">'
@@ -2193,7 +2065,7 @@ function menuPopUp(nome,tit,vOp,ops,est) {
 		browse.esconde(oM,false);
 	}
 	//**************************//
-	// apre prÛximo ao 'ob' parametro clicl 'pr'
+	// apre pr√≥ximo ao 'ob' parametro clicl 'pr'
 	function menuPopUp_abre(ob,pr,ev) {
 		if (this.aberto) {
 			this.fecha();
@@ -2226,7 +2098,7 @@ function menuPopUp(nome,tit,vOp,ops,est) {
 		
 		browse.mostra(oM,false);
 		
-		//abaixo - campo de listar possÌveis conte˙dos
+		//abaixo - campo de listar poss√≠veis conte√∫dos
 		if (this.abaixo) {
 			x = browse.getAbsX(ob);
 			//browse.setTX(oM,browse.getTX(ob));
@@ -2372,9 +2244,9 @@ var obj_obj;
 //*******************************//
 // CONTROLE DE JANELAS POPUP..
 // TIPOS DE JANELA: 
-// 0 - FECHA S” SE FECHAR A PRINCIPAL
+// 0 - FECHA S√ì SE FECHAR A PRINCIPAL
 // 1 - FECHA SE O FOCO VOLTAR A PRINCIPAL
-// 2 - OBRIGA O FOCO NA SECUNDARIA (DI¡LOGO);
+// 2 - OBRIGA O FOCO NA SECUNDARIA (DI√ÅLOGO);
 // 3 - TOTALMENTE INDEPENDENTE
 //*******************************//
 //*******************************//
@@ -2392,7 +2264,7 @@ var obj_obj;
 	}
 	//*******************************//
 	function evento(s,ev) {
-		//opÁ„o em js
+		//op√ß√£o em js
 		//if (window.addEventListener) window.addEventListener("load",func,false);
 		//else if (window.attachEvent) window.attachEvent("onload",func);   
 		//for (var f = 0; (formnode = document.getElementsByTagName('form').item(f)); f++) {
@@ -2463,7 +2335,7 @@ var obj_obj;
 			if (!vazio(objPai) && objPai.tipo==2) {
 				//window.focus();
 				//lert("tipo janela=1");
-				//fecha somente se o foco volta para a m„e...
+				//fecha somente se o foco volta para a m√£e...
 				//parente.dRegistraWin(janPos);
 				//window.close();
 			}
@@ -2580,7 +2452,7 @@ var obj_obj;
 		//********************************
 		function winDep_on(s) {
 			if (this.frame) {
-				//lert('n„o sei gravar em frame...');
+				//lert('n√£o sei gravar em frame...');
 				var d = browse.getId('frm',this.obj.document);
 				//objNav(d);
 				d.contentWindow.document.write(s);

@@ -19,15 +19,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 if (true) {
 	
 	var _c = console.log;
+	var planetas = '☿ Mercúrio	♀ Vênus	⊕ Terra	♂ Marte	♃ Júpiter	♄ Saturno	♅ Urano	♆ Netuno';
 	
 	//################################
 	//é evento
 	function isEvent(o) {
-		//return (''+ev).toLowerCase().indexOf('event')!=-1;
-		return (new Event('click')) instanceof o;
+		return o instanceof Event;
 	}
 
-	var planetas = '☿ Mercúrio	♀ Vênus	⊕ Terra	♂ Marte	♃ Júpiter	♄ Saturno	♅ Urano	♆ Netuno';
 
 	//################################
 	//################################
@@ -38,23 +37,15 @@ if (true) {
 		
 		//vetor acentos
 		////áàâãéêíóôõúüñç
-		var va = {'a' : 'á,à,â,ã'
-			,'e' : 'é,ê'
+		var va = {'a' : 'áàâã'
+			,'e' : 'éê'
 			,'i' : 'í'
-			,'o' : 'ó,ô,õ'
-			,'u' : 'ú,ü'
+			,'o' : 'óôõ'
+			,'u' : 'úü'
 			,'c' : 'ç'
 		};
-		/*for (var x in va) {
-			//lert(x);
-			//va[x] = troca(escape(va[x]),'%','\\u00');
-			//lert(va[x]);
-		}
-		*/
 		var a = trimm(o);
 		a = trocaTudo(a,'  ',' ');
-		//a = trocaTudo(a,'- ','-');
-		//a = trocaTudo(a,' -','-');
 		a = trocaTudo(a,'| ','|');
 		a = trocaTudo(a,' |','|');
 		//lert(a);
@@ -68,12 +59,6 @@ if (true) {
 			vrNot[i] = v[i].charAt(0)=='-'; //negativo, não?
 			if (vrNot[i]) v[i] = v[i].substring(1);
 			vr[i] = new RegExp(rExpr(v[i]),'i');
-			//vri[i] = new RegExp(v[i],'i');
-			//ok vr[i] = /d[iu]as/i;
-			//vr[i] = /histo\u0301ria/i; //ok com acento?
-			// ********* na realidade a acentuação fica a letra original + algo... Histo%C3%8C%C2%81ria
-			//vr[i] = /historia/i; //ok so sem acento
-			//lert('vr='+vr[i]);
 		}
 		//###################################
 		this.txt = function() {
@@ -92,7 +77,7 @@ if (true) {
 			for (var i=0;i<t.length;i++) {
 				var c = t.charAt(i);
 				if ( va[c] ) {
-					c = '['+c+','+va[c]+']';
+					c = '['+c+va[c]+']';
 				}
 				r += c;
 			}
@@ -101,10 +86,24 @@ if (true) {
 		}
 		//###################################
 		this.pesqMark = function(tx) {
+			var r = '';
 			for (var i=0;i<vr.length;i++) {
-				var v = tx.match(vr[i]);
-				alert(v.length+' v='+v);
+				//objNav(v);
+				//alert(typeof(v)+' tam='+v.length+' v='+v);
+				//console.log(v);
+				while (tx.length>0) {
+					var v = tx.match(vr[i]);
+					if (!v || v.length==0) {
+						return r+tx;
+					} else {
+						r += tx.substring(0,v.index)
+							+'<b>'+v[0]+'</b>'
+						;
+						tx = tx.substring(v.index+v[0].length);
+					}
+				}
 			}
+			return r;
 		}
 		//###################################
 		// negrita tx
@@ -156,22 +155,10 @@ if (true) {
 		this.pesq = function(s) {
 			//var s = s1.toLowerCase();
 			for (var i=0;i<vr.length;i++) {
-				//if (s.indexOf(v[i])==-1) {
-				//if ( '!/'+v[i]+'/i'.test(s) ) {
-				//if ( ! s.search(vr[i]) ) {
-				// nao func if ( s.indexOf(vr[i]) == -1 ) {
-				//if (		( !vrNot[i] && !s.match(vr[i]) )
-				//		|| 	( vrNot[i] && s.match(vr[i]) ) {
-				//lert('i='+i);
-				//if ( vrNot[i] == s.match(vr[i]) ) {
 				if ( vrNot[i] == vr[i].test(s) ) {
 					return false;
 				}
 			}
-			//vr[0].exec(s);
-			//alert(vr[0].lastIndex);
-			//objNav(s.match(vr[0]));
-			//alert(typeof(s.match(vr[0])));
 			return true;
 		}
 	}

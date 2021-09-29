@@ -38,7 +38,7 @@ function dialogo(Conteudo,Classe) {
 	eu.limiteW = 0.80; //%
 	eu.limiteH = 0.80; //%
 	eu.overflow = true;
-	eu.opat = 100; //tempo milisegs mudança opacidade fundo
+	eu.opat = 100; //tempo milisegs mudanÃ§a opacidade fundo
 	eu.opaIni = 0.2; //inicio opacidade
 	eu.opaFim = 0.6; //fim opacidade
 	eu.opaInc = 0.2; //inc opacidade
@@ -241,7 +241,7 @@ function dialogo(Conteudo,Classe) {
 			}
 			//terminou?
 			if ( (!aberto && opa>eu.opaIni) || (aberto && opa<eu.opaFim) ) {
-				//não + um ciclo
+				//nÃ£o + um ciclo
 				setTimeout(function() {ver(-1);},eu.opat);
 			} else if (opa<=eu.opaIni) {
 				//terminou, esconde tudo
@@ -258,7 +258,7 @@ function dialogo(Conteudo,Classe) {
 		aberto = true;
 		fDoc = document;
 		jan = browse.getId(classe,fDoc);
-		//obj já adicionado
+		//obj jÃ¡ adicionado
 		if (vazio(jan)) {
 			//lert('criar jan...');
 			//add obj dialogo
@@ -309,9 +309,9 @@ function dialogo(Conteudo,Classe) {
 			}
 		} else if (typeof(conteudo)=='function') {
 			conteudo(ftex);
-		} else { //assume q é objeto
+		} else { //assume q Ã© objeto
 			//ftex.innerHTML = conteudo.innerHTML;
-			//guarda nodo onde está o conteudo pra voltar
+			//guarda nodo onde estÃ¡ o conteudo pra voltar
 			contVolta = conteudo.parentNode;
 			ftex.appendChild(conteudo);
 			//ftex = conteudo;

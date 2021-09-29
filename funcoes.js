@@ -15,8 +15,49 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/*
+a ideia era ter no dev js separado
+e na produção unico, mesclado, com
+npx google-closure-compiler 
+mas dá erro.
 
-if (true) {
+var loadJs = (nome,op) => {
+	var scr = document.createElement('script');
+	scr.src = nome+'.js?ms='+(new Date()).getTime();
+	document.body.appendChild(scr);
+	//add eventos
+	for (i in op) {
+		scr.addEventListener(i,op[i]);
+	}	
+}
+
+window.addEventListener('load',() => {
+	var app = 'biblia';
+	var mod = ['/js/funcoes','/js/dialogo'];
+	var pos = 0;
+	var scr = loadJs(app+'App',{
+		error: (a,b,c)=>{
+			mod[mod.length] = app;
+			var ok = () =>{
+				//lert('pos='+pos+' '+mod[pos]);
+				if (pos==mod.length) {
+					init();
+				} else {
+					loadJs(mod[pos],{load:ok,error:()=>{alert('not found '+mod[pos-1]);}});
+					pos++;
+				}
+			}
+			ok();
+		}
+		,load: (a,b,c)=>{
+			init();
+		}
+	});	
+});
+*/
+
+
+//if (true) {
 	
 	var _c = console.log;
 	var planetas = '☿ Mercúrio	♀ Vênus	⊕ Terra	♂ Marte	♃ Júpiter	♄ Saturno	♅ Urano	♆ Netuno';
@@ -4989,411 +5030,393 @@ if (true) {
 	}
 	//fim func DEBUG
 
-	//**************************//
-	//**************************//
-	var browse = (typeof(document)=='object'?new (function() {
-		var eu = this;
-		this.NS6 = false;
-		this.NS4 = false;
-		this.IE4 = false;
+//**************************//
+//**************************//
+window['browse'] = (typeof(document)=='object'?new (function() {
+	var eu = this;
+	this.NS6 = false;
+	this.NS4 = false;
+	this.IE4 = false;
 
-		var nav = navigator.userAgent.toLowerCase();
-		this.mobile = nav.indexOf('mobile')!=-1;
+	var nav = navigator.userAgent.toLowerCase();
+	this.mobile = nav.indexOf('mobile')!=-1;
 
-		if (document.getElementById && !document.all) {
-			this.NS6 = true;
-			this.nav = "NS6";
+	if (document.getElementById && !document.all) {
+		this.NS6 = true;
+		this.nav = "NS6";
+	} else {
+		if (document.layers) {
+			this.NS4 = true;
+			this.nav = "NS4";
 		} else {
-			if (document.layers) {
-				this.NS4 = true;
-				this.nav = "NS4";
-			} else {
-				if (document.all) {
-					this.IE4 = true;
-					this.nav = "IE4";
-					this.IE6 = navigator.appVersion.indexOf('MSIE 6')!=-1
-						|| navigator.appVersion.indexOf('MSIE 5')!=-1
-					;
+			if (document.all) {
+				this.IE4 = true;
+				this.nav = "IE4";
+				this.IE6 = navigator.appVersion.indexOf('MSIE 6')!=-1
+					|| navigator.appVersion.indexOf('MSIE 5')!=-1
+				;
+			}
+		}
+	}
+	this.ie = this.IE4;
+	setTimeout(function() {
+		eu.ie6 = document.documentElement 
+			&& 	( document.documentElement.clientWidth 
+				|| document.documentElement.clientHeight)
+		;}
+	,0);
+	//this.moz = this.IE6
+	this.moz = navigator.userAgent.toLowerCase().indexOf("gecko")!=-1;
+	this.fir = navigator.userAgent.toLowerCase().indexOf("firefox")!=-1
+		|| navigator.userAgent.toLowerCase().indexOf("icewea")!=-1
+	;
+	this.win = navigator.userAgent.toLowerCase().indexOf("windows")!=-1;
+	this.lin = navigator.userAgent.toLowerCase().indexOf("linux")!=-1;
+
+	var f = _funcoes();
+	var x = new Array("getId","mostra","esconde","getAbsX","getAbsY"
+	,"setX","setY","getX","getY","getTX","getTY","getDocFrame"
+	,"visivel","eventoX","eventoY","tamWinX","tamWinY","cssRules","setTX","setTY");
+	for (var i=0;i<x.length;i++) {
+		this[x[i]] = f[x[i]+this.nav];//xval('obj_'+x[i]+this.nav);
+	}
+	//lert("obj criado"+this);
+	//lert("obj criado"+this.getId);
+
+	this.setBodyClassDevice = () => {
+		var c = (window.devicePixelRatio<1.5?'desktop':'mobile');
+		classOn(document.body,c);
+	}
+ 
+	//**************************//
+	//campos uso geral
+	//**************************//
+	this.MostraEsconde = obj_MostraEsconde;
+	//**************************
+	this.isScrolledIntoView = function(elem) {
+		 var docViewTop = $(window).scrollTop();
+		 var docViewBottom = docViewTop + $(window).height();
+
+		 var elemTop = $(elem).offset().top;
+		 var elemBottom = elemTop + $(elem).height();
+
+		 return ((elemBottom <= docViewBottom) && (elemTop >= docViewTop));
+	}
+	//**************************
+	this.aceitaFoco = function(o) {
+		try {
+			var t = o.tagName.toLowerCase();
+			if (t=='input' || t=='textarea' || t=='select') {
+				return true;
+			}
+		} catch (e) {
+		}
+		return false;
+	}
+	//**************************
+	function obj_MostraEsconde(id) {
+		var o = this.getId(id);
+		if (this.visivel(o)) {
+			this.esconde(o);
+		} else {
+			this.mostra(o);
+		}
+	}
+	//**************************
+	function _funcoes() {
+		return {
+			cssRulesNS6: (o) => {
+				return o.cssRules;
+			}
+			,cssRulesIE4: (o) => {
+				return o.rules;
+			}
+			,tamWinXNS6: (o) => {
+				if (vazio(o)) {
+					o = window;
+				}
+				return o.outerWidth;
+			}
+			,tamWinXIE4: (o) => {
+				if (vazio(o)) {
+					o = window;
+				}
+				//lert(this.IE6==true+' '+document.documentElement.clientWidth);
+				if (document.body.clientWidth) {
+					return o.document.body.clientWidth;
+				} else if (this.ie6) {
+					return o.document.documentElement.clientWidth;
+				} else {
+					return o.screen.availWidth;
+				}
+				//return o.document.body.offsetWidth;
+			}
+			,eventoYNS6: (o) => {
+				return o.layerY;
+			}
+			,eventoYNS4: (o) => {
+				return o.y;
+			}
+			,eventoYIE4: (o) => {
+				//return o.clientY;
+				//lert('a');
+				var e = targetEvent(o);
+				return o.offsetY+browse.getAbsY(e);
+				//return -1;
+			}
+			,eventoXNS6: (o) => {
+				//lert(o.offsetWidth);
+				return o.clientX;
+				//return o.layerX;
+			}
+			,eventoXNS4: (o) => {
+				return o.x;
+			}
+			,eventoXIE4: (o) => {
+				//lert(o.offsetWidth);
+				//return o.clientX+o.offsetX;
+				//return o.screenX+o.offsetX;
+				return o.clientX;
+				//return -1;
+			}
+			,getTXNS6: (o) => {
+				//lert(o.offsetWidth);
+				try {
+					return o.offsetWidth;
+				} catch (e) {
+					alert(erro(e));
 				}
 			}
-		}
-		this.ie = this.IE4;
-		setTimeout(function() {
-			eu.ie6 = document.documentElement 
-				&& 	( document.documentElement.clientWidth 
-					|| document.documentElement.clientHeight)
-			;}
-		,0);
-		//this.moz = this.IE6
-		this.moz = navigator.userAgent.toLowerCase().indexOf("gecko")!=-1;
-		this.fir = navigator.userAgent.toLowerCase().indexOf("firefox")!=-1
-			|| navigator.userAgent.toLowerCase().indexOf("icewea")!=-1
-		;
-		this.win = navigator.userAgent.toLowerCase().indexOf("windows")!=-1;
-		this.lin = navigator.userAgent.toLowerCase().indexOf("linux")!=-1;
-	 
-		var x = new Array("getId","mostra","esconde","getAbsX","getAbsY"
-		,"setX","setY","getX","getY","getTX","getTY","getDocFrame"
-		,"visivel","eventoX","eventoY","tamWinX","tamWinY","cssRules","setTX","setTY");
-		for (var i=0;i<x.length;i++) {
-			this[x[i]] = eval('obj_'+x[i]+this.nav);
-		}
-		//lert("obj criado"+this);
-		//lert("obj criado"+this.getId);
-
-		this.setBodyClassDevice = () => {
-			var c = (window.devicePixelRatio<1.5?'desktop':'mobile');
-			classOn(document.body,c);
-		}
-	 
-		//**************************//
-		//campos uso geral
-		//**************************//
-		this.MostraEsconde = obj_MostraEsconde;
-
-		//**************************
-		this.isScrolledIntoView = function(elem) {
-			 var docViewTop = $(window).scrollTop();
-			 var docViewBottom = docViewTop + $(window).height();
-
-			 var elemTop = $(elem).offset().top;
-			 var elemBottom = elemTop + $(elem).height();
-
-			 return ((elemBottom <= docViewBottom) && (elemTop >= docViewTop));
-		}
-		//**************************
-		this.aceitaFoco = function(o) {
-			try {
-				var t = o.tagName.toLowerCase();
-				if (t=='input' || t=='textarea' || t=='select') {
-					return true;
+			,getTXNS4: (o) => {
+				return -1;
+			}
+			,getTXIE4(o) {
+					//lert(o.offsetWidth);
+					return o.offsetWidth;
 				}
-			} catch (e) {
+			,setTXNS6: (o,v) => {
+				o.style.width = v;
 			}
-			return false;
-		}
-		//**************************
-		function obj_tamWinYNS6(o) {
-			if (vazio(o)) {
-				o = window;
+			,setTXNS4: (o,v) => {
+				return -1;
 			}
-			return o.outerHeight;
-		}
-		function obj_tamWinYIE4(o) {
-			if (vazio(o)) {
-				//lert('peg atual win');
-				o = window;
+			,setTXIE4: (o,v) => {
+				o.style.width = v;
 			}
-			if (this.ie6) {
-				var r = o.document.documentElement.clientHeight;
-				//lert('ie6='+this.ie6+' tam='+r+' '+);
-				return r;
-			} else {
-				return o.screen.availHeight;
-			}
-		}
-	 
-		function obj_MostraEsconde(id) {
-			var o = this.getId(id);
-			if (this.visivel(o)) {
-				this.esconde(o);
-			} else {
-				this.mostra(o);
-			}
-		}
-		//**************************//
-		function obj_cssRulesNS6(o) {
-			return o.cssRules;
-		}
-		function obj_cssRulesIE4(o) {
-			return o.rules;
-		}
-		//**************************//
-		function obj_tamWinXNS6(o) {
-			if (vazio(o)) {
-				o = window;
-			}
-			return o.outerWidth;
-		}
-		function obj_tamWinXIE4(o) {
-			if (vazio(o)) {
-				o = window;
-			}
-			//lert(this.IE6==true+' '+document.documentElement.clientWidth);
-			if (document.body.clientWidth) {
-				return o.document.body.clientWidth;
-			} else if (this.ie6) {
-				return o.document.documentElement.clientWidth;
-			} else {
-				return o.screen.availWidth;
-			}
-			//return o.document.body.offsetWidth;
-		}
-		//**************************//
-		function obj_eventoYNS6(o) {
-			return o.layerY;
-			//client retoran a pos sem scroll?
-			//return o.clientY;
-		}
-		function obj_eventoYNS4(o) {
-			return o.y;
-		}
-		function obj_eventoYIE4(o) {
-			//return o.clientY;
-			//lert('a');
-			var e = targetEvent(o);
-			return o.offsetY+browse.getAbsY(e);
-			//return -1;
-		}
-		//**************************//
-		function obj_eventoXNS6(o) {
-			//lert(o.offsetWidth);
-			return o.clientX;
-			//return o.layerX;
-		}
-		function obj_eventoXNS4(o) {
-			return o.x;
-		}
-		function obj_eventoXIE4(o) {
-			//lert(o.offsetWidth);
-			//return o.clientX+o.offsetX;
-			//return o.screenX+o.offsetX;
-			return o.clientX;
-			//return -1;
-		}
-		//**************************//
-		function obj_getTXNS6(o) {
-			//lert(o.offsetWidth);
-			try {
-				return o.offsetWidth;
-			} catch (e) {
-				alert(erro(e));
-			}
-		}
-		function obj_getTXNS4(o) {
-			return -1;
-		}
-		function obj_getTXIE4(o) {
-			//lert(o.offsetWidth);
-			return o.offsetWidth;
-		}
-		//**************************//
-		function obj_setTXNS6(o,v) {
-			o.style.width = v;
-		}
-		function obj_setTXNS4(o,v) {
-			return -1;
-		}
-		function obj_setTXIE4(o,v) {
-			o.style.width = v;
-		}
-		//**************************//
-		function obj_setTYNS6(o,v) {
-			o.style.height = v;
-		}
-		function obj_setTYNS4(o,v) {
-			return -1;
-		}
-		function obj_setTYIE4(o,v) {
-			try {
+			,setTYNS6: (o,v) => {
 				o.style.height = v;
-			} catch (e) {
-				alert(erro(e));
 			}
-		}
-		//**************************//
-		function obj_getTYNS6(o) {
-			return o.offsetHeight;
-		}
-		function obj_getTYNS4(o) {
-			return -1;
-		}
-		function obj_getTYIE4(o) {
-			return o.offsetHeight;
-		}
-		//**************************//
-		function obj_getIdNS6(id,ob) {
-			if (typeof(ob)=='undefined') ob = document;
-			if (!ob.getElementById) {
-				return getId(ob,id);
+			,setTYNS4: (o,v) => {
+				return -1;
 			}
-			return ob.getElementById(id);
-		}
-		function obj_getIdNS4(id) {
-			var r = document.layers[id];
-			return r;
-		}
-		function obj_getIdIE4(id,ob) {
-			if (typeof(ob)=='undefined') ob = document;
-			return ob.all[id];
-		}
-	 
-		//**************************//
-		function obj_getXNS6(o) {
-			return o.style.left;
-		}
-		function obj_getXNS4(o) {
-			return o.x;
-		}
-		function obj_getXIE4(o) {
-			return o.style.pixelLeft;
-		}
-		//**************************//
-		function obj_getYNS6(o) {
-			return o.style.top;
-		}
-		function obj_getYNS4(o) {
-			return o.y;
-		}
-		function obj_getYIE4(o) {
-			return o.style.pixelTop;
-		}
-		//**************************//
-		function obj_setXNS6(o,p) {
-			if (!o.style) {
-				objNav(o);
-				alert(erro());
+			,setTYIE4: (o,v) => {
+				try {
+					o.style.height = v;
+				} catch (e) {
+					alert(erro(e));
+				}
 			}
-			o.style.left = p+'px';
-		}
-		function obj_setXNS4(o,p) {
-			o.x = p;
-		}
-		function obj_setXIE4(o,p) {
-			try {
-				o.style.pixelLeft = p;
-			} catch (e) {
-				objNav(o);
+			,getTYNS6: (o) => {
+				return o.offsetHeight;
 			}
-			//+'px';
-		}
-		//**************************//
-		function obj_setYNS6(o,p) {
-			o.style.top = p+'px';
-		}
-		function obj_setYNS4(o,p) {
-			o.y = p;
-		}
-		function obj_setYIE4(o,p) {
-			o.style.pixelTop = p; 
-			//+'px';
-		}
-		//**************************//
-		function obj_visivelNS6(o) {
-			return o.style.visibility == "visible";
-		}
-		function obj_visivelNS4(o) {
-			return o.visibility == "show";
-		}
-		function obj_visivelIE4(o) {
-			return o.style.visibility == "visible";
-		}
-		//**************************//
-		function obj_mostraNS6(o,b) {
-			//lert('o='+o.innerHTML);
-			if (typeof(o)=='string') o = browse.getId(o);
-			if (o.getAttribute('disp')) {
-				o.style.display = 'block';
-			} else {
+			,getTYNS4: (o) => {
+				return -1;
+			}
+			,getTYIE4: (o) => {
+				return o.offsetHeight;
+			}
+			,getIdNS6: (id,ob) => {
+				if (typeof(ob)=='undefined') ob = document;
+				if (!ob.getElementById) {
+					return getId(ob,id);
+				}
+				return ob.getElementById(id);
+			}
+			,getIdNS4: (id) => {
+				var r = document.layers[id];
+				return r;
+			}
+			,getIdIE4: (id,ob) => {
+				if (typeof(ob)=='undefined') ob = document;
+				return ob.all[id];
+			}
+			,getXNS6: (o) => {
+				return o.style.left;
+			}
+			,getXNS4: (o) => {
+				return o.x;
+			}
+			,getXIE4: (o) => {
+				return o.style.pixelLeft;
+			}
+			,getYNS6: (o) => {
+				return o.style.top;
+			}
+			,getYNS4: (o) => {
+				return o.y;
+			}
+			,getYIE4: (o) => {
+				return o.style.pixelTop;
+			}
+			,setXNS6: (o,p) => {
+				if (!o.style) {
+					objNav(o);
+					alert(erro());
+				}
+				o.style.left = p+'px';
+			}
+			,setXNS4: (o,p) => {
+				o.x = p;
+			}
+			,setXIE4: (o,p) => {
+				try {
+					o.style.pixelLeft = p;
+				} catch (e) {
+					objNav(o);
+				}
+				//+'px';
+			}
+			,setYNS6: (o,p) => {
+				o.style.top = p+'px';
+			}
+			,setYNS4: (o,p) => {
+				o.y = p;
+			}
+			,setYIE4: (o,p) => {
+				o.style.pixelTop = p; 
+			}
+			,visivelNS6: (o) => {
+				return o.style.visibility == "visible";
+			}
+			,visivelNS4: (o) => {
+				return o.visibility == "show";
+			}
+			,visivelIE4: (o) => {
+				return o.style.visibility == "visible";
+			}
+			,mostraNS6: (o,b) => {
+				//lert('o='+o.innerHTML);
+				if (typeof(o)=='string') o = browse.getId(o);
+				if (o.getAttribute('disp')) {
+					o.style.display = 'block';
+				} else {
+					o.style.visibility = "visible";
+					if (''+b=='undefined') o.style.display = '';
+				}
+			}
+			,mostraNS4: (o) => {
+				if (typeof(o)=='string') o = browse.getId(o);
+				o.visibility = "show";
+			}
+			,mostraIE4: (o,b) => {
+				if (typeof(o)=='string') o = browse.getId(o);
 				o.style.visibility = "visible";
 				if (''+b=='undefined') o.style.display = '';
 			}
-		}
-		function obj_mostraNS4(o) {
-			if (typeof(o)=='string') o = browse.getId(o);
-			o.visibility = "show";
-		}
-		function obj_mostraIE4(o,b) {
-			if (typeof(o)=='string') o = browse.getId(o);
-			o.style.visibility = "visible";
-			if (''+b=='undefined') o.style.display = '';
-		}
-		//**************************//
-		function obj_escondeNS6(o,b) {
-			if (typeof(o)=='string') o = browse.getId(o);
-			if (!o || !o.getAttribute) {
-				alert(erro('obj_escondeNS6'));
-				return;
+			,escondeNS6: (o,b) => {
+				if (typeof(o)=='string') o = browse.getId(o);
+				if (!o || !o.getAttribute) {
+					alert(erro('obj_escondeNS6'));
+					return;
+				}
+				if (o.getAttribute('disp')) {
+					o.style.display = 'none';
+				} else {
+					o.style.visibility = "hidden";
+					if (''+b=='undefined') o.style.display = 'none';
+				}
 			}
-			if (o.getAttribute('disp')) {
-				o.style.display = 'none';
-			} else {
-				o.style.visibility = "hidden";
-				if (''+b=='undefined') o.style.display = 'none';
+			,escondeNS4: (o,b) => {
+				if (typeof(o)=='string') o = browse.getId(o);
+				o.visibility = "hide";
 			}
-		}
-		function obj_escondeNS4(o,b) {
-			if (typeof(o)=='string') o = browse.getId(o);
-			o.visibility = "hide";
-		}
-		function obj_escondeIE4(o,b) {
-			if (typeof(o)=='string') o = browse.getId(o);
-			try {
-				o.style.visibility = "hidden";
-			} catch (e) {
+			,escondeIE4: (o,b) => {
+				if (typeof(o)=='string') o = browse.getId(o);
+				try {
+					o.style.visibility = "hidden";
+				} catch (e) {
+				}
+				try {
+					if (''+b=='undefined') o.style.display = 'none';
+				} catch (e) {
+				}
 			}
-			try {
-				if (''+b=='undefined') o.style.display = 'none';
-			} catch (e) {
+			,getAbsXNS6: (o) => {
+				try {
+					var a=o.offsetParent;
+					if ((""+a).substring(0,4)=="[obj") {
+						// & (""+a).indexOf("HTMLBodyElement")==-1) 
+						//rr += "* "+a;
+						return o.offsetLeft + obj_getAbsXNS6(a);
+					} else {
+						return o.offsetLeft;
+					}
+				} catch (e) {
+					alertDev(erro(e));
+				}
 			}
-		}
-		//**************************//
-		function obj_getAbsXNS6(o) {
-			try {
+			,getAbsXNS4: (o) => {
+				return o.x;
+			}
+			,getAbsXIE4: (o) => {
 				var a=o.offsetParent;
 				if ((""+a).substring(0,4)=="[obj") {
-					// & (""+a).indexOf("HTMLBodyElement")==-1) 
-					//rr += "* "+a;
-					return o.offsetLeft + obj_getAbsXNS6(a);
+					return o.offsetLeft + obj_getAbsXIE4(a);
 				} else {
 					return o.offsetLeft;
 				}
-			} catch (e) {
-				alertDev(erro(e));
 			}
-		}
-		function obj_getAbsXNS4(o) {
-			return o.x;
-		}
-		function obj_getAbsXIE4(o) {
-			var a=o.offsetParent;
-			if ((""+a).substring(0,4)=="[obj") {
-				return o.offsetLeft + obj_getAbsXIE4(a);
-			} else {
-				return o.offsetLeft;
+			,getDocFrameNS6: (o) => {
+				return o.contentDocument;
 			}
-		}
-		//**************************//
-		function obj_getDocFrameNS6(o) {
-			return o.contentDocument;
-		}
-		//**************************//
-		function obj_getDocFrameNS4(o) {
-			alert("nao sei getDocFrameNS4");
-			return o.contentDocument;
-		}
-		//**************************//
-		function obj_getDocFrameIE4(o) {
-			//lert("nao sei getDocFrameIE4"+obj(o.ownerDocument));
-			return o.ownerDocument;
-		}
-		//**************************//
-		function obj_getAbsYNS6(o) {
-			var a=o.offsetParent;
-			if ((""+a).substring(0,4)=="[obj") {
-				return o.offsetTop + obj_getAbsYNS6(a);
-			} else {
-				return o.offsetTop;
+			,getDocFrameNS4: (o) => {
+				alert("nao sei getDocFrameNS4");
+				return o.contentDocument;
 			}
-		}
-		function obj_getAbsYNS4(o) {
-			return o.y;
-		}
-		function obj_getAbsYIE4(o) {
-			return obj_getAbsYNS6(o);
-		}
-	})():false);
+			,getDocFrameIE4: (o) => {
+				//lert("nao sei getDocFrameIE4"+obj(o.ownerDocument));
+				return o.ownerDocument;
+			}
+			,getAbsYNS6: (o) => {
+				var a=o.offsetParent;
+				if ((""+a).substring(0,4)=="[obj") {
+					return o.offsetTop + obj_getAbsYNS6(a);
+				} else {
+					return o.offsetTop;
+				}
+			}
+			,getAbsYNS4: (o) => {
+				return o.y;
+			}
+			,getAbsYIE4: (o) => {
+				return obj_getAbsYNS6(o);
+			}
+			,tamWinYNS6: (o) => {
+				if (vazio(o)) {
+					o = window;
+				}
+				return o.outerHeight;
+			}
+			,tamWinYIE4: (o) => {
+				if (vazio(o)) {
+					//lert('peg atual win');
+					o = window;
+				}
+				if (this.ie6) {
+					var r = o.document.documentElement.clientHeight;
+					//lert('ie6='+this.ie6+' tam='+r+' '+);
+					return r;
+				} else {
+					return o.screen.availHeight;
+				}
+			}
+			
+		};
+	}
 	
+
+})():false);
+
 
 //****************************************************
 function estat(Nome) {
@@ -5525,4 +5548,4 @@ function estat(Nome) {
 }
 	
 
-}
+//}

@@ -1,5 +1,20 @@
-window.addEventListener('load',() => {
+//https://developer.mozilla.org/pt-BR/docs/Web/HTTP/CORS
 
+window.addEventListener('load',() => {
+	
+	if ( !window['app'] ) {
+		var app = {name:'name app'
+			,app: false
+			,js: ['/js/funcoes']
+			,init:()=>{alert('init default app complete');}
+			,favicon:false
+		};
+		window['app'] = app;
+	} else {
+		var app = window['app'];
+		window['app'] = undefined;
+	}
+	
 	function fim() {
 		function ret(o,t) {
 			var a = o.getElementsByTagName(t);
@@ -20,7 +35,8 @@ window.addEventListener('load',() => {
 			domObj({tag:'link',rel:"shortcut icon",href:app.favicon,targ:h});
 			domObj({tag:'link',rel:"icon",href:app.favicon,targ:h});
 		}
-		if (app.init) window[app.init]();
+		if (typeof(app.init)=='string') window[app.init]();
+		if (typeof(app.init)=='function') app.init();
 	}
 	function loadJs(nome,ev) {
 		var scr = document.createElement('script');

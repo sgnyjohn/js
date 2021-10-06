@@ -15,21 +15,22 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 //****************************************************
+/** @constructor */
 function dialogo(Conteudo,Classe) {
+	var eu = this;
 	var conteudo = Conteudo;
 	//lert('cont='+conteudo);
 	var classe = Classe?Classe:'dialogo';
 	this.botaoFecha = '<td class="'+classe+'FechaEs">&nbsp;'
 			+'<td class="'+classe+'Fecha">f<br>e<br>c<br>h<br>a<br>r'
 	;
-	this.ver = ver;
-	this.mostra = ver;
-	this.fecha = fecha;
+	eu['ver'] = ver;
+	eu.mostra = ver;
+	eu.fecha = fecha;
 	var jan,jan1,fDoc;
 	var aberto = false;
 	var opa;
-	var eu = this;
-	this.ver = ver;
+	//this.ver = ver;
 	var jpos = 'position:'+(browse.IE6?'absolute;':'fixed;');
 	//lert('jpos='+jpos);
 	var ftex;

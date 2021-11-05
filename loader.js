@@ -1,4 +1,6 @@
-//https://developer.mozilla.org/pt-BR/docs/Web/HTTP/CORS
+/* 👉 loader 👈
+	https://developer.mozilla.org/pt-BR/docs/Web/HTTP/CORS
+*/
 
 window.addEventListener('load',() => {
 	

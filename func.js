@@ -29,12 +29,13 @@ if (!Date.prototype.getDayStr) {
 		,'en':['sunday','monday','tuesday','wednesday','thursday','friday','saturday']
 	};
 	Date.prototype.getDayStr = function() {
-		r = this.wd[window.navigator.language];
-		if (!r) r = this.wd[window.navigator.language.leftAt('-')]
+		var r = this.wd[window.navigator.language];
+		if (!r) r = this.wd[window.navigator.language.leftAt('-')];
+		if (!r) r = this.wd['en'];
 		if (r) return r[this.getDay()];
 	}
 	Date.prototype.getDayStr3 = function(p) {
-		r = this.getDayStr()
+		var r = this.getDayStr();
 		if (r) return r.substring(0,3);
 	}
 }

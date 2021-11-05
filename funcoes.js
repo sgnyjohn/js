@@ -13,6 +13,19 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+***
+
+ [ O big data dispõe somente de uma forma muito primitiva de conhecimento,
+	a saber, a correlação: acontece A, então ocorre B. Não há 
+	nenhuma compreensão. A Inteligência Artificial não pensa.
+	A Inteligência Artificial não sente medo.
+	
+	Byung-Chul Han
+
+	https://brasil.elpais.com/cultura/2021-10-09/byung-chul-han-o-celular-e-um-instrumento-de-dominacao-age-como-um-rosario.html
+ ]
+
 */
 
 
@@ -1131,7 +1144,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 						border-right:2px solid;border-bottom:2px solid;
 				}
 				TABLE.### TD.###A {border-bottom:0;}
-				TABLE.### TD.###:hover {color: blue;}
+				TABLE.### TD.###:hover {filter: invert(30%);}
 				TABLE.### TD.###V {border:0;
 					border-bottom:2px solid;width:100%;
 				}
@@ -1871,7 +1884,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 					var x = rows[i].childNodes.item(oOrd.pos);
 					if (!x) {
 						break;//alertDev('ln='+i+' ord='+oOrd.pos+' '+x+'\n'+rows[i].innerHTML);
-					} else if ( isNaN(x.textContent.localToNumber()) ) {
+					} else if ( x.textContent!='NaN' && isNaN(x.textContent.localToNumber()) ) {
 						oOrd.func = sStr;
 						break;
 					}
@@ -1940,7 +1953,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		var campos = {}; //[nome]=posicao
 		this.campos = campos;
 		//vetor campos index posição
-		var camposN = Array(); //[]=nome
+		var camposN = Array(); //[n]=nome
 		//var valor;this.valor = valor;
 		var valores = Array(); //valores string
 		this.valores = valores;
@@ -1970,29 +1983,53 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		}
 		//*********************************************
 		// salva regs to csv
-		this.csvSave = function(file) {
-			if (!file) file = this.csvName;
-			var adt = file+'.new';
-			var adb = file+'.bak';
+		this.csvSave = function(op) {
 			if (!this.updated) {
 				alert('csv file '+file+' not updated');
 				return;
 			}
-			try {
-				var ad = fs.createWriteStream(adt);
-				ad.write(this.csvCab()+'\n');
-				this.top();
-				while (this.next()) {
-					ad.write(this.csvLn()+'\n');
+			if (!op) op = {};
+			var file = this.csvName;
+			if (op.file) file = op.file;
+			var adt = file+'.new';
+			var adb = file+'.bak';
+			var nv = 0;
+			var tbf = 128000;
+			var eu = this;
+			if (fs.existsSync(adt)) fs.rm(adt,(er)=>{if (er) console.log(er);});
+			function faz() {
+				while (eu.next()) {
+					nv++;
+					var tx = eu.csvLn()+'\n';
+					tm += tx.length;
+					ad.write(tx);
+					if (tm>tbf) {
+						console.log(file+' gravar...'+tm+' '+nv);
+						tm = 0;
+						break;
+					}
+					//monit
+					if (op.sync && (nv % op.sync)==1 ) {
+						console.log(file+' monit '+nv);
+					}
 				}
-				ad.close();
-			} catch (e) {
-				deb("ERRO salvando "+adt);
-			} finally {
-				if (fs.existsSync(adb)) fs.rm(adb,(er)=>{console.log(er);});
-				fs.rename(file,adb,(er)=>{console.log(er);});
-				fs.rename(adt,file,(er)=>{console.log(er);});
+				if (!eu.eof()) {
+					setTimeout(faz);
+				} else {
+					console.log('fim gravando '+file+' nr='+nv)
+					ad.close();
+					if (fs.existsSync(adb)) fs.rm(adb,(er)=>{if (er) console.log(er);});
+					fs.rename(file,adb,(er)=>{if (er) console.log(er);});
+					fs.rename(adt,file,(er)=>{if (er) console.log(er);});
+					console.log('fim 2 gravando '+file+' nr='+nv)
+				}
 			}
+			var ad = fs.createWriteStream(adt,{flags:'as'});
+			ad.write(this.csvCab()+'\n');
+			this.top();
+			var tm = 0;
+			faz();
+			return nr;
 		}
 		//*********************************************
 		// adiciona regs from csv
@@ -2618,6 +2655,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			ur = -1;
 		}
 		this.top = this.init;
+		//*********************************************
+		this.eof = function() {
+			return ur >= valores.length;
+		}
 		//*********************************************
 		this.next = function() {
 			ur++;

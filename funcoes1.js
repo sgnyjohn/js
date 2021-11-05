@@ -43,10 +43,10 @@ function graphLine(V,Op) {
 			ctr.style['stroke-opacity'] = 1;
 			ctrD.hide();			
 		}
-		//criar novo objeto
+		//criar novo objeto, mostra janela label
 		ctr = ev.target;
 		var ta='';
-		if (!ctrD) ctrD = new contextDiv({html:'legenda'});
+		if (!ctrD) ctrD = new contextDiv({html:'Label',class:'graphLabel'});
 		var ln = 1*ctr.getAttribute('grafline');
 		if (ctr.getAttribute('class')=='yScale') {
 			//alert('scale');

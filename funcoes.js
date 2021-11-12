@@ -270,7 +270,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		var vOp = global('vOp',{});
 		init();
 		// get OP - remov cookies
-		this.getArr = () => {
+		this.getHash = () => {
 			var r = {};
 			aeval(vOp,(vl,k)=>{
 				if (k.equals(prefix)) {
@@ -874,6 +874,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			//eb('esconde '+f+' '+erro());
 			browse.esconde(f);
 		}
+		this.close = this.hide;
 	}
 
 	//***********************************************
@@ -1122,9 +1123,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			//lert('oa='+objAtivo);
 			var o = vt[objAtivo].obj;
 			//lert('ev='+ev.target.value+' o='+o);
-			aeval(o.length?o:[o],function(a,i){
+			aeval(o.length?o:[o],(a,i) => {
 				try {
-					cnt.appendChild(a);
+					if (typeof(a)=='function') {
+						a(cnt);
+					} else { 
+						cnt.appendChild(a);
+					}
 				} catch (e) {
 					alert('erro add obj tab '+e+' '+i+'='+a);
 				}
@@ -2319,7 +2324,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		//*********************************************
 		// show in lists 
 		this.showHeader = function(field) { //,fieldName) {
-			return troca(''+camposN[field],'_',' ');
+			return troca(troca(''+camposN[field],'_',' '),'+',' +');
 		}		
 		//*********************************************
 		// gera objetos html 
@@ -2341,7 +2346,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			//lert('dst='+dst);
 			var doc = dst?domDoc(dst):document;
 			var limit = op.limit?op.limit:false;
-			var tb = doc.createElement('table');tb.className = this.className?this.className:'bdToDom';
+			var tb = doc.createElement('table');
+			tb.className = this.className
+				?this.className:'bdToDom'+(op.class?' '+op.class
+				:''
+			);
 			tb.border=1;
 			// head
 			var l = doc.createElement('tr');l.className='head';tb.appendChild(l);
@@ -2684,6 +2693,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		}
 		//*********************************************
 		this.estru = function() {
+			return this.struct(true);
+		}
+		//*********************************************
+		this.struct = function(txt) {
 			var e = new estat('struct table '+nome);
 			for (var r=0;r<valores.length;r++) {
 				for (var c=0;c<camposN.length;c++) {
@@ -2692,8 +2705,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 					}
 				}
 			}
-			
-			return e.toTxt()+'\n n='+camposN.length+' ('+camposN+')\n'+e;
+			if (txt) return e.toTxt()+'\n n='+camposN.length+' ('+camposN+')\n'+e;
+
+			var v = e.getVetor();
+			var r = '<table border=1>'
+				+'<tr><td>n<td>name<td>nv'
+			;
+			for (var c=0;c<camposN.length;c++) {
+				var n = camposN[c];
+				r += '<tr><td>'+c+'<td>'+n+'<td>'+v[n];
+			}
+			return r+'</table>';
 		}
 		//*********************************************
 		// recebe txt 1a linha campos* e add regs
@@ -3005,8 +3027,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			}
 		}
 	}
-
-
 	//################################
 	//retorna data formatada tipo facebook
 	function dataRecente(d) {

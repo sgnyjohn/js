@@ -365,13 +365,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	}
 	function deb(a,ob) {
 		if (!dev()) return;
-		if (ob) {
+		if (typeof(ob)=='object') {
 			objNav(ob);
 			if (confirm(a)) {
 				alert(erro());
 			}
 		}
-		console.log(dataSql()+'\t'+a);
+		var trac = (isNumber(ob)?ob:0);
+		var f = (new Error('erroDebug')).stack.split('\n')[1+ob];
+		//console.log(f);
+		console.log(dataSql()+'\t'+a+'\t'+f);
 	}
 	function htmlDecode(input) {
 	  var doc = new DOMParser().parseFromString(input, "text/html");
@@ -3817,7 +3820,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		this.set = put;
 		this.paramToForm = paramToForm;
 		this.refresh = refresh;
-		this.getV = getV;
 		this.url = ''; //host
 		var url = ''; //parametros
 		var urlJ;
@@ -3838,8 +3840,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			var url = '';
 			//alertErro(e);
 		}
-		var param = new Array();
-		var paramJ = new Array();;
+		var param = {};
+		var paramJ = {};
 		this.url = url;
 		this.protocolo = leftAt(url,':');
 		this.host = substrAtAt(url+'/','://','/'); 
@@ -3904,8 +3906,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			}
 		}
 		//******************************
-		function getV() {
+		this.getHash = () => {
 			return param;
+		}
+		this.getV = this.getHash;
+		//******************************
+		this.getHashJ = () => {
+			return paramJ;
 		}
 		//******************************
 		this.formToParam = function(ob,strParam) {

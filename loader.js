@@ -1,27 +1,30 @@
 /* 👉 loader 👈
-	https://developer.mozilla.org/pt-BR/docs/Web/HTTP/CORS
+  
+  Signey out/2021
+  
+  
+	Cross-Origin Resource Sharing - https://developer.mozilla.org/pt-BR/docs/Web/HTTP/CORS
+			GET /resources/public-data/ HTTP/1.1
+			Host: bar.other
+			...
+			Referer: http://foo.example/examples/
+			Origin: http://foo.example
+
+			HTTP/1.1 200 OK
+			Access-Control-Allow-Origin: *
 */
 
 window.addEventListener('load',() => {
-	
-	if ( !window['app'] ) {
-		var app = {name:'name app'
-			,app: false
-			,js: ['/js/funcoes']
-			,init:()=>{alert('init default app complete');}
-			,favicon:false
-		};
-		window['app'] = app;
-	} else {
-		var app = window['app'];
-		window['app'] = undefined;
+	//****************************************************
+	function deb(a) {
+		console.log('loader: '+a);
 	}
-	
-	function fim() {
+	//****************************************************
+	function end_loader() {
 		function ret(o,t) {
 			var a = o.getElementsByTagName(t);
 			if (a.length==0) {
-				console.log('create element '+t+' em '+o);
+				deb('create element '+t+' em '+o);
 				var r = domObj({tag:t,targ:o});
 			} else {
 				r = a[0];
@@ -37,27 +40,37 @@ window.addEventListener('load',() => {
 			domObj({tag:'link',rel:"shortcut icon",href:app.favicon,targ:h});
 			domObj({tag:'link',rel:"icon",href:app.favicon,targ:h});
 		}
-		if (typeof(app.init)=='string') window[app.init]();
-		if (typeof(app.init)=='function') app.init();
+		function ap() {
+			this.teste = ()=>{
+				alert(app.name);
+			}
+			if (typeof(app.init)=='string') window[app.init](this);
+			if (typeof(app.init)=='function') app.init(this);
+		}
+		new ap();
 	}
+	//****************************************************
+	// carrega 1 js...
 	function loadJs(nome,ev) {
 		var scr = document.createElement('script');
 		scr.src = nome+'.js?ms='+(new Date()).getTime();
-		console.log('load: '+scr.src);
+		deb('load: '+scr.src);
 		document.body.appendChild(scr);
 		//add eventos
 		for (i in ev) {
 			scr.addEventListener(i,ev[i]);
 		}	
 	}
-	function proxFila() {
+	//****************************************************
+	// carrega o próximo js
+	function nextJs() {
 		//lert('pos='+pos+' '+mod[pos]);
 		if (app.pos==app.js.length) {
-			fim();
+			end_loader();
 		} else {
 			loadJs(app.js[app.pos],
 				{ 
-					  load: proxFila
+					  load: nextJs
 					,error: () => {
 						alert('not found '+app.js[app.pos]);
 					}
@@ -66,19 +79,34 @@ window.addEventListener('load',() => {
 			app.pos++;
 		}
 	}
+	//////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////
 	//carrega scripts
+	var app;
+	if ( !window['app'] ) {
+		app = {name:'name app'
+			,app: false
+			,js: ['/js/funcoes']
+			,init:()=>{alert('init default app complete');}
+			,favicon:false
+		};
+	} else {
+		app = window['app'];
+		window['app'] = undefined;
+	}
+
 	if (app.app!==true) {
 		app.pos = 0;
-		proxFila();
+		nextJs();
 	} else {
 		loadJs(app.js[app.js.length-1]+'App',{
 			error: (a,b,c)=>{
 				//processa fila
-				proxFila();
+				nextJs();
 			}
 			,load: (a,b,c)=>{
 				//js único, o arq App possui todos os modulos
-				fim();
+				end_loader();
 			}
 		});	
 	}

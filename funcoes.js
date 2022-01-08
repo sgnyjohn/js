@@ -1,4 +1,6 @@
-/* .querySelectorAll
+/* 
+	.querySelectorAll()
+	.closest()
 Copyright (c) 2002/2011 Signey John
 
 This program is free software: you can redistribute it and/or modify
@@ -97,7 +99,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 				}
 				r += c;
 			}
-			//lert(r);
+			deb('pq='+r);
 			return r;
 		}
 		//###################################
@@ -369,11 +371,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			objNav(ob);
 			if (confirm(a)) {
 				alert(erro());
+				return;
 			}
 		}
 		var trac = (isNumber(ob)?ob:0);
-		var f = (new Error('erroDebug')).stack.split('\n')[1+ob];
-		//console.log(f);
+		var f = (new Error('erroDebug')).stack.split('\n')[1+trac]+'';
+		//não repetir trace
+		var ve = global('_vDeb',{});
+		(ve[f]?f='':ve[f]=1);
+		//não repete trace.
 		console.log(dataSql()+'\t'+a+'\t'+f);
 	}
 	function htmlDecode(input) {
@@ -809,6 +815,25 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			return visible;
 		}
 		//*************************
+		function limitWidthHeight() {
+			var tw = window.innerWidth;//browse.getTX(document.body);
+			var two = browse.getTX(f);
+			//limita Largura ?
+			two = (two<1?eu.two:two)*1.05; //para o scroll
+			if (two>tw*op.pW) {
+				two = tw*op.pW;
+			}
+			styleSet(f,'width',two+'px');
+			//limita algura
+			var th = window.innerHeight;//browse.getTY(window);
+			var tho = browse.getTY(f);
+			tho = (tho==0?eu.tho:tho);
+			if (tho>th*op.pH) {
+				tho = th*op.pH;
+				styleSet(f,'height',tho+'px');
+			}			
+		}
+		//*************************
 		this.center = function() {
 			if (visible) {
 				eu.hide();
@@ -826,11 +851,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			}
 			visible = true;
 			eu.recalc = false;
+			//limita Largura ?
 			two = (two<1?eu.two:two)*1.05; //para o scroll
 			if (two>tw*op.pW) {
 				two = tw*op.pW;
 			}
 			styleSet(f,'width',two+'px');
+			//limita algura
 			var th = window.innerHeight;//browse.getTY(window);
 			var tho = browse.getTY(f);
 			tho = (tho==0?eu.tho:tho);
@@ -848,20 +875,28 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 				eu.hide();
 				return;
 			}
-			eu.visible = true;
+			visible = true;
 			if (!ev) {
 				alertDev('contextDiv.show(event): missing event, use .center()');
 				eu.center();
 				return;
 			}
 			//screenX: 2679 screenY: 292
-			var nx = ev.x-browse.getTX(f); //ev.x ev.screenX
-			if (nx<0) nx=ev.x;
-			var ny = ev.y-browse.getTY(f);
-			if (ny<0) ny=ev.y;
+			var nx, ny;
+			if ( eu.queryAlign && (nx=ev.target.closest(eu.queryAlign)) ) {
+				//_c(nx);
+				ny = nx.offsetTop;//browse.getY(nx);//
+				nx = browse.getAbsX(nx); //browse.getX(nx)-browse.getTX(f);
+			} else {
+				nx = ev.x-browse.getTX(f); //ev.x ev.screenX
+				if (nx<0) nx=ev.x;
+				ny = ev.y-browse.getTY(f);
+				if (ny<0) ny=ev.y;
+			}
 			styleSet(f,'left',nx+'px');
 			styleSet(f,'top',ny+'px');
-			//lert(f.style.cssText);
+			//_c(f);
+			setTimeout(limitWidthHeight,100);
 			browse.mostra(f);
 		}
 		//*************************
@@ -1990,6 +2025,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			);
 		}
 		//*********************************************
+		// retorna tex do bd
+		this.csv = function() {
+			var tx = eu.csvCab();
+			eu.top();
+			while (eu.next()) {
+				tx += eu.csvLn()+'\n';
+			}
+			return tx;
+		}
+		//*********************************************
 		// salva regs to csv
 		this.csvSave = function(op) {
 			if (!this.updated) {
@@ -1997,6 +2042,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 				return;
 			}
 			if (!op) op = {};
+			//url?
+			if (op.url) {
+				var c = new carregaUrl();
+				c.post(op.url,'tex='+this.csv()
+					,(a,b,tx) => {
+						if (b.httpReq.status!=200) {
+							var er = 'bd.csvSave(url) erro='+b.httpReq.status+' '+op.url;
+							alert(er);
+							eu.sErro = er;
+						} else if (!vazio(tx)) {
+							alert(tx);
+						}
+					}
+				);				
+				return;
+			}
 			var file = this.csvName;
 			if (op.file) file = op.file;
 			var adt = file+'.new';
@@ -2050,13 +2111,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		this.csvLn = function() {
 			var r = '';
 			for (var i=0;i<camposN.length;i++) {
-				r += this.dlCol+valores[ur][i];
+				r += (i==0?'':this.dlCol)+valores[ur][i];
 			}
-			return r.substring(this.dlCol.length);
+			return r;
 		}
 		//*********************************************
 		// retorna string linha cab txt
 		this.csvCab = function() {
+			//lert('0='+camposN[0]);
 			var r = '';
 			for (var i=0;i<camposN.length;i++) {
 				r += this.dlCol+camposN[i];
@@ -2726,6 +2788,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		//		separado do nome de campos e bloco dados por linha vazia
 		//		cabeçalho arquivo pode conter campo 'delimiter' this.dlCol
 		this.addTxt = function(tx,op) {
+			if (vazio(tx)) return;
 			if (typeof(op)=='function') 
 				op = {filter:op};
 			//var x = palavraA(trimm(tx),this.dlRow);
@@ -3431,6 +3494,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		}
 		this.httpReq = xmlhttp;
 		//*********************************
+		this.post = function(url,data,func) {
+				this.funcRet = func;
+				var xhr = this.httpReq;//new XMLHttpRequest();
+				xhr.open("POST", url, true);
+
+				// Envia a informação do cabeçalho junto com a requisição.
+				xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+
+				xhr.onreadystatechange = recebe;
+				xhr.send(data);
+		}
+		//*********************************
 		function deb(s,ob) {
 			if (eu.debug) window.deb(s,ob);
 		}
@@ -3463,7 +3538,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			this.idObj1 = id1;
 			this.abre(url);
 		}
-		
 		//*********************************
 		function abre(url,funcRet) {
 			//eb(this.debug+' url='+url);
@@ -4810,6 +4884,7 @@ if (typeof(window) == 'object') window['browse'] = (typeof(document)=='object'?n
 	,"setX","setY","getX","getY","getTX","getTY","getDocFrame"
 	,"visivel","eventoX","eventoY","tamWinX","tamWinY","cssRules","setTX","setTY");
 	for (var i=0;i<x.length;i++) {
+		if (!f[x[i]+this.nav]) deb('browse.init: method not exists: '+x[i]+this.nav);
 		this[x[i]] = f[x[i]+this.nav];//xval('obj_'+x[i]+this.nav);
 	}
 	//lert("obj criado"+this);
@@ -5079,7 +5154,7 @@ if (typeof(window) == 'object') window['browse'] = (typeof(document)=='object'?n
 					if ((""+a).substring(0,4)=="[obj") {
 						// & (""+a).indexOf("HTMLBodyElement")==-1) 
 						//rr += "* "+a;
-						return o.offsetLeft + browse.getAbs(a);//obj_getAbsXNS6(a);
+						return o.offsetLeft + browse.getAbsX(a);//obj_getAbsXNS6(a);
 					} else {
 						return o.offsetLeft;
 					}
@@ -5093,7 +5168,7 @@ if (typeof(window) == 'object') window['browse'] = (typeof(document)=='object'?n
 			,getAbsXIE4: (o) => {
 				var a=o.offsetParent;
 				if ((""+a).substring(0,4)=="[obj") {
-					return o.offsetLeft + browse.getAbs(a); //obj_getAbsXIE4(a);
+					return o.offsetLeft + browse.getAbsX(a); //obj_getAbsXIE4(a);
 				} else {
 					return o.offsetLeft;
 				}
@@ -5112,7 +5187,7 @@ if (typeof(window) == 'object') window['browse'] = (typeof(document)=='object'?n
 			,getAbsYNS6: (o) => {
 				var a=o.offsetParent;
 				if ((""+a).substring(0,4)=="[obj") {
-					return o.offsetTop + browse.getAbs(a); //obj_getAbsYNS6(a);
+					return o.offsetTop + browse.getAbsX(a); //obj_getAbsYNS6(a);
 				} else {
 					return o.offsetTop;
 				}
@@ -5121,7 +5196,7 @@ if (typeof(window) == 'object') window['browse'] = (typeof(document)=='object'?n
 				return o.y;
 			}
 			,getAbsYIE4: (o) => {
-				return browse.getAbs(o);//obj_getAbsYNS6(o);
+				return browse.getAbsToDo(o);//obj_getAbsYNS6(o);
 			}
 			,tamWinYNS6: (o) => {
 				if (vazio(o)) {

@@ -37,6 +37,65 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	var browse = {};	
 	var _c = console.log;
 	var planetas = '☿ Mercúrio	♀ Vênus	⊕ Terra	♂ Marte	♃ Júpiter	♄ Saturno	♅ Urano	♆ Netuno';
+
+	//################################
+	// make links search
+	function linkSearch() {
+		var ds;
+		var vl = [];
+		setTimeout(()=>{
+			//seek for container
+			var v = document.querySelectorAll('a');
+			aeval(v,(x,i)=>{
+				var t = getParentAttr(x,'title');
+				vl[vl.length] =  [x.outerHTML
+					,x.textContent
+						+(x.getAttribute('title')
+							?' '+x.getAttribute('title')
+							:''
+						)
+						+' '+t
+				];
+			});
+			var c = document.querySelector('.linkSearch');
+			if (!c) {
+				//add top body
+				c = domObj({tag:'div',class:'linkSearch'});
+				document.body.insertBefore(c,document.body.firstChild);
+			}
+			//c.innerHTML = '🔎<input>🔎';
+			domObj({tag:'span',targ:c,'':'🔎'});
+			domObj({tag:'input',targ:c
+				,ev_keyup:(ev)=>{
+					var r = '...';
+					if (ev.target.value.length>=2) {
+						r = '';
+						var p = new strPesq(ev.target.value);
+						aeval(vl,(x)=>{
+							if (p.pesq(x[1])) {
+								r += x[0]+'<br>';
+							}
+						});
+					}
+					ds.innerHTML = r;
+				}
+			});
+			domObj({tag:'span',targ:c,'':'🔎'});
+			ds = domObj({tag:'p',targ:c,'':'...'});
+		});
+	}
+	
+	//################################
+	//strip tags
+	function stripTags( str ) {
+		return str.replace(/(<([^>]+)>)/ig,"");
+	}
+	
+	//################################
+	//é visible
+	function isVisible( elem ) {
+		return !!( elem.offsetWidth || elem.offsetHeight || elem.getClientRects().length );
+	}
 	
 	//################################
 	//é evento
@@ -236,7 +295,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	
 	//**********************************************
 	// separa dir, nome, ext
-	function Arq(path) {
+	function arq(path) {
 		var eu = this;
 		eu.path = path;
 		(()=>{
@@ -248,16 +307,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 				eu.dir = path.substring(0,p);
 				eu.nom = path.substring(p+1);
 			}
-			p = path.lastIndexOf('.');
+			p = eu.nom.lastIndexOf('.');
 			if (p==-1) {
 				eu.ext='';
 				eu.nomb = eu.nom;
 			} else {
-				eu.nomb = path.substring(0,p);
-				eu.ext = path.substring(p+1);
+				eu.nomb = eu.nom.substring(0,p);
+				eu.ext = eu.nom.substring(p+1);
 			}
 		})();
 	}
+	var Arq = arq;
 	//**********************************************
 	// carrega script e init objeto com param
 	function require(url,param,callb) {
@@ -375,12 +435,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			}
 		}
 		var trac = (isNumber(ob)?ob:0);
+		//pega src e nro linha
 		var f = (new Error('erroDebug')).stack.split('\n')[1+trac]+'';
 		//não repetir trace
 		var ve = global('_vDeb',{});
 		(ve[f]?f='':ve[f]=1);
 		//não repete trace.
-		console.log(dataSql()+'\t'+a+'\t'+f);
+		console.log(dataSql()+'\t'+a+'\t==>>'+f);
 	}
 	function htmlDecode(input) {
 	  var doc = new DOMParser().parseFromString(input, "text/html");
@@ -776,11 +837,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		var op = mergeOptions({pW:0.8,pH:0.8,container:true},Op);
 		this.op = op;
 		
-		var f = op.dom;
-		if (!f||op.container) {
-			f = document.createElement('div');
-			f.className = '_contextDiv'+(op.class?' '+op.class:'');
-			var c = '' //z-index:500;position:fixedabsolute;overflow: auto;'//position:absolute;'
+		//style exists ?
+		var cl = '_contextDiv';
+		if (!document.getElementById(cl)) {
+			addStyleId('DIV.'+cl+' {'
 				+'position:fixed;' //xdisplay:none;xz-index:100;
 				+'background-color:var(--corFd);'//#f0f0f0;' //xborder:2px solid blue;'
 				+'overflow:auto;'
@@ -788,11 +848,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 				+'padding:5px 10px;'
 				+'top:0;left:-300%;'
 				+'border:5px solid dark;'
-				//+'top:0;left:0;'
-				//+'padding:4px 8px;'
-			;
-			f.style.cssText = 'xdisplay:none;'; //xborder:4px outset red;';
-			addStyleId('div._contextDiv {'+c+'}','_contextDiv');
+				+'}'
+			,cl);
+		}
+		
+		var f = op.dom;
+		if (!f||op.container) {
+			f = document.createElement('div');
+			f.className = cl+(op.class?' '+op.class:'');
+
 			//add in document
 			document.body.appendChild(f);
 			if (op.dom) {
@@ -834,23 +898,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			}			
 		}
 		//*************************
-		this.center = function() {
-			if (visible) {
-				eu.hide();
-				return;
-			}
+		this.reCenter = function() {
 			var tw = window.innerWidth;//browse.getTX(document.body);
 			var two = browse.getTX(f);
-			if (two<1 && !eu.recalc) {
-				//precisa calc tamanho
-				//eb('recalc='+two);
-				eu.recalc = true;
-				browse.mostra(f);
-				setTimeout(eu.center,100);
-				return;
-			}
-			visible = true;
-			eu.recalc = false;
 			//limita Largura ?
 			two = (two<1?eu.two:two)*1.05; //para o scroll
 			if (two>tw*op.pW) {
@@ -867,6 +917,27 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			}
 			styleSet(f,'left',(tw-two)/2+'px');
 			styleSet(f,'top',(th-tho)/2+'px');
+		}
+		//*************************
+		this.center = function() {
+			if (visible) {
+				eu.hide();
+				return;
+			}
+			var two = browse.getTX(f);
+			if (two<1 && !eu.recalc) {
+				//precisa calc tamanho
+				//eb('recalc='+two);
+				eu.recalc = true;
+				browse.mostra(f);
+				setTimeout(eu.center,100);
+				return;
+			}
+			visible = true;
+			eu.recalc = false;
+			
+			eu.reCenter();
+			
 			browse.mostra(f);
 		}
 		//*************************
@@ -955,6 +1026,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			var uSvg = 'http://www.w3.org/2000/svg';
 			//uSvg = 'org.w3c.dom.svg';
 			var ret=p.doc.createElementNS(uSvg,p.tag);
+		} else if (p.tag.charAt(0)=='<') {
+			var ret = domObj({tag:'div','':p.tag}).firstChild;
+			p.tag = ret.tagName;
 		} else {
 			var ret=p.doc.createElement(p.tag);
 		}
@@ -3078,7 +3152,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	//*******************************************
 	function aeval(arr,func) {
 		var nv = 0;
-		if (typeof(arr.length)=='number') {
+		if (typeof(arr)=='undefined') {
+			return;
+		} else if (typeof(arr.length)=='number') {
 			for (var i=0;i<arr.length;i++) {
 				func(arr[i],i);
 			}
@@ -4712,15 +4788,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 				'width=600,height=700,resizable=yes,scrollbars=yes,status=1'
 			);
 			//lert(window);
-			try {
-				w.document.write(r);
-				//w.objNav = objNav;
-				//objNavAlvo = o;
-				//var zzz;
-				w.este = new objNav(o,w);
-			} catch (e) {
-				alertErro(e);
-			}
+			setTimeout(()=>{
+				try {
+					w.document.write(r);
+					//w.objNav = objNav;
+					//objNavAlvo = o;
+					//var zzz;
+					w.este = new objNav(o,w);
+				} catch (e) {
+					alertErro(e);
+				}
+			},1000);
 		}
 		//**************************//
 		function filtrar(f) {
@@ -5539,6 +5617,158 @@ function graphBar(mat,Op) {
 		return r+'</table>';
 	}
 }
+
+//*******************************//
+// janelas dependentes para jsCSSEditor
+//*******************************//
+var wDep = new Array;
+	//*******************************//
+	function existeWin(url) {
+		for(var prop in wDep) {
+			if (prop == url) {
+				var o = wDep[prop];
+				//bjNav(o.obj);
+				//lert(o.obj.focus);
+				return !o.fechada && !o.obj.closed;
+			}
+		}
+		return false;
+	}
+	//*******************************//
+	function dRegistraWin(url) {
+		alert('dreg='+url);
+		for(var prop in wDep) {
+			if (prop == url) {
+				wDep[prop].fechada = true;
+				wDep[prop].obj.close();
+				return true;
+			}
+		}
+		return false;
+	}
+	//*******************************//
+	function registraWin(obj) {
+		wDep[obj.url] = obj;
+	}
+
+
+	//********************************
+	// abre janela navegador de dialogo
+	//********************************
+	function winDep(jan,url) {
+		this.debug=false;
+		this.jan = jan;
+		this.url = url;
+		this.tipo = 0;
+		this.cascata = false;
+		this.nome = '_blank';
+		this.obj = null;
+		this.pulaClose = false;
+		this.janPos = -1;
+		this.frame=false;
+		this.centrada = true;
+		this.scr = 'yes';
+		this.stat = 'yes';
+		this.fechada = false;
+		//scroll
+  
+		this.w = 400;
+		this.h = 400;
+  
+		this.abre = winDep_abre;
+		this.centra = winDep_centra;
+		this.on = winDep_on;
+		this.fCascata = fCascata;
+		this.html = html;
+		//********************************
+		function html(txH) {
+			this.obj.innerHTML = txH;
+		}
+		//********************************
+		function winDep_on(s) {
+			if (this.frame) {
+				//lert('não sei gravar em frame...');
+				var d = browse.getId('frm',this.obj.document);
+				//objNav(d);
+				d.contentWindow.document.write(s);
+			} else {
+				this.obj.document.write(s);
+			}
+		}
+		//********************************
+		function winDep_centra() {
+			if (browse.ie) {
+				this.pX = this.jan.screenLeft+this.jan.document.body.offsetWidth/2
+				-this.w/2;
+				this.pY = this.jan.screenTop+this.jan.document.body.offsetHeight/2
+				-this.h/2;
+			} else {
+				this.pX = this.jan.screenX+this.jan.outerWidth/2-this.w/2;
+				this.pY = this.jan.screenY+this.jan.outerHeight/2-this.h/2;
+			}
+		}
+		//********************************
+		function fCascata() {
+			if (browse.ie) {
+				this.pX = this.jan.screenLeft+20;
+				this.pY = this.jan.screenTop+30;
+			} else {
+				this.pX = this.jan.screenX+20;
+				this.pY = this.jan.screenY+30;
+			}
+		}
+		//********************************
+		function winDep_abre() {
+			if (existeWin(this.url)) {
+				alert('url existe='+url);
+				return false;
+			}
+			if (this.centrada) {
+				this.centra();
+			}
+			if (this.cascata) {
+				this.fCascata();
+			}
+			//lert('x='+this.pX+' y='+this.pY);
+			var d=(this.debug?"yes":"no");
+			var t='width='+this.w+',height='+this.h
+			+(this.pX?',screenX='+this.pX+',screenY='+this.pY:'')
+			+',resizable=yes,scrollbars='+this.scr+','
+			+'toolbar='+d+',menubar='+d+',status='+this.stat;
+			//+'toolbar='+d+',menubar='+d+',status='+d;
+			//ebJ(t);
+			if (this.frame) {
+				//lert('a');
+				this.obj = window.open('about:blank',this.nome,t);
+			} else {
+				this.obj = window.open(this.url,this.nome,t);
+			}
+			//lert('ab');
+			try {
+				this.obj.focus();
+				if (this.tipo!=3) {
+					registraWin(this);
+				}
+				if (typeof(this.frame)=='number') {
+					//lert('fur='+this.url);
+					this.obj.document.write(
+						'<html><frameset rows="'+this.frame+',*" border=0 framespacing=0  frameborder=0>'
+						+'<frame id=frm2 src="'+this.url2+'" scrolling=no>'
+						+'<frame id=frm src="'+this.url+'">'
+						+'</frameset></html>'
+					);
+				} else if (this.frame) {
+					this.obj.document.write(
+						'<html><frameset rows=100% border=1 framespacing=1 frameborder=0>'
+						+'<frame id=frm src="'+this.url+'"></frameset>'
+						+'</html>'
+					);
+				}
+			} catch(e) {
+			}
+			return true;
+		}
+	}
 
 
 //}

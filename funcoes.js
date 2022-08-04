@@ -39,6 +39,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	var planetas = '☿ Mercúrio	♀ Vênus	⊕ Terra	♂ Marte	♃ Júpiter	♄ Saturno	♅ Urano	♆ Netuno';
 
 	//################################
+	// return index for prop
+	function index(obj,prop) {
+		if (typeof(obj)!='object') return false;
+		var r = {};
+		for (k in obj) {
+			var k1 = obj[k][prop];
+			if (typeof(k1)!='undefined') r[k1] = obj[k];
+		}
+		return r;
+	}
+	//################################
 	// clone object
 	function clone(obj) {
 		if (typeof(obj)!='object') return obj;
@@ -5328,14 +5339,20 @@ function estat(Nome) {
 	this.getMatriz = getMatriz;
 	var vt = 0;
 	this.length=0; //total geral
-	/****************************************************
-	this.getVetorPerc = function() {
-		var r = {};
-		for (c in v) {
-			r[c] = v[c]/vt*100.0;
-		}
-		return r;
-	}*/	
+	//****************************************************
+	this.max = function(ch,vl) {
+		var va = typeof(v[ch])=='undefined'?-999999999999:v[ch];
+		va = Math.max(vl,va);
+		v[ch] = va;
+		return va;
+	}
+	//****************************************************
+	this.min = function(ch,vl) {
+		var va = typeof(v[ch])=='undefined'?999999999999:v[ch];
+		va = Math.min(vl,va);
+		v[ch] = va;
+		return va;
+	}
 	//****************************************************
 	this.toGraphBar = function(Op) {
 		var Horiz = (''+Op.type).indexOf('co')==-1; //if not column is bar

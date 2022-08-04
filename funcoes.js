@@ -39,6 +39,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	var planetas = '☿ Mercúrio	♀ Vênus	⊕ Terra	♂ Marte	♃ Júpiter	♄ Saturno	♅ Urano	♆ Netuno';
 
 	//################################
+	// clone object
+	function clone(obj) {
+		if (typeof(obj)!='object') return obj;
+		var r = {};
+		for (k in obj) {
+			r[k] = clone(obj[k]);
+		}
+		return r;
+	}
+
+
+	//################################
 	// make links search
 	function linkSearch() {
 		var ds;

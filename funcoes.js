@@ -1209,7 +1209,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 	//***********************************************
 	/** x@constructor */
-	function domObj(p) {
+	// param obj ou text+obj
+	function domObj(p,oo) {
 		p.doc=(p.doc?p.doc:document);
 		p.tag=(p.tag?p.tag:'p');
 		//p.targ=(p.targ?p.targ:p.doc.body);
@@ -1219,11 +1220,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			//uSvg = 'org.w3c.dom.svg';
 			var ret=p.doc.createElementNS(uSvg,p.tag);
 		} else if (typeof(p)=='string' && p.charAt(0)=='<') {
-			return domObj({tag:'div','':p}).firstChild;
-			//return red;
-			//p.tag = ret.tagName;
+			var ret = domObj({tag:'div','':p}).firstChild;
+			if (!oo) return;
+			p = oo;
 		} else {
 			var ret=p.doc.createElement(p.tag);
+			if (!oo) return;
+			p = oo;
 		}
 		//onsole.log(p);
 		for (var i in p) {

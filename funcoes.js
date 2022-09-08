@@ -1211,22 +1211,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	/** x@constructor */
 	// param obj ou text+obj
 	function domObj(p,oo) {
+		var ret;
+		if (typeof(p)=='string' && p.charAt(0)=='<') {
+			ret = domObj({tag:'div','':p}).firstChild;
+			if (!oo) return ret;
+			p = oo;
+		}
 		p.doc=(p.doc?p.doc:document);
 		p.tag=(p.tag?p.tag:'p');
-		//p.targ=(p.targ?p.targ:p.doc.body);
-		//lert(p.svg);
-		if (p.svg) {
+		if (ret) {
+		} else if (p.svg) {
 			var uSvg = 'http://www.w3.org/2000/svg';
 			//uSvg = 'org.w3c.dom.svg';
-			var ret=p.doc.createElementNS(uSvg,p.tag);
-		} else if (typeof(p)=='string' && p.charAt(0)=='<') {
-			var ret = domObj({tag:'div','':p}).firstChild;
-			if (!oo) return;
-			p = oo;
+			ret=p.doc.createElementNS(uSvg,p.tag);
 		} else {
-			var ret=p.doc.createElement(p.tag);
-			if (!oo) return;
-			p = oo;
+			ret=p.doc.createElement(p.tag);
 		}
 		//onsole.log(p);
 		for (var i in p) {

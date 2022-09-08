@@ -15,6 +15,87 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+//********************************************
+// clock
+//********************************************
+function relogio(Op) {
+	var pH,db,pM,pS,vA={};
+	var rlg;
+	var op = mergeOptions({w:80},Op);
+	//op.pW = Math.floor((Math.max(0.5,op.w/400)+0.5)*2); //par inteiro
+	op.pW = Math.max(0.75,op.w/200); //par inteiro
+	this.dom = function() {
+		return rlg;
+	}
+	init();
+	function init() {
+		var db = 0,w,h;
+		rlg = domObj({tag:'figure'});
+		var bs = domObj({tag:'div',targ:rlg
+			,style:'background-color:#8822ff;position:relative;'
+				+'width:'+op.w+'px;height:'+op.w+'px;border-radius:'+op.w+'px;'
+				+'background-image:linear-gradient(#A46FDE, #7437BB);'
+				+'box-shadow:'+op.oW*3+'px '+op.oW*3+'px '+op.oW*10+'px #555;'
+		});
+		//marcas
+		for (var h=0;h<6;h++) {
+			var g = op.pW*2*(h%3==0?3:1);
+			domObj({tag:'table',targ:bs
+				,style:'border-spacing:0;border-collapse:colapse;'
+					+'width:'+op.w+'px;'//+'height:'+g+'px;'
+					+'position:absolute;top:50%;margin-top:-'+g/2+'px;'
+					+'transform:rotate('+(360/12*h)+'deg);'
+				,'':'<tr>'
+					+'<td style="width:5%;background-color:red;height:'+g+'px;"></td>'
+					+'<td style="width:90%;"></td>'
+					+'<td style="width:5%;background-color:red;"></td>'
+			});
+		}
+		var pont = (w,h)=>{
+			return domObj({tag:'div',targ:bs
+				,style:'width:'+op.w+'px;'//height:'+h+'px;'
+					+'position:absolute;top: 50%;'//margin-top: -'+h/2+'px;'
+				,'':domObj({tag:'div'
+					,style:'background-color:#FFF;'
+						+'width:'+(w*1.17)+'px;'+'height:'+h+'px;'
+						+'margin-left:'+(op.w/2-w*0.17)+'px;margin-top:-'+h/2+'px;'
+						+'border-radius:'+h/2+'px;box-shadow:'+op.pW+'px '+op.pW+'px '+h+'px #333;'
+					})
+			});
+		}
+		//pont horas
+		var pH = pont(op.w/3.3,op.pW*4);
+		//pont min
+		var pM = pont(op.w/2.6,op.pW*3)
+		//pont seg
+		var pS = pont(op.w/2.2,op.pW*2);
+		
+		setInterval(()=> {
+			
+			var d = new Date();
+			
+			var rot = (ob,gr)=>{
+				if (vA[ob]==gr)	debJ('rot '+ob);
+				if (vA[ob]==gr) return;
+				vA[ob] = gr;
+				q(ob).css({
+					"transform": "rotate(" +gr+ "deg)"
+				});
+			}
+			
+			// SEGS
+			rot(pS,360 / 60 * (d.getSeconds()-15));
+			// MIN
+			rot(pM,360 / 60 * (d.getMinutes()-15));
+			// HORA
+			//rot(pH,360 / 12 * (d.getHours()-3));
+			rot(pH,360 / 48 * (d.getHours()*4+Math.floor(d.getMinutes()/15)-12));
+			
+		},1000);
+	}
+}
+
+
 
 //********************************************
 // svg graph line

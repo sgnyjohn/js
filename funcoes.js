@@ -38,6 +38,193 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	var _c = console.log;
 	var planetas = '☿ Mercúrio	♀ Vênus	⊕ Terra	♂ Marte	♃ Júpiter	♄ Saturno	♅ Urano	♆ Netuno';
 
+
+	//***********************************************
+	//recriando o jquery ?
+	function q(str) {
+		var vDom;
+		if (typeof(str)=='string') {
+			vDom = document.querySelectorAll(str);
+		} else if (typeof(str.length)!='undefined') {
+			vDom = str;
+		} else {
+			vDom = [str];
+		}
+		return new obj(vDom);
+		//dom to obj
+		function obj(VDom) {
+			//ebJ('ob '+str+' '+VDom.length);
+			var vDom = VDom;
+			//******************************************
+			// retorna txt.
+			this.txt = function() {
+				function domTxt(dom) {
+					var tn = dom.tagName?dom.tagName.toUpperCase():'';
+					var dl=' ';
+					if (tn=='P'||tn=='TABLE'||tn=='TBODY'||tn.charAt(0)=='H') {
+						dl='\n';
+					} else if (tn=='TR') {
+						dl='\t';
+					}
+					var r = '';
+					if (dom.childNodes&&dom.childNodes.length>0) {
+						for (var i=0;i<dom.childNodes.length;i++) {
+							r += dl+domTxt(dom.childNodes.item(i));
+						}
+						//lert('tn='+tn+' '+r);
+						return r.substring(dl.length);
+					}
+					return dom.textContent;
+				}
+				var r = '';
+				aeval(vDom,(dom)=>{
+					r += '\n'+domTxt(dom);
+				});
+				return r.substring(1);
+			}
+			//******************************************
+			// seta prp{} com seus vlrs
+			// ou seta no estiloStr prp op{} e seus valores
+			// ou setaStr prp com opStr
+			this.css = function(prp,op) {
+				var stn;
+				if (typeof(prp)=='string') {
+					if (typeof(op)=='object') {
+						//tag style
+						stn = prp;
+						prp = op;
+					} else {
+						//transf em obj
+						var r = {};
+						r[prp] = op;
+						prp = r;
+					}
+				}
+				if (stn) {
+					//tag style
+					aeval(vDom,(dom)=>{
+						var ob1 = new oObj(dom.innerHTML,'}','{');
+						ob = new oObj(ob1.get(stn));
+						for (ch in prp) {
+							//ebJ(str+' '+dom+' '+ch+'='+prp[ch]);
+							ob.set(ch,prp[ch]);
+						}
+						//ebJ(str+' '+dom+' '+ob.text());
+						ob1.set(stn,ob.text());
+						dom.innerHTML = ob1.text();
+					});
+				} else {
+					//attributos style
+					aeval(vDom,(dom)=>{
+						var ob = new oObj(dom.style.cssText);
+						for (ch in prp) {
+							//ebJ(str+' '+dom+' '+ch+'='+prp[ch]);
+							ob.set(ch,prp[ch]);
+						}
+						//ebJ(str+' '+dom+' '+ob.text());
+						dom.style.cssText = ob.text();
+					});
+				}
+			}
+		}
+		//texto <==> obj
+		function oObj(tx,Dl1,Dl2) {
+			var dl1 = Dl1?Dl1:';';
+			var dl2 = Dl2?Dl2:':';
+			var obj = {};
+			aeval(tx.split(dl1),(x)=>{
+				var p = x.indexOf(dl2);
+				obj[ trimm(x.substring(0,p)) ] = trimm(x.substring(p+1));
+			});
+			// set prp
+			this.set = (p,v) => {
+				obj[p] = v;
+			}
+			// obj => text
+			this.text = () => {
+				var r = '';
+				for (ch in obj) {
+					if (!vazio(ch)) r += ch+dl2+' '+obj[ch]+dl1;
+				}
+				return r;
+			}
+		}
+	}
+
+
+
+	//////////////////////
+	// lixo, permissa errada, o 
+	// correto é q há 2 maneiras de acentuar em utf8,
+	// além do normal há os acentos postecipados (que "embutem" backspace)
+	/*function isoToUtf(str) {
+		//poe em obj html e pega innerhtml
+		var r = domObj({tag:'p','':str}).innerHTML;
+		var t = '';
+		aeval(r,(a)=>{t+=decToHex(a.charCodeAt(0))+'='+a+' ';})
+		debJ('isoToUtf: '+str
+			+'\n'+t
+		);
+		alert('debj t='+t);
+		return r;
+		function getHash() {
+			var ch = 'isoToUtfHash';
+			var gl = global(ch);
+			if ( gl[ch] ) {
+				return gl[ch];
+			}
+			var toBin=(c)=>{
+				var v = c.split(' ');
+				var r = '';
+				aeval(v,(x)=>{
+					r += String.fromCharCode(hexToDec(x));
+				});
+				return trimm(r);
+			}
+			//tab conv copy from html
+			var vUtf=toBin('61 3A E1 E2 E3 E0 0A 65 3A E9 EA 0A 69 3A ED 0A 6F 3A F3 F4 F5 0A 75 3A FA FC 0A 63 3A E7 0A 41 3A C1 C2 C3 C0 0A 45 3A C9 CA 0A 49 3A CD 0A 4F 3A D3 D4 D5 0A 55 3A DA DC 0A 43 3A C7 0A');
+			//tabela conv arquivo disco = web?
+			var vUtf=toBin('61 3a c3 a1 c3 a2 c3 a3 c3 a0 0a 65 3a c3 a9 c3 aa 0a 69 3a c3 ad 0a 6f 3a c3 b3 c3 b4 c3 b5 0a 75 3a c3 ba c3 bc 0a 63 3a c3 a7 0a 41 3a c3 81 c3 82 c3 83 c3 80 0a 45 3a c3 89 c3 8a 0a 49 3a c3 8d 0a 4f 3a c3 93 c3 94 c3 95 0a 55 3a c3 9a c3 9c 0a 43 3a c3 87 0a').split('\n');
+			//iso
+			var vIso=toBin('61 3a e1 e2 e3 e0 0a 65 3a e9 ea 0a 69 3a ed 0a 6f 3a f3 f4 f5 0a 75 3a fa fc 0a 63 3a e7 0a 41 3a c1 c2 c3 c0 0a 45 3a c9 ca 0a 49 3a cd 0a 4f 3a d3 d4 d5 0a 55 3a da dc 0a 43 3a c7 0a').split('\n');
+			if (vUtf.length!=vIso.length) {
+				alert('ERRO 1 isotoutf '+vUtf.length+' '+vIso.length);
+				return;
+			}
+			r = {};
+			for (var i=0;i<vUtf.length;i++) {
+				var tu=vUtf[i];
+				var ti=vIso[i];
+				var semAcento = leftAt(tu,':');
+				if (semAcento != leftAt(ti,':')) {
+					alert('ERRO 2 isotoutf '+semAcento+' != '+leftAt(ti,':'));
+					return;
+				}
+				if ( (tu.length-2)/(ti.length-2) != 2 ) {
+					alert('ERRO 3 isotoutf '+((tu.length-2)/(ti.length-2))+' != 2 ti='+ti+' tu='+tu);
+					return;
+				}
+				for (var c=2;c<tu.length;c+=2) {
+					deb(i+' '+c+' add '+ti.substring(c/2+1,c/2+2)+'=>'+tu.substring(c,c+2));
+					r[ti.substring(c/2+1,c/2+2)] = tu.substring(c,c+2);
+				}
+			}
+			//lert('hash ok '+r);
+			gl[ch] = r;
+			return r;
+		}
+		var r = '';
+		var h = getHash();
+		for (var i=0;i<str.length;i++) {
+			var c = str.charAt(i);
+			r += h[c]?h[c]:c;
+		}
+		//lert('fim '+str.length+' => '+r.length);
+		return r;
+	}
+	*/
+
+
 	//################################
 	// return index for prop
 	function index(obj,prop) {
@@ -129,6 +316,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 	//################################
 	//################################
+	// falta resolver utf-8... 
+	//		1 input meleca html aceita colar utf8 e o digitado resulta em iso-8859-1
+	//		2 o regexpr ignore acentuação funciona apenas com iso, não utf
 	/** @constructor */
 	function strPesq(o) {
 		// validar portugues pt 
@@ -137,7 +327,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		
 		//vetor acentos
 		////áàâãéêíóôõúüñç
-		var va = {'a' : 'áàâã'
+		var va = {
+			 'a' : 'áàâã'
 			,'e' : 'éê'
 			,'i' : 'í'
 			,'o' : 'óôõ'
@@ -181,7 +372,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 				}
 				r += c;
 			}
-			deb('pq='+r);
+			deb('pq='+r+' tm='+t.length);
 			return r;
 		}
 		//###################################
@@ -430,10 +621,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	var _global = {};
 	function global(s,df) {
 		if (typeof(_global[s])=='undefined') {
-			_global[s] = df?df:{};
+			_global[s] = typeof(df)!='undefined'?df:{};
 		}
 		return _global[s];
 	}
+
+	//**********************************************
 	//**********************************************
 	//developer
 	var alertDev = deb;
@@ -500,6 +693,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			e[e.length] = [str,ms()];
 		}
 	}
+
+	//**********************************************
+	//**********************************************
+
 	//se celular touch transforma title em box
 	function domTitleMobile(ds) {
 		if (browse.mobile) {
@@ -1009,34 +1206,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		this.close = this.hide;
 	}
 
-	//***********************************************
-	function q(a) {
-		//alert('erro,não implementado');return;
-		if (typeof(a)=='string') {
-			a = document.querySelectorAll(a);
-		}
-		if (typeof(a)=='object') {
-			if (this==window) {
-				var r = new q(a);
-				r.q = q;
-				return r;
-			}
-			this.v = a.length?a:[a];
-			return this;
-		} else if (typeof(a)=='function') {
-			aeval(this.v,a);
-			return this;
-		} else {
-			alert('p1 typeof='+typeof(a)+' sem funcao!');
-		}
-		//*******************************************
-		this.add = function(op) {
-			op.targ = this.v[0];
-			var o = domObj(op);
-			return new q(o);
-		}
-	}
-
 
 	//***********************************************
 	/** x@constructor */
@@ -1049,9 +1218,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			var uSvg = 'http://www.w3.org/2000/svg';
 			//uSvg = 'org.w3c.dom.svg';
 			var ret=p.doc.createElementNS(uSvg,p.tag);
-		} else if (p.tag.charAt(0)=='<') {
-			var ret = domObj({tag:'div','':p.tag}).firstChild;
-			p.tag = ret.tagName;
+		} else if (typeof(p)=='string' && p.charAt(0)=='<') {
+			return domObj({tag:'div','':p}).firstChild;
+			//return red;
+			//p.tag = ret.tagName;
 		} else {
 			var ret=p.doc.createElement(p.tag);
 		}
@@ -1416,6 +1586,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	//**************************
 	// load seq of XMLHttpRequest
 	// obj de obj -> 0 -> n {0:{url:'',callback:function,timeout},timeout:60,callback:?}
+	// usado em covid
 	function loader(op) {
 		//default op
 		var op = mergeOptions({timeout:30,msegs:200,withCredentials:true},op);
@@ -3227,6 +3398,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		return c.charCodeAt(0);
 	}
 	//**************************//
+	function hexToDec(c) {	
+		var c = trimm(c).toUpperCase();
+		var t = c.length;
+		var r = 0;
+		for (var i=0;i<t;i++) {
+			r += "0123456789ABCDEF".indexOf(c.substring(i,i+1))*Math.pow(16,(t-i-1));
+		}
+		return r;
+	}
+	//**************************//
 	function decToHex(c) {
 		if (c==256) return 'FF';
 		while (c<0) c += 256;
@@ -3540,6 +3721,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	function domRemove(ob) {
 		ob.parentNode.removeChild(ob);
 	}
+	
 	//*********************************
 	function carregaObj(url,id,id1) {
 		//ert('url='+url+' id='+id+' id1='+id1);
@@ -3559,7 +3741,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		this.abre = abre;
 		this.carregaObj = carregaObj;
 		this.js = js;
-		this.charSet = 'ISO-8859-1';
+		this.charSet = 'utf-8';//'ISO-8859-1';
 		var vHead = new Array();
 		var xmlhttp=false;
 		this.debug = false;

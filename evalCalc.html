@@ -2,6 +2,7 @@
 <head>
 <title>eval calc....</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta charset="UTF-8">
 
 <script language=JavaScript src=/js/func.js></script>
 <script language=JavaScript src=/js/funcoes.js></script>
@@ -12,7 +13,11 @@
 
 <script>
 var divR;
-var __xx_xxzzzz_ = function(){return eval(arguments[0])};
+
+var __xx_xxzzzz_ = function(){
+	debJ('vai exec: '+arguments[0]);
+	return eval(arguments[0])
+};
 
 function tab(ob) {
 	var v = document.getElementsByTagName('textarea');
@@ -81,6 +86,7 @@ function verEval(ob) {
 		if (vazio(v[i]) && !vazio(ex)) {
 			try {
 				xx=(__xx_xxzzzz_)(ex);
+				//retornou um objeto? ... adiciona html em table body
 				if (xx && xx.tagName) {
 					var x = document.getElementsByTagName('td')[3];
 					x.appendChild(domObj({tag:'hr'}));
@@ -113,7 +119,7 @@ setTimeout(verEval,100);
 <table style="width:100%;xheight:90%;border:2px solid blue;background-color:#eefeee;">
 
 <tr>
-<td  style="width:48%;text-align:center;">code<br>
+<td  style="width:48%;text-align:center;">code (empty line blocks)<br>
 <textarea style="width:95%;height:90%;" rows=20 
 	onchange="javascript:verEval(this);"
 	onblur="javascript:verEval(this);"
@@ -150,6 +156,19 @@ objDebug(window.navigator)
 
 
 </table>
+
+<p>a:áâãà</p>
+<p>e:éê</p>
+<p>i:í</p>
+<p>o:óôõ</p>
+<p>u:úü</p>
+<p>c:ç</p>
+<p>A:ÁÂÃÀ</p>
+<p>E:ÉÊ</p>
+<p>I:Í</p>
+<p>O:ÓÔÕ</p>
+<p>U:ÚÜ</p>
+<p>C:Ç</p>
 
 
 </body>

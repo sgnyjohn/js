@@ -8,7 +8,7 @@
   * o loader controla todas as respostas e passará para a classe js 
   * 	- user logado
   * 	- person VS user: user is person logged.
-  * 
+  *  
   
 */
 
@@ -33,7 +33,7 @@ window.addEventListener('load',() => {
 			try {
 				eval(func);
 			} catch (e) {
-				alert('APP '+nomeApp+' not func and eval error expr ('+func+')');
+				alert('APP '+nomeApp+' not func and eval error expr ('+func+')\n\n'+erro(e));
 			}
 		}
 	}
@@ -84,12 +84,12 @@ window.addEventListener('load',() => {
 								//executa 
 								exec(nome,func);
 							} else {
-								//app nova, criar.
+								//not loaded js, app nova, criar.
 								loadJs(jsDir+'/'+nome,{load:()=>{
 									deb('load: '+nome+'.js OK, criar obj ('+func+')');
 									//armazena app e apos executa
 									apps[nome] = new window[nome]();
-									exec(nome,func);
+									exec(nome,'init',func);
 								}});
 							}
 							//windows.init();

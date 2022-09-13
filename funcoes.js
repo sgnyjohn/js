@@ -38,7 +38,28 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	var _c = console.log;
 	var planetas = '☿ Mercúrio	♀ Vênus	⊕ Terra	♂ Marte	♃ Júpiter	♄ Saturno	♅ Urano	♆ Netuno';
 
+	function tempo(dif) {
+		//dif = dif/1000;
+		var ar = (x)=>{return Math.floor(x+0.5)};
+		var sg = ar(dif%60);dif = dif/60;
+		var mi = ar(dif%60);dif = dif/60;
+		var hr = ar(dif%24);
+		var di = ar(dif/24);
+		return (di>0?di+"d ":"")
+			+(hr>0?hr+"h ":"")
+			+(mi>0?mi+"m ":"")
+			+sg+"s "
+		;
+	}
 
+	//***********************************************
+	function asearch(obj,prp,vl) {
+		for (var i=0;i<obj.length;i++) {
+			//debJ(prp+'='+v[prp]+'='+vl+'=>'+(v[prp]==vl));
+			if (obj[i][prp] == vl) return obj[i];
+		}
+	}
+	
 	//***********************************************
 	//recriando o jquery ?
 	function q(str) {
@@ -2082,6 +2103,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		//*****************************************
 		function init() {
 			var rows = obj.getElementsByTagName('tr');
+			if (rows.length==0) return;
 			//store original position on row 'ord' attribute...
 			for (var i=1;i<rows.length;i++) {
 				rows[i].setAttribute('ord',i);
@@ -5624,7 +5646,9 @@ function estat(Nome) {
 	function toHtml() {
 		var v1 = getMatriz();
 		v1.sort(function(a,b){return fSort(b[1],a[1])});
-		var r = '<table border=1>';
+		var r = '<table class="estat" border=1>'
+			+'<tr><th>'+nome+'<th>vl'
+		;
 		for(var i=0;i<v1.length;i++) {
 			r += '<tr><td>'+v1[i][0]+'<td>'+format(v1[i][1],0);
 		}

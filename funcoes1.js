@@ -16,6 +16,74 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 //********************************************
+// pendulo
+// usage document.body.appendChild((new pendulo({h:200,gr:25,segs:1})).dom());
+//********************************************
+function pendulo(Op) {
+	//var pH,db,pM,pS,vA={};
+	var ret;
+	var op = mergeOptions({h:80,segs:1.5,gr:25,class:'_pndl_'},Op);
+	//op.pW = Math.floor((Math.max(0.5,op.w/400)+0.5)*2); //par inteiro
+	op.bord = Math.max(0.75,op.h/200); //par inteiro
+	op.h1 = op.h1?op.h1:op.h*0.8;
+	op.h2 = op.h2?op.h2:op.h*0.2;
+	op.h3 = op.h2/2;
+	op.w = 2*Math.min(Math.tan(op.gr*Math.PI/180)*op.h,op.h);
+	op.lf = op.w/2-op.h3*2;
+	//ebJ(op.w+' '+op.lf);
+	this.dom = function() {
+		return ret;
+	}
+	init();
+	function init() {
+		//style
+		var st = `
+			div.[class] {
+				height:[h]px;
+				width:[w]px;
+				xborder:1px solid;
+			}
+			div.[class] li.ball1 {
+				display: inline-block;
+				height: [h1]px;
+				border: [bord]px solid #C1D0D0;
+				position: relative;
+				transform-origin: top;
+				margin-left:[lf]px;
+				animation: [class]bal [segs]s ease-in-out infinite; 
+			}
+			div.[class] li.ball1::before {
+				content: '';
+				position: absolute;
+				width: [h2]px;
+				height: [h2]px;
+				background: #C1D0D0;
+				border-radius: 100%;
+				top: 100%;
+				left: -[h3]px;
+			}
+			@keyframes [class]bal {
+				0%,50%,100% { 
+					transform: rotate(-[gr]deg); 
+				}
+				50% { 
+					transform: rotate([gr]deg); 
+				}
+			}		
+		`;
+		aeval(op,(vl,ch)=>{st=troca(st,'['+ch+']',''+vl)});
+		//ebJ(st);
+		addStyleId(st,op.class);
+		//rlg = domObj({tag:'figure'});
+		ret = domObj({tag:'div',class:op.class
+			,'':'<ul class="ball-group1">'
+					+'<li class="ball1"></li>'
+				+'</ul>'
+		});
+	}
+}
+
+//********************************************
 // clock
 //********************************************
 function relogio(Op) {
@@ -30,19 +98,20 @@ function relogio(Op) {
 	init();
 	function init() {
 		var db = 0,w,h;
-		rlg = domObj({tag:'figure'});
-		var bs = domObj({tag:'div',targ:rlg
+		//rlg = domObj({tag:'figure'});
+		var bs = domObj({tag:'div'//,xtarg:rlg
 			,style:'background-color:#8822ff;position:relative;'
 				+'width:'+op.w+'px;height:'+op.w+'px;border-radius:'+op.w+'px;'
 				+'background-image:linear-gradient(#A46FDE, #7437BB);'
 				+'box-shadow:'+op.oW*3+'px '+op.oW*3+'px '+op.oW*10+'px #555;'
 		});
+		rlg = bs;
 		//marcas
 		for (var h=0;h<6;h++) {
 			var g = op.pW*2*(h%3==0?3:1);
 			domObj({tag:'table',targ:bs
 				,style:'border-spacing:0;border-collapse:colapse;'
-					+'width:'+op.w+'px;'//+'height:'+g+'px;'
+					+'width:'+op.w+'px;height:'+g+'px;'
 					+'position:absolute;top:50%;margin-top:-'+g/2+'px;'
 					+'transform:rotate('+(360/12*h)+'deg);'
 				,'':'<tr>'
@@ -53,12 +122,12 @@ function relogio(Op) {
 		}
 		var pont = (w,h)=>{
 			return domObj({tag:'div',targ:bs
-				,style:'width:'+op.w+'px;'//height:'+h+'px;'
-					+'position:absolute;top: 50%;'//margin-top: -'+h/2+'px;'
+				,style:'width:'+op.w+'px;height:'+h+'px;'
+					+'position:absolute;top: 50%;margin-top: -'+h/2+'px;'
 				,'':domObj({tag:'div'
 					,style:'background-color:#FFF;'
 						+'width:'+(w*1.17)+'px;'+'height:'+h+'px;'
-						+'margin-left:'+(op.w/2-w*0.17)+'px;margin-top:-'+h/2+'px;'
+						+'margin-left:'+(op.w/2-w*0.17)+'px;'//margin-top:-'+h/2+'px;'
 						+'border-radius:'+h/2+'px;box-shadow:'+op.pW+'px '+op.pW+'px '+h+'px #333;'
 					})
 			});

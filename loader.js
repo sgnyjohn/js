@@ -167,7 +167,7 @@ window.addEventListener('load',() => {
 			}
 			if (typeof(appProp.init)=='string') {
 				x=1;
-				window[appProp.init](this);
+				if (!vazio(appProp.init)) window[appProp.init](this);
 			} else if (typeof(appProp.init)=='function')
 			 appProp.init(this);
 			else {

@@ -22,14 +22,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 function pendulo(Op) {
 	//var pH,db,pM,pS,vA={};
 	var ret;
-	var op = mergeOptions({h:80,segs:1.5,gr:25,class:'_pndl_'},Op);
+	var op = mergeOptions(
+		{h:80,segs:1.5,gr:25,class:'_pndl_'}
+	,Op);
 	//op.pW = Math.floor((Math.max(0.5,op.w/400)+0.5)*2); //par inteiro
 	op.bord = Math.max(0.75,op.h/200); //par inteiro
 	op.h1 = op.h1?op.h1:op.h*0.8;
 	op.h2 = op.h2?op.h2:op.h*0.2;
 	op.h3 = op.h2/2;
-	op.w = 2*Math.min(Math.tan(op.gr*Math.PI/180)*op.h,op.h);
-	op.lf = op.w/2-op.h3*2;
+	//op.w = 2*Math.min(Math.tan(op.gr*Math.PI/180)*op.h,op.h);
+	op.w = 2*op.h*Math.sin(op.gr*Math.PI/180)+op.h2/2;
+	op.lf = op.w/2-op.h2*2.125;
+	op.h += op.h2;
 	//ebJ(op.w+' '+op.lf);
 	this.dom = function() {
 		return ret;
@@ -41,9 +45,9 @@ function pendulo(Op) {
 			div.[class] {
 				height:[h]px;
 				width:[w]px;
-				xborder:1px solid;
+				border:0px solid;
 			}
-			div.[class] li.ball1 {
+			div.[class] li.ball {
 				display: inline-block;
 				height: [h1]px;
 				border: [bord]px solid #C1D0D0;
@@ -52,7 +56,7 @@ function pendulo(Op) {
 				margin-left:[lf]px;
 				animation: [class]bal [segs]s ease-in-out infinite; 
 			}
-			div.[class] li.ball1::before {
+			div.[class] li.ball::before {
 				content: '';
 				position: absolute;
 				width: [h2]px;
@@ -76,8 +80,8 @@ function pendulo(Op) {
 		addStyleId(st,op.class);
 		//rlg = domObj({tag:'figure'});
 		ret = domObj({tag:'div',class:op.class
-			,'':'<ul class="ball-group1">'
-					+'<li class="ball1"></li>'
+			,'':'<ul class="ball-group">'
+					+'<li class="ball"></li>'
 				+'</ul>'
 		});
 	}

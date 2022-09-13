@@ -67,6 +67,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		if (typeof(str)=='string') {
 			vDom = document.querySelectorAll(str);
 		} else if (typeof(str.length)!='undefined') {
+			//array
 			vDom = str;
 		} else {
 			vDom = [str];
@@ -2103,7 +2104,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		//*****************************************
 		function init() {
 			var rows = obj.getElementsByTagName('tr');
-			if (rows.length==0) return;
+			if (rows.length<3) return;
 			//store original position on row 'ord' attribute...
 			for (var i=1;i<rows.length;i++) {
 				rows[i].setAttribute('ord',i);

@@ -107,21 +107,26 @@ function relogio(Op) {
 			,style:'background-color:#8822ff;position:relative;'
 				+'width:'+op.w+'px;height:'+op.w+'px;border-radius:'+op.w+'px;'
 				+'background-image:linear-gradient(#A46FDE, #7437BB);'
-				+'box-shadow:'+op.oW*3+'px '+op.oW*3+'px '+op.oW*10+'px #555;'
+				//+'box-shadow:'+op.oW*3+'px '+op.oW*3+'px '+op.oW*10+'px #555;'
 		});
 		rlg = bs;
 		//marcas
+		var td = '<td style="width:5%;background-color:red;height:'+g+'px;'
+				//'box-shadow:'+op.oW*3+'px '+op.oW*3+'px '+op.oW*10+'px #555;'
+				//+'border-radius:'+g+'px;'
+		+'"></td>';
 		for (var h=0;h<6;h++) {
 			var g = op.pW*2*(h%3==0?3:1);
 			domObj({tag:'table',targ:bs
-				,style:'border-spacing:0;border-collapse:colapse;'
-					+'width:'+op.w+'px;height:'+g+'px;'
-					+'position:absolute;top:50%;margin-top:-'+g/2+'px;'
+				,style:'border-spacing:0;border-collapse:collapse;'
+					+'width:'+op.w+'px;height:'+g+'px;'//border-radius:'+op.w+'px;'
+					//+'position:absolute;top:50%;margin-top:-'+g/2+'px;'
+					+'position:absolute;top:'+(op.w/2-g/2)+'px;'//margin-top:-'+g/2+'px;'
 					+'transform:rotate('+(360/12*h)+'deg);'
 				,'':'<tr>'
-					+'<td style="width:5%;background-color:red;height:'+g+'px;"></td>'
-					+'<td style="width:90%;"></td>'
-					+'<td style="width:5%;background-color:red;"></td>'
+					+td
+					+'<td></td>'
+					+td
 			});
 		}
 		var pont = (w,h)=>{
@@ -148,7 +153,7 @@ function relogio(Op) {
 			var d = new Date();
 			
 			var rot = (ob,gr)=>{
-				if (vA[ob]==gr)	debJ('rot '+ob);
+				//if (vA[ob]==gr)	debJ('rot '+ob);
 				if (vA[ob]==gr) return;
 				vA[ob] = gr;
 				q(ob).css({

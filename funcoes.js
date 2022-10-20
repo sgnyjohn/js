@@ -37,7 +37,35 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	var browse = {};	
 	var _c = console.log;
 	var planetas = '☿ Mercúrio	♀ Vênus	⊕ Terra	♂ Marte	♃ Júpiter	♄ Saturno	♅ Urano	♆ Netuno';
-
+	//***********************************************
+	// object or json - return prop path del by .
+	function getObjPath(obj,path) {
+		var v = path.split('.');
+		for (var i=0;i<v.length;i++) {
+			obj = obj[v[i]];
+		}
+		return obj;
+	}
+	//***********************************************
+	// object or json - return props and parent
+	function getByProp(obj,propName) {
+		var r = {};
+		function a(obj,propName,r) {
+			for (k in obj) {
+				if (k==propName) {
+					r[r.length] = {o:obj[k],p:obj};
+				} else if (typeof(obj[k])=='object') {
+					getByProp(obj[k],propName,r);
+				}
+			}
+		}
+		return a(obj,propName,r);
+	}
+	//***********************************************
+	function isDom(o) {
+		return o && o.tagName;
+	}
+	//***********************************************
 	function tempo(dif) {
 		//dif = dif/1000;
 		var ar = (x)=>{return Math.floor(x+0.5)};
@@ -51,7 +79,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			+sg+"s "
 		;
 	}
-
 	//***********************************************
 	function asearch(obj,prp,vl) {
 		for (var i=0;i<obj.length;i++) {
@@ -59,7 +86,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			if (obj[i][prp] == vl) return obj[i];
 		}
 	}
-	
 	//***********************************************
 	//recriando o jquery ?
 	function q(str) {
@@ -112,7 +138,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 				var stn;
 				if (typeof(prp)=='string') {
 					if (typeof(op)=='object') {
-						//tag style
+						//setar em tagName=style
 						stn = prp;
 						prp = op;
 					} else {
@@ -143,7 +169,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 							//ebJ(str+' '+dom+' '+ch+'='+prp[ch]);
 							ob.set(ch,prp[ch]);
 						}
-						//ebJ(str+' '+dom+' '+ob.text());
+						//lert(str+' '+dom+' '+ob.text());
 						dom.style.cssText = ob.text();
 					});
 				}
@@ -561,12 +587,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 	//**********************************************
 	// carrega script e init objeto com param
-	function op(Prefix) {
+	function op(Prefix,Url) {
 		var eu = this;
 		this.ok = false;
+		var url = (Url?Url:'?op=op');
 		var prefix=Prefix?Prefix+'.':'';
 		var vOp = global('vOp',{});
 		init();
+		//****************************************************
+		this.loadOps = function(prf) {
+			var r = new op(prefix+prf,url);
+			return r;
+		}		
 		// get OP - remov cookies
 		this.getHash = () => {
 			var r = {};
@@ -586,7 +618,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		// set OP - remov cookies
 		this.set = (ch,vl) => {
 			vOp[prefix+ch]=vl;
-			(new carregaUrl()).abre('?op=op&'+prefix+ch+'='+encodeURIComponent(vl)
+			(new carregaUrl()).abre(url+'&'+prefix+ch+'='+encodeURIComponent(vl)
 				,(a,b,tx)=>{}
 			);
 		}
@@ -597,8 +629,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		// load OP
 		function init() {
 			if (vOp.__loaded__) return;
-			(new carregaUrl()).abre('?op=op',(a,b,tx)=>{
-				//lert('op prf='+prefix+' '+tx);
+			(new carregaUrl()).abre(url,(a,b,tx)=>{
+				//lert(url+' ==> op prf='+prefix+'\n\n'+tx);
 				var v = tx.split('\n');
 				aeval(v,(vl)=>{
 					var p = vl.indexOf('=');
@@ -607,6 +639,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 						vOp[ch] = trimm(vl.substring(p+1));
 					}
 				});
+				//eb('op=',vOp);
 				vOp.__loaded__ = true;
 			});
 		}
@@ -1247,7 +1280,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			//uSvg = 'org.w3c.dom.svg';
 			ret=p.doc.createElementNS(uSvg,p.tag);
 		} else {
-			ret=p.doc.createElement(p.tag);
+			if (p.tag.charAt(0)=='<') {
+				ret = domObj({tag:'div','':trimm(p.tag)}).firstChild;
+			} else {
+				ret=p.doc.createElement(p.tag);
+			}
 		}
 		//onsole.log(p);
 		for (var i in p) {
@@ -1611,9 +1648,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	// load seq of XMLHttpRequest
 	// obj de obj -> 0 -> n {0:{url:'',callback:function,timeout},timeout:60,callback:?}
 	// usado em covid
+	// falta / toDo = aguardar as tarefas executadas apos a carga de cada uma
+	//		- opção para serem seriais ? bx,ex;bx,ex... ou bx,bx,.. várais possibilidades
 	function loader(op) {
+		var eu = this;
 		//default op
-		var op = mergeOptions({timeout:30,msegs:200,withCredentials:true},op);
+		mergeOptions({timeout:30,msegs:200,withCredentials:true,nvEnd:0},op);
 		var i=0;
 		while (op[i]) {
 			op[i] = mergeOptions({timeout:op.timeout},op[i]);
@@ -1621,9 +1661,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		}
 		if (i==0) {
 			eu.error = 'no task XMLHttpRequest informed {0:{},...}'
+			end(true);
 			return;
 		}
-		var eu = this;
 		var pos = 0;
 		this.end = false;
 		setTimeout(next);
@@ -1657,8 +1697,29 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			return oReq;		
 		}
 		//**************************
-		function end(v) {
-			this.end = v;
+		function end() {
+			//sim sem erro, verifica se
+			//		há callback executando
+			if (!eu.error) {
+				var i=0;
+				var t = '';
+				while (op[i]) {
+					t += '  '+i+'='+op[i].timeEnd;
+					if (!op[i].timeEnd) {
+						op.nvEnd++;
+						if (op.nvEnd%5==0) {
+							debJ('loader aguardando callback '+i);
+						}
+						setTimeout(end,200);
+						return;
+					}
+					i++;
+				}
+				//lert('ldar='+t);
+			}
+			this.end = true;
+			this.timeEnd = ms();
+			
 			if (op.callback) {
 				op.callback(eu);
 			}
@@ -1669,18 +1730,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 				//(new carregaUrl()).abre(op[pos].url,ret);
 				var oReq = newOReq();
 				oReq.pos = pos;
-				oReq.onload = ret;
+				oReq.onload = ret; //()=>{ret(pos);};
 				oReq.open("get", op[pos].url, true);
 				oReq.send();
-				op[pos].timeBegin = ms()/1000;
+				op[pos].timeBegin = ms();
 			} else if (op[pos].timeEnd) {
 				pos++;
 				if (!op[pos] || eu.error) {
 					end(true);
 					return;
 				}
-			} else if (op[pos].timeout<ms()/1000-op[pos].timeBegin) {
-				eu.error = 'timeout step '+pos+' '+(ms()/1000-op[pos].timeBegin);
+			} else if (op[pos].timeout*1000<ms()-op[pos].timeBegin) {
+				eu.error = 'timeout step '+pos+' '+(ms()-op[pos].timeBegin)/1000;
 				//lert(pos.url+' '+eu.error);
 				end(true);
 				return;
@@ -1689,8 +1750,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		}
 		//**************************
 		function ret() {
-			//status: 200 //readyState: 4
-			//objNav(this);lert('xxcd url='+op[this.pos].url+' th='+this.getAllResponseHeaders());
+			//ebJ('fim '+pos);
 			if (this.readyState != 4) {
 				return;
 			} else if (this.status!=200) {
@@ -1698,14 +1758,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 					+'\readyState: '+this.readyState
 					+'\nurl: '+op[this.pos].url
 				;
-				//lert(pos.url+' '+eu.error);
-				end(true);	
+				op[pos].timeEnd = ms();
+				end();	
 				return;			
 			}
-			op[pos].callback(this.responseText,this);
-			op[pos].timeEnd = ms()/1000;
+			//
+			op[pos].callback(this.responseText,op[pos].url);
+			op[pos].timeEnd = ms();
 		}
-	}
+	} //loader
 
 	//**************************
 	// sizeKey = first columns from matrice
@@ -3544,7 +3605,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			return;
 		}
 		for (var i=0;i<v.length;i++) {
-			r += ';'+v[i];
+			r += del+v[i];
 		}
 		return r.substring(1);
 	}

@@ -4,6 +4,13 @@
 	//dom objects not work.
 */
 
+var lib = {
+	isFunction: (o)=>{return typeof(o)=='function'}
+	,ifFunc: (o)=>{return typeof(o)=='function'}
+	,isDom: (o)=>{return o && o.tagName;}
+	,isStr: (o)=>{return typeof(o)=='string';}
+}
+
 if (!Number.prototype.format) {
 	// cache of NumberFormat object
 	Number.prototype._format_ = {};

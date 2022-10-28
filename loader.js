@@ -17,6 +17,7 @@
 
 window.addEventListener('load',() => {
 	var jsDir = '/js';
+	var head;
 	//vetor apps: classe servidor pode criar novas apps na win
 	//  através de tag com class=loader sendo que o 
 	//	.textContent='user logon'
@@ -26,6 +27,16 @@ window.addEventListener('load',() => {
 	var apps = {};
 	var jsVet = {}; //js carregados
 	var onLogon = [];
+	function ret(o,t) {
+		var a = o.getElementsByTagName(t);
+		if (a.length==0) {
+			deb('create element '+t+' em '+o);
+			var r = domObj({tag:t,targ:o});
+		} else {
+			r = a[0];
+		}
+		return r;
+	}
 	//****************************************************
 	// mascara do loader para objeto app
 	//****************************************************
@@ -33,12 +44,19 @@ window.addEventListener('load',() => {
 	//		acessório.
 	function ap(AppProp) {
 		var app = AppProp?AppProp:{};
-		setTimeout(()=>{
+		if (AppProp) setTimeout(()=>{
+			//ultimo js
+			var nom = app.name;
+			if (!lib.isFunction(window[nom])) nom = AppProp.js[AppProp.js.length-1].substrRat('/');
+			if (!lib.isFunction(window[nom])) {
+				alert('erro APP: não existe function com nome '+app.nom+' ou '+nom);
+				return;
+			}
 			//cria a app
 			try {
-				app.obj = new window[app.name](this);
+				app.obj = new window[nom](this);
 			} catch (e) {
-				alert('erro criando objeto: new '+name+'()\n\n'+erro(e));
+				alert('erro criando objeto: new '+nom+'()\n\n'+erro(e));
 			}
 		});
 		//****************************************************
@@ -217,37 +235,29 @@ window.addEventListener('load',() => {
 	//****************************************************
 	// carregou todos os JS, monta html e INIT app
 	function end_loader() {
-		function ret(o,t) {
-			var a = o.getElementsByTagName(t);
-			if (a.length==0) {
-				deb('create element '+t+' em '+o);
-				var r = domObj({tag:t,targ:o});
-			} else {
-				r = a[0];
-			}
-			return r;
-		}
-		//acerta html: head,title,meta,....
-		var h = ret(document,'head');
 		//eb('head='+h.innerHTML);
 		//h.innerHTML = ''; // 👍
-		ret(h,'title').innerHTML = (appProp.title?appProp.title:appProp.name);
-		domObj({tag:'meta','http-equiv':"Content-Type",content:"text/html; charset=UTF-8",targ:h});
+		ret(head,'title').innerHTML = (appProp.title?appProp.title:appProp.name);
+		domObj({tag:'meta','http-equiv':"Content-Type",content:"text/html; charset=UTF-8",targ:head});
 		// problema q objetos não são reajustados ? zoom apenas fonte ?
 		// https://developer.mozilla.org/en-US/docs/Web/HTML/Viewport_meta_tag
 		//omObj({tag:'viewport',content:"width=device-width,initial-scale=1,user-scalable",targ:h});
 		if (appProp.favicon) {
-			domObj({tag:'link',rel:"shortcut icon",href:appProp.favicon,targ:h});
-			domObj({tag:'link',rel:"icon",href:appProp.favicon,targ:h});
+			domObj({tag:'link',rel:"shortcut icon",href:appProp.favicon,targ:head});
+			domObj({tag:'link',rel:"icon",href:appProp.favicon,targ:head});
 		}
 		if (appProp.css) {
-			domObj({tag:'link',targ:h,rel:'StyleSheet',href:appProp.css});
+			appProp.css = (typeof(appProp.css)=='object'&&appProp.css.length?appProp.css:[appProp.css]);
+			aeval(appProp.css,(cs)=>{
+				domObj({tag:'link',targ:head,rel:'StyleSheet',href:cs+'?ms='+ms()});
+			});
 		}
 		oApp = new ap(appProp);
 	}
 	//****************************************************
 	// carrega 1 js...
 	function loadJs(nome,ev) {
+		if (nome.indexOf('.')==-1) nome += '.js';
 		var t = (new Date()).getTime();
 		if (jsVet[nome]) {
 			deb('loadJs: já carregado: '+nome
@@ -257,9 +267,9 @@ window.addEventListener('load',() => {
 		}
 		jsVet[nome] = t;
 		var scr = document.createElement('script');
-		scr.src = nome+'.js?ms='+(new Date()).getTime();
+		scr.src = nome+'?ms='+(new Date()).getTime();
 		deb('loadJs: ('+nome+')');
-		document.body.appendChild(scr);
+		head.appendChild(scr);
 		//add eventos
 		for (i in ev) {
 			scr.addEventListener(i,ev[i]);
@@ -272,11 +282,12 @@ window.addEventListener('load',() => {
 		if (appProp.pos==appProp.js.length) {
 			end_loader();
 		} else {
-			loadJs(appProp.js[appProp.pos],
+			var js = appProp.js[appProp.pos];
+			loadJs(js,
 				{ 
 					  load: nextJs
 					,error: () => {
-						alert('not found '+appProp.js[appProp.pos]);
+						alert('js not found '+js);
 					}
 				}
 			);
@@ -301,6 +312,8 @@ window.addEventListener('load',() => {
 	
 	//validar propiedades basicas
 	//  FALTA
+	head = ret(document,'head');
+
 	
 	//carrega unico JS stripado ?
 	if (appProp.app!==true) {

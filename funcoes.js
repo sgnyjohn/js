@@ -92,17 +92,26 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		var vDom;
 		if (typeof(str)=='string') {
 			vDom = document.querySelectorAll(str);
-		} else if (typeof(str.length)!='undefined') {
+		} else if ( typeof(str.length)!='undefined' && str.length>0 ) {
 			//array
+			//lert(str.length);
 			vDom = str;
 		} else {
 			vDom = [str];
 		}
+		//lert(str+' '+vDom);
 		return new obj(vDom);
 		//dom to obj
 		function obj(VDom) {
 			//ebJ('ob '+str+' '+VDom.length);
 			var vDom = VDom;
+			//******************************************
+			// executa func 
+			this.eval = function(fun) {
+				for (var i=0;i<vDom.length;i++) {
+					fun(vDom[i],i);
+				}
+			}			
 			//******************************************
 			// retorna txt.
 			this.txt = function() {
@@ -129,6 +138,36 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 					r += '\n'+domTxt(dom);
 				});
 				return r.substring(1);
+			}
+			//******************************************
+			// add event
+			this.event = function(str,fun,bole) {
+				aeval(vDom,(dom)=>{
+					//lert(str+' '+dom);
+					dom.addEventListener(str,fun,bole);
+				});				
+				return vDom.length;
+			}
+			//******************************************
+			//******************************************
+			// add dom, obj ou html
+			this.add = function(oh) {
+				if (!lib.isDom(oh))
+					oh = domObj(oh);
+				aeval(vDom,(dom)=>{
+					r = dom.appendChild(oh);
+				});
+				return oh;
+			}
+			//******************************************
+			// set html
+			this.h = function(html) {
+				var r = '';
+				aeval(vDom,(dom)=>{
+					if (lib.isStr(html)) dom.innerHTML = html
+					else r += dom.innerHTML+'\n\n';
+				});
+				return html?html:r;
 			}
 			//******************************************
 			// seta prp{} com seus vlrs
@@ -506,8 +545,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		}
 	}
 
-	//**************************//
+	setCss = styleSet;
+	/**************************
 	function setCss(obj,nomep,vlr) {
+		
 		var r = Array(obj,nomep,'');
 		//parametro 1 = array?
 		if (vazio(nomep)) {
@@ -545,6 +586,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		}
 		return r;
 	}
+	*/
 
 
 	//**********************************************

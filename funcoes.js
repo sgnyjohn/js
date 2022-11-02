@@ -40,11 +40,25 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	//***********************************************
 	// object or json - return prop path del by .
 	function getObjPath(obj,path) {
-		var v = path.split('.');
-		for (var i=0;i<v.length;i++) {
-			obj = obj[v[i]];
+		if (!lib.isStr(path)) {
+			//pode pedir para somar vários caminhos.
+			var objR = [];
+			aeval(path,(ph)=>{
+				var o = getObjPath(obj,ph);
+				debJ('ph='+ph+' obj='+o);
+				if (typeof(o)!='undefined') aeval(o,(oo)=>{objR[objR.length]=oo});
+			});
+			debJ(path+' ret tm='+objR.length);
+			return objR;
+		} else {
+			var v = path.split('.');
+			for (var i=0;typeof(obj)!='undefined'&&i<v.length;i++) {
+				obj = obj[v[i]];
+				if (typeof(obj)=='undefined') deb('erro path i='+i+' '+path,obj);
+			}
+			return obj;			
 		}
-		return obj;
+	
 	}
 	//***********************************************
 	// object or json - return props and parent

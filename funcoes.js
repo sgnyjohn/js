@@ -436,24 +436,41 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			,'u' : 'úü'
 			,'c' : 'ç'
 		};
+		var vex = ',.,+,*,?,^,$,(,),[,],{,},|,\.,';
 		var a = trimm(o);
-		a = trocaTudo(a,'  ',' ');
+		/*a = trocaTudo(a,'  ',' ');
 		a = trocaTudo(a,'| ','|');
-		a = trocaTudo(a,' |','|');
+		a = trocaTudo(a,' |','|');*/
 		//lert(a);
 		var v = a.toLowerCase().split(' ');
 		this.v = v;
 		//if (referrer.search(new RegExp("Ral", "i")) == -1) { ...
 		var vr = Array();
 		var vrNot = Array();
+		var pa = -1; //elemento iniciando " anterior
 		for (var i=0;i<v.length;i++) {
+		  deb(i+' ini..'+v[i]);
 			v[i] = trimm(v[i]);
 			vrNot[i] = v[i].charAt(0)=='-'; //negativo, não?
 			if (vrNot[i]) v[i] = v[i].substring(1);
-			//com aspas pode haver branco no inicio e fim
+			if (pa==-1) {
+				if (v[i].charAt(0)=='"') pa = i;
+			} else if (v[i].charAt(v[i].length-1)=='"') {
+				 var t = '';
+				 feval(pa,i,(ps) => {
+					 t += ' '+v[ps];
+				 });
+				 vrNot[pa] = vrNot[i];
+				 i = pa;
+				 v[i] = t.substring(1).trimm('"');
+				 deb(i+' montado..'+v[i]);
+				 v = v.slice(0,i-1);
+			}
+			/*/com aspas pode haver branco no inicio e fim
 			if (v[i].charAt(0)=='"'&&v[i].charAt(v[i].length-1)=='"') {
 				v[i] = v[i].trimm('"');
 			}
+			*/
 			vr[i] = new RegExp(rExpr(v[i]),'i');
 		}
 		//###################################
@@ -470,15 +487,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		function rExpr(t) {
 			//expressão regular acentuação pt-br
 			//áàâãéêíóôõúüñç
-			var r = '';
+			deb('==> '+i+'('+v[i]+')');
+			var ca='',r = '';
 			for (var i=0;i<t.length;i++) {
 				var c = t.charAt(i);
-				if ( va[c] ) {
-					c = '['+c+va[c]+']';
+				if (vex.indexOf(c)!=-1 && ca!='\\') {
+					//deb('foi');
+					r += '\\'+c;
+				} else if ( va[c] ) {
+					r += '['+c+va[c]+']';
+				} else {
+					r += c;
 				}
-				r += c;
+				ca = c;
 			}
-			//eb('pq='+r+' tm='+t.length);
+			//deb(t+') pq=('+r+') tm='+t.length);
+			//dfsd=sdf;
 			return r;
 		}
 		//###################################
@@ -563,6 +587,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			return true;
 		}
 	}
+	//fim strPesq
 
 	setCss = styleSet;
 	/**************************
@@ -3468,8 +3493,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		window.open('tel:'+n1,'_blank');
 	}
 	//*******************************************
-	function feval(max,func) {
-		for (var i=0;i<max;i++) {
+	function feval(ini,max,func) {
+		if (!func) {
+			func = max;
+			max = ini;
+			ini = 0;
+		} else {
+			//antigo for next.
+			max += 1;
+		}
+		for (var i=ini;i<max;i++) {
 			func(i);
 		}
 	}
@@ -4291,13 +4324,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		var dc = nome + '=' + vlr
 			+(venceDias==0?'' : ';expires=' + v)+';path=/'
 			+(domi?';domain='+domi:'')
+			+'; SameSite=None; Secure'
 		;
 		//debJ('dc1='+dc);
 		//;var r = cookieGet(nome)==vlr;
 		document.cookie = dc;
 		/*if (cookieGet(nome)!=vlr) {
 			alert('cookiePut: falhou setar cookie...'
-				+document.cookie.length
+				+document.cookie.length-magnet:?dn=084%20Okr%C4%99t.mp3&xl=3592254&xt=urn:sha1:ZTTSZZLUKCRAD2CVLR6CKEY5LG64EFK7&xs=http://213.134.179.70:6346/uri-res/N2R%3Furn:sha1:ZTTSZZLUKCRAD2CVLR6CKEY5LG64EFK7
 			);
 		return r;
 		*/

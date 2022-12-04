@@ -447,11 +447,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		//if (referrer.search(new RegExp("Ral", "i")) == -1) { ...
 		var vr = Array();
 		var vrNot = Array();
-		var pa = -1; //elemento iniciando " anterior
+		var ps=0;pa = -1; //elemento iniciando " anterior
 		for (var i=0;i<v.length;i++) {
 		  deb(i+' ini..'+v[i]);
 			v[i] = trimm(v[i]);
-			vrNot[i] = v[i].charAt(0)=='-'; //negativo, não?
+			vrNot[ps] = v[i].charAt(0)=='-'; //negativo, não?
 			if (vrNot[i]) v[i] = v[i].substring(1);
 			if (pa==-1) {
 				if (v[i].charAt(0)=='"') pa = i;
@@ -461,17 +461,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 					 t += ' '+v[ps];
 				 });
 				 vrNot[pa] = vrNot[i];
-				 i = pa;
+				 pa = -1;
 				 v[i] = t.substring(1).trimm('"');
-				 deb(i+' montado..'+v[i]);
-				 v = v.slice(0,i-1);
+				 //v = v.slice(0,i-1);
+				 deb(i+' montado..'+v[i]+' ntam='+v.length);
 			}
 			/*/com aspas pode haver branco no inicio e fim
 			if (v[i].charAt(0)=='"'&&v[i].charAt(v[i].length-1)=='"') {
 				v[i] = v[i].trimm('"');
 			}
 			*/
-			vr[i] = new RegExp(rExpr(v[i]),'i');
+			vr[ps++] = new RegExp(rExpr(v[i]),'i');
 		}
 		//###################################
 		this.txt = function() {

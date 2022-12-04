@@ -451,7 +451,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			vrNot[i] = v[i].charAt(0)=='-'; //negativo, não?
 			if (vrNot[i]) v[i] = v[i].substring(1);
 			//com aspas pode haver branco no inicio e fim
-			if (v[i].chatAt(0)=='"'&&v[i].charAt(v[i].length-1)=='"') {
+			if (v[i].charAt(0)=='"'&&v[i].charAt(v[i].length-1)=='"') {
 				v[i] = v[i].trimm('"');
 			}
 			vr[i] = new RegExp(rExpr(v[i]),'i');
@@ -468,6 +468,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		}
 		//###################################
 		function rExpr(t) {
+			//expressão regular acentuação pt-br
 			//áàâãéêíóôõúüñç
 			var r = '';
 			for (var i=0;i<t.length;i++) {
@@ -477,7 +478,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 				}
 				r += c;
 			}
-			deb('pq='+r+' tm='+t.length);
+			//eb('pq='+r+' tm='+t.length);
 			return r;
 		}
 		//###################################

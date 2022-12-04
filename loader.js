@@ -316,10 +316,11 @@ window.addEventListener('load',() => {
 
 	
 	//carrega unico JS stripado ?
+	appProp.pos = 0;
 	if (appProp.app!==true) {
-		appProp.pos = 0;
 		nextJs();
 	} else {
+		alert('carregar app');
 		loadJs(appProp.js[appProp.js.length-1]+'App',{
 			error: (a,b,c)=>{
 				//processa fila

@@ -450,6 +450,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			v[i] = trimm(v[i]);
 			vrNot[i] = v[i].charAt(0)=='-'; //negativo, não?
 			if (vrNot[i]) v[i] = v[i].substring(1);
+			//com aspas pode haver branco no inicio e fim
+			if (v[i].chatAt(0)=='"'&&v[i].charAt(v[i].length-1)=='"') {
+				v[i] = v[i].trimm('"');
+			}
 			vr[i] = new RegExp(rExpr(v[i]),'i');
 		}
 		//###################################

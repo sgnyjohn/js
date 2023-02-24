@@ -40,7 +40,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	//***********************************************
 	// object or json - return prop path del by .
 	function getObjPath(obj,path) {
-		if (!lib.isStr(path)) {
+		if (!Lib.isStr(path)) {
 			//pode pedir para somar vários caminhos.
 			var objR = [];
 			aeval(path,(ph)=>{
@@ -166,7 +166,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			//******************************************
 			// add dom, obj ou html
 			this.add = function(oh) {
-				if (!lib.isDom(oh))
+				if (!Lib.isDom(oh))
 					oh = domObj(oh);
 				aeval(vDom,(dom)=>{
 					r = dom.appendChild(oh);
@@ -178,7 +178,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			this.h = function(html) {
 				var r = '';
 				aeval(vDom,(dom)=>{
-					if (lib.isStr(html)) dom.innerHTML = html
+					if (Lib.isStr(html)) dom.innerHTML = html
 					else r += dom.innerHTML+'\n\n';
 				});
 				return html?html:r;
@@ -420,6 +420,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	// falta resolver utf-8... 
 	//		1 input meleca html aceita colar utf8 e o digitado resulta em iso-8859-1
 	//		2 o regexpr ignore acentuação funciona apenas com iso, não utf
+	// ao inves de usar "" para literais, usar _ no lugar do space
 	/** @constructor */
 	function strPesq(o) {
 		// validar portugues pt 
@@ -436,46 +437,32 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			,'u' : 'úü'
 			,'c' : 'ç'
 		};
-		var vex = ',.,+,*,?,^,$,(,),[,],{,},|,\.,';
-		var a = trimm(o);
-		/*a = trocaTudo(a,'  ',' ');
-		a = trocaTudo(a,'| ','|');
-		a = trocaTudo(a,' |','|');*/
-		//lert(a);
-		var v = a.toLowerCase().split(' ');
-		this.v = v;
-		//if (referrer.search(new RegExp("Ral", "i")) == -1) { ...
-		var vr = Array();
-		var vrNot = Array();
-		var ps=0;pa = -1; //elemento iniciando " anterior
-		for (var i=0;i<v.length;i++) {
-		  deb(i+' ini..'+v[i]);
-			v[i] = trimm(v[i]);
-			vrNot[ps] = v[i].charAt(0)=='-'; //negativo, não?
-			if (vrNot[i]) v[i] = v[i].substring(1);
-			if (pa==-1) {
-				if (v[i].charAt(0)=='"') pa = i;
-			} else if (v[i].charAt(v[i].length-1)=='"') {
-				 var t = '';
-				 feval(pa,i,(ps) => {
-					 t += ' '+v[ps];
-				 });
-				 vrNot[pa] = vrNot[i];
-				 pa = -1;
-				 v[i] = t.substring(1).trimm('"');
-				 //v = v.slice(0,i-1);
-				 deb(i+' montado..'+v[i]+' ntam='+v.length);
+		var vex = ',.,+,*,?,^,$,(,),[,],{,},\.,'; //aceita |,
+		var vr,vrNot,tx;
+		init();
+		function init() {
+			var a = trimm(o);
+			// o ou é embutido dentro da expressao
+			a = trocaTudo(a,'  ',' ');
+			a = trocaTudo(a,'| ','|');
+			a = trocaTudo(a,' |','|');
+			//lert(a);
+			tx = a.toLowerCase();
+			var v = a.toLowerCase().split(' ');
+			this.v = v;
+			//if (referrer.search(new RegExp("Ral", "i")) == -1) { ...
+			vr = Array();
+			vrNot = Array();
+			for (var i=0;i<v.length;i++) {
+				v[i] = trimm(v[i]);
+				vrNot[i] = v[i].charAt(0)=='-'; //negativo, não?
+				if (vrNot[i]) v[i] = v[i].substring(1);
+				vr[i] = new RegExp(rExpr(v[i]),'i');
 			}
-			/*/com aspas pode haver branco no inicio e fim
-			if (v[i].charAt(0)=='"'&&v[i].charAt(v[i].length-1)=='"') {
-				v[i] = v[i].trimm('"');
-			}
-			*/
-			vr[ps++] = new RegExp(rExpr(v[i]),'i');
 		}
 		//###################################
 		this.txt = function() {
-			return a;
+			return tx;
 		}
 		//###################################
 		this.valid = function() {
@@ -487,7 +474,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		function rExpr(t) {
 			//expressão regular acentuação pt-br
 			//áàâãéêíóôõúüñç
-			deb('==> '+i+'('+v[i]+')');
+			//deb('==> ('+t+')');
+			t = t.replaceAll('_',' ');
 			var ca='',r = '';
 			for (var i=0;i<t.length;i++) {
 				var c = t.charAt(i);
@@ -501,7 +489,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 				}
 				ca = c;
 			}
-			//deb(t+') pq=('+r+') tm='+t.length);
+			deb(t+'==>('+r+') tm='+t.length);
 			//dfsd=sdf;
 			return r;
 		}
@@ -669,66 +657,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	//**********************************************
 	// carrega script e init objeto com param
 	function require(url,param,callb) {
-	}
-
-	//**********************************************
-	// carrega script e init objeto com param
-	function op(Prefix,Url) {
-		var eu = this;
-		this.ok = false;
-		var url = (Url?Url:'?op=op');
-		var prefix=Prefix?Prefix+'.':'';
-		var vOp = global('vOp',{});
-		init();
-		//****************************************************
-		this.loadOps = function(prf) {
-			var r = new op(prefix+prf,url);
-			return r;
-		}		
-		// get OP - remov cookies
-		this.getHash = () => {
-			var r = {};
-			aeval(vOp,(vl,k)=>{
-				if (k.equals(prefix)) {
-					r[k.substring(prefix.length)] = vl;
-				}
-			});
-			return r;
-		}
-		// get OP - remov cookies
-		this.get = (ch,df) => {
-			var r = vOp[prefix+ch];
-			if (typeof(r)=='undefined') return df;
-			return r;
-		}
-		// set OP - remov cookies
-		this.set = (ch,vl) => {
-			vOp[prefix+ch]=vl;
-			(new carregaUrl()).abre(url+'&'+prefix+ch+'='+encodeURIComponent(vl)
-				,(a,b,tx)=>{}
-			);
-		}
-		// load OK
-		this.ok = () => {
-			return vOp.__loaded__;
-		}
-		// load OP
-		function init() {
-			if (vOp.__loaded__) return;
-			(new carregaUrl()).abre(url,(a,b,tx)=>{
-				//lert(url+' ==> op prf='+prefix+'\n\n'+tx);
-				var v = tx.split('\n');
-				aeval(v,(vl)=>{
-					var p = vl.indexOf('=');
-					if (p>0) {
-						var ch = trimm(vl.substring(0,p));
-						vOp[ch] = trimm(vl.substring(p+1));
-					}
-				});
-				//eb('op=',vOp);
-				vOp.__loaded__ = true;
-			});
-		}
 	}
 
 	//**********************************************
@@ -1997,8 +1925,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	function objText(obj,delimElem,delimValue) {
 		delimElem = delimElem?delimElem:';'
 		delimValue = delimValue?delimValue:':'
-		var r = '';
+		var r = '',nv=0;
 		for (var k in obj) {
+			nv++;
 			r += k+delimValue+obj[k]+delimElem;
 		}		
 		return r;
@@ -2447,9 +2376,34 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		this.dlRow = '\n';
 		this.dlCol = '\t';
 		var fileHead;
+		var idx = {};
 		if (typeof(window)!='undefined') {
 			//var fs;
 		}
+		//*********************************************
+		// get com index - cria index 
+		this.getObjByKey = function(key,vlr) {
+			var ix = idx[key];
+			if (!ix) {
+				ix = this.index(key,true);
+				idx[key] = ix;
+			}
+			var rg = ix[vlr];
+			//lert('rg='+rg+' '+Lib.isNum(rg));
+			if (Lib.isNum(rg)) return this.getObj(rg);
+			return {};
+		}
+		//*********************************************
+		// cria objeto hash do registro
+		this.getObj = function(rg) {
+			rg = Lib.isNum(rg) ? rg : ur;
+			var r = {};
+			for (var i=0;i<camposN.length;i++) {
+				//var v = this.get(camposN[i]);
+				r[camposN[i]] = valores[rg][i];
+			}
+			return r;
+		}	
 		//*********************************************
 		// CARREGA csv FROM url
 		this.csvLoad = function(url) {
@@ -3415,6 +3369,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			} else if ( add && !nulo(valores[ur][pc]) ) {
 				//valor é string a += add 
 				valores[ur][pc] += ' '+trimm(''+Valor);
+			} else if (Lib.isNum(Valor)) {
+				valores[ur][pc] = Valor;
 			} else {
 				//valor qq type
 				valores[ur][pc] = trimm(''+Valor);
@@ -5703,6 +5659,8 @@ function estat(Nome) {
 	var vt = 0;
 	this.length=0; //total geral
 	//****************************************************
+	this.getObj = function(ch,vl) { return v;	}	
+	//****************************************************
 	this.max = function(ch,vl) {
 		var va = typeof(v[ch])=='undefined'?-999999999999:v[ch];
 		va = Math.max(vl,va);
@@ -5800,9 +5758,10 @@ function estat(Nome) {
 		return r;
 	}
 	//****************************************************
-	function toHtml() {
+	function toHtml(sort) {
+		sort = isNumber(sort)?sort:1;
 		var v1 = getMatriz();
-		v1.sort(function(a,b){return fSort(b[1],a[1])});
+		v1.sort(function(a,b){return fSort(b[sort],a[sort])});
 		var r = '<table class="estat" border=1>'
 			+'<tr><th>'+nome+'<th>vl'
 		;
@@ -5824,6 +5783,7 @@ function estat(Nome) {
 		} else {
 			v[ch]+=vl;
 		}
+		return v[ch];
 	}
 }
 

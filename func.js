@@ -1,15 +1,100 @@
 /*
 	signey jun/2018 mai/2019 mai/2020 
 
-	//dom objects not work.
+	// dom objects not work.
+	
 */
 
-var lib = {
+var Lib = {
 	isFunction: (o)=>{return typeof(o)=='function'}
 	,ifFunc: (o)=>{return typeof(o)=='function'}
 	,isDom: (o)=>{return o && o.tagName;}
 	,isStr: (o)=>{return typeof(o)=='string';}
-}
+	,isNum: (str)=> {
+		if (typeof(str)=='number') {
+			return true;
+		} else if (typeof(str)=='string') {
+			return str.length!=0 && !isNaN(1*str);
+		}
+		return false;
+	}
+	,dateSql: (a,semHora)=>{
+		var d = vazio(a)?new Date():a;
+		if (typeof(a)=='string') {
+			d = strToData(a);
+		} else if (typeof(a)=='number') {
+			d = new Date(a);
+		}
+		return takeYear(d)+'-'+strZero(d.getMonth()+1,2)
+			+'-'+strZero(d.getDate(),2)
+			+(semHora?'':' '+strZero(d.getHours(),2)+':'
+				+strZero(d.getMinutes(),2)+':'+strZero(d.getSeconds(),2)
+			)
+		;		
+	}
+};
+
+/*
+ * todos os objetos terão propriedade tipo "funcion"
+ * 	e meus codigos podem dar problema... estat ja deu.
+ * 	pois uso muito "for (k in obj)" ...
+ * 
+if (!Object.prototype.getElements) 
+	Object.prototype.getElements = (Func,_arr) => {
+		function a(obj,func,arr) {
+			aeval(obj,(v,k)=>{
+				if (func(v,k)) {
+					arr.push(v);
+				}
+				if (typeof(v)=='object') {
+					a(v,func,arr);
+				}
+			});
+			return arr;
+		}
+		return a(this,Func,_arr?_arr:[]);
+	}
+;
+*/
+
+var Obj = {
+	// recebe js obj/json aplica a func
+	//   passando vlr e ch e add em array
+	//	 se func retorna verdadeiro.
+	getElements: (Obj,Func,_arr) => {
+		function a(obj,func,arr) {
+			aeval(obj,(v,k)=>{
+				if (func(v,k)) {
+					arr.push(v);
+				}
+				if (typeof(v)=='object') {
+					a(v,func,arr);
+				}
+			});
+			return arr;
+		}
+		return a(Obj,Func,_arr?_arr:[]);
+	}
+};
+
+if (!Date.prototype.getYearWeek) Date.prototype.getYearWeek = function(){
+	/* semana comunic começa na sexta.
+	 * dom 0 5
+	 * seg 1 4
+	 * ter 2 3
+	 * qua 3 2
+	 * qui 4 1
+	 * sex 5 0
+	 * sab 6 -1
+	*/
+	var y = this.getFullYear();
+	var d0 = new Date(y, 0, 1);
+	//calcula a data que começa a semana 1 do ano.
+	d0.setTime(d0.getTime()+(d0.getDay()==6?6:5-d0.getDay())*24*3600000);
+	//caso dt < d0 retorna semana do ultimo dia do ano anterior
+	if (this.getTime()<d0.getTime()) return (new Date(y-1, 11, 31)).getYearWeek();
+  return y+'s'+strZero(Math.floor((this-d0)/7/24/3600000)+1,2);
+};
 
 if (!Number.prototype.format) {
 	// cache of NumberFormat object
@@ -48,6 +133,27 @@ if (!Date.prototype.getDayStr) {
 }
 
 //Strings
+
+if(!String.prototype.sliceQ) { 
+	String.prototype.sliceQ = function(a) {
+		//The parenthesis in the regex creates a captured group within the quotes
+		var myRegexp = /[^\s"]+|"([^"]*)"/gi;
+		var myString = 'single words "fixed string of words"';
+		var myArray = [];
+
+		do {
+				//Each call to exec returns the next regex match as an array
+				var match = myRegexp.exec(myString);
+				if (match != null)
+				{
+						//Index 1 in the array is the captured group if it exists
+						//Index 0 is the matched text, which we use if no captured group exists
+						myArray.push(match[1] ? match[1] : match[0]);
+				}
+		} while (match != null);
+		return myArray;
+	}
+}
 
 if(!String.prototype.count) { 
 	String.prototype.count = function(a) {

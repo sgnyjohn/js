@@ -17,7 +17,7 @@
 
 window.addEventListener('load',() => {
 	var jsDir = '/js';
-	var head;
+	var head; 
 	//vetor apps: classe servidor pode criar novas apps na win
 	//  através de tag com class=loader sendo que o 
 	//	.textContent='user logon'
@@ -26,7 +26,10 @@ window.addEventListener('load',() => {
 	// a app inicial fica armazenada em appProp
 	var apps = {};
 	var jsVet = {}; //js carregados
-	var onLogon = [];
+	var onLogonA = [];
+	function dev() {
+		return (''+window.location).indexOf('://dv.')!=-1;
+	}
 	function ret(o,t) {
 		var a = o.getElementsByTagName(t);
 		if (a.length==0) {
@@ -37,50 +40,124 @@ window.addEventListener('load',() => {
 		}
 		return r;
 	}
+
+	function onLogon(func,obj,param) {
+		if (typeof(func)=='function') {
+			onLogonA[onLogonA.length] = [func,obj,param];
+			return true;
+		}
+		//lert('onlogon: '+onLogon.length);
+		aeval(onLogonA,(f,i)=>{
+			//lert(i+' '+f);
+			//setTimeout(()=>{});
+			f[0].apply(f[1],f[2]);
+		});
+		onLogonA = [];
+		//return new op(prf,urlE(app,'?op=op'));
+	}
+
 	//****************************************************
 	// mascara do loader para objeto app
 	//****************************************************
 	// existe a app original q possui urlServer, nas outras seria 
 	//		acessório.
 	function ap(AppProp) {
-		var app = AppProp?AppProp:{};
-		if (AppProp) setTimeout(()=>{
+		var eu = this;
+		var appPr = AppProp?AppProp:{};
+		//if (AppProp) setTimeout(()=>{
 			//ultimo js
-			var nom = app.name;
-			if (!lib.isFunction(window[nom])) nom = AppProp.js[AppProp.js.length-1].substrRat('/');
-			if (!lib.isFunction(window[nom])) {
-				alert('erro APP: não existe function com nome '+app.nom+' ou '+nom);
+			var nom = appPr.name;
+			if (!Lib.isFunction(window[nom])) nom = appPr.js[appPr.js.length-1].substrRat('/');
+			if (!Lib.isFunction(window[nom])) {
+				alert('erro APP: não existe function com nome '+appPr.name+' ou '+nom);
 				return;
 			}
-			//cria a app
+			//cria a app REAL
 			try {
-				app.obj = new window[nom](this);
+				this.obj = new window[nom](this);
+				//appPr.obj = this.obj;
+				apps[nom] = this.obj;
+				
+				// exige user ?
+				initApp();
+
 			} catch (e) {
 				alert('erro criando objeto: new '+nom+'()\n\n'+erro(e));
 			}
-		});
+		//});
 		//****************************************************
-		this.loadOps = function(prf) {
+		this.loadJs = function(url,objOUfunc) {
+			loadJs(url,objOUfunc);
+		}
+		//****************************************************
+		this.getUserName = function() {
+			if (apps['user']) {
+				return apps['user'].getUserName();
+			}
+		}
+		//****************************************************
+		this.loadObj = function(nome,func) {
 			//lert('loader: '+appProp['urlServer']+'?op=op');
-			return new op(prf,urlE(app,'?op=op'));
+			loadObj(nome,func);
+		}
+		//****************************************************
+		this.onLogon = function(func,obj,param) {
+			onLogon(func,obj,param);
+		}
+		//****************************************************
+		this.opsLoad = function(func) {
+			var u = apps['user'];
+			//lert('loader: '+appProp['urlServer']+'?op=op user='+u);
+			if (!u) return false;
+			return apps['user'].getObjOps(appPr.name,urlE(appPr,'?op=op'),func);
+			//return new op(prf,urlE(app,'?op=op'),this);
 		}
 		//****************************************************
 		this.loadTxt = function(url,func) {
-			loadTxt(url,func,app);
+			loadTxt(url,func,appPr);
 		}
 		//****************************************************
 		this.load = function(url,post) {
-			load(url,post,app);
+			load(url,post,appPr);
 		}
 		//****************************************************
 		this.get = function(ch) {
-			return appProp[ch];
+			return appPr[ch];
 		}
 		//****************************************************
 		this.getApp = function() {
-			return appProp;
+			return appPr;
+		}
+		//load user and op
+		function init() {
+			if (appPr.init) eu.obj[appPr.init]();
+		}
+		function initApp() {
+			if (!appPr.user) {
+				init();
+				return;
+			}
+			var us = apps['user'];
+			if (!us) {
+				loadObj('user');
+			} else if (us.logged()) {
+				init();
+				return;
+			}
+			//logado, init app ou carrga op e init opp
+			onLogon(()=>{
+				if (oApp.obj.setOps!==false) {
+					//carrega ops
+					//lert('vai carregar ops...');
+					oApp.opsLoad(oApp.obj[appPr.init]);
+				} else {
+					init();
+				}
+			}
+			,apps['user'],[]);
 		}
 	}
+
 	//*******************************
 	// exec method de app
 	function exec(nomeApp,func) {
@@ -99,12 +176,17 @@ window.addEventListener('load',() => {
 	}
 	//*******************************
 	// carrega class user, ou outra com nome
-	function loadObj(name,app) {
+	function loadObj(name,func) {
 			//not loaded js, app nova, criar.
 			loadJs(jsDir+'/'+name,{load:()=>{
 				deb('load: '+name+'.js OK, criar obj ()');
 				//armazena app e apos executa
-				new ap({name:nome});
+				new ap({name:name});
+				//ebJ('loadObj '+name+' func='+func);
+				if (func) {
+					//alert('func pos logon');
+					func();
+				}
 			}});
 	}
 	//*******************************
@@ -115,15 +197,16 @@ window.addEventListener('load',() => {
 			if (xhr.readyState === XMLHttpRequest.DONE) {
 				if (trimm(xhr.responseText)=='-*_login_*-') {
 					//guarda reload para após executar login
-					onLogon[onLogon.length] = ()=>{loadTxt(url,func)};
-					alert('tesesdef='+xhr.responseText+'\n\n'+url);
+					onLogon(loadTxt,this,[url,func,app]);
+					//lert(app.name+' tesesdef='+xhr.responseText+'\n\n'+url);
 					loadObj('user');
 				} else {
 					func(xhr.responseText,xhr.status==200,xhr);
 				}
 			}
 		}
-		xhr.open("GET", urlE(app,url), true);
+		//se ? executa classe servidor
+		xhr.open("GET", url.charAt(0)=='?' ? urlE(app,url) : url , true);
 		xhr.send(null);
 	}
 	//*******************************
@@ -139,14 +222,14 @@ window.addEventListener('load',() => {
 			if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
 				//application/json
 				var mime = xhr.getResponseHeader('Content-Type');
-				//if (url=='json') { objNav(xhr);alert(xhr+' '+mime);}
+				//if (url=='json') { objNav(xhr);lert(xhr+' '+mime);}
 				_c('='+mime+'=');
 				if (equals(mime,'application/json')) {
 					_c(xhr.responseText);
-					alert(xhr.responseText);
+					alert('dsfsduif='+xhr.responseText);
 					var r = JSON.parse(xhr.responseText);
 					objNav(r);
-					alert(r.computedString);				
+					alert('cxvxcvli='+r.computedString);				
 				}
 				//receive response from server
 				a = xhr.readyState;
@@ -163,51 +246,63 @@ window.addEventListener('load',() => {
 					var h = ob.innerHTML;
 					var o = ob.className;
 					deb('load:Receive: '+i+' tg='+ob.tagName+' tg='+ob.outerHTML);
-					if (o) {
-						if (o=='loader') {
-							// opcao loader permite q um objeto carregue outro.
-							// o objeto deve ser tratado pelo LOADER, tipo logon.
-							// para isto o loader precisa de lista de classes/objetos
-							var name = leftAt(ob.textContent,' ');
-							var func = trimm(substrAt(ob.textContent+' ',' '));
-							deb('obj '+app.name+' envia pacote para app '+name);
-							if (apps[name]) {
-								//executa 
-								exec(name,func);
-							} else {
-								//not loaded js, app nova, criar.
-								loadJs(jsDir+'/'+name,{load:()=>{
-									deb('load: '+name+'.js OK, criar obj ('+func+')');
-									//armazena app e apos executa
-									new ap({name:name});
-									//exec(nome,'init',func);
-								}});
-							}
-							//windows.init();
-						} else if (o=='compil') {
-							var m = 'compil: '+ob.textContent;
-							_c(m);
-							if (dev()) alert(m);
-						} else if (typeof(app.obj[o])=='function') {
-							app.obj[o](h);
-							//tem op default e aceitou
+					if (!o) {
+						if (typeof(h)!='string') {
+							//lixo na resposta...
 						} else {
-							alert('CLASS RESP '+i+'/'+d.childNodes.length
-								+' server desconhecido('+ob.outerHTML+')'
-								+' app='+app.name
-								+' appo='+app.obj[o]
-							);
+							alert('RESP server desconhecido: \n\n'+ob.outerHTML);
 						}
-					} else if (typeof(h)!='string') {
+					} else if (o=='loader') {
+						// opcao loader permite q um objeto carregue outro.
+						// o objeto deve ser tratado pelo LOADER, tipo logon.
+						// para isto o loader precisa de lista de classes/objetos
+						var name = leftAt(ob.textContent,' ');
+						var func = trimm(substrAt(ob.textContent+' ',' '));
+						deb('obj '+app.name+' envia pacote para app '+name);
+						if (apps[name]) {
+							//executa 
+							exec(name,func);
+						} else {
+							//not loaded js, app nova, criar.
+							loadJs(jsDir+'/'+name,{load:()=>{
+								deb('load: '+name+'.js OK, criar obj ('+func+')');
+								//armazena app e apos executa
+								new ap({name:name});
+								//exec(nome,'init',func);
+							}});
+						}
+						//windows.init();
+					} else if (o=='compil') {
+						var m = 'compil: '+ob.textContent;
+						_c(m);
+						if (dev()) alert(m);
+					//} else if (typeof(app.obj[o])=='function') {
+						// tem no app default?
+					//	app.obj[o](h);
+						//tem op default e aceitou
 					} else {
-						alert('RESP server desconhecido: \n\n'+ob.outerHTML);
+						//procura em todas apps.
+						for (k in apps) {
+							var a = apps[k];
+							if (typeof(a[o])=='function') {
+								a[o](h);
+								return;
+							}
+							//lert('procurando metodo... '+k+'.'+o+'='+typeof(a[o]));
+						}
+	
+						alert('CLASS RESP '+i+'/'+d.childNodes.length
+							+' server desconhecido('+ob.outerHTML+')'
+							//+' app='+app.name
+							//+' appo='+app.obj[o]
+						);
 					}
 				}
 			}
 		}
 		//send request to server
 		if (postString) {
-			deb('POST url='+u+' post='+postString);
+			deb('POST url='+u+' post='+postString+' '+erro('carga errada'));
 			xhr.open('POST', u, true);
 			xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
 			xhr.send(postString);
@@ -220,6 +315,7 @@ window.addEventListener('load',() => {
 	//****************************************************
 	function urlE(app,u) {
 		var s = app.urlServer?app.urlServer:appProp.urlServer;
+		//eb('urlE: '+s);
 		return s+u;
 	}
 	//****************************************************
@@ -252,11 +348,18 @@ window.addEventListener('load',() => {
 				domObj({tag:'link',targ:head,rel:'StyleSheet',href:cs+'?ms='+ms()});
 			});
 		}
-		oApp = new ap(appProp);
+		try {
+			oApp = new ap(appProp);
+		} catch (e) {
+			alert('erro init app '+objText(appProp)+'\n\n'+erro(e));
+		}
 	}
 	//****************************************************
 	// carrega 1 js...
 	function loadJs(nome,ev) {
+		if (typeof(ev)=='function') {
+			ev = ['load',ev];
+		}
 		if (nome.indexOf('.')==-1) nome += '.js';
 		var t = (new Date()).getTime();
 		if (jsVet[nome]) {

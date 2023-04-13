@@ -30,9 +30,9 @@ var Eml = {
 		return r;
 	}
 	,cpEst:()=>{return cpEst;}*/
-	hexConv:(cp) => {
+	hexConv: (cp) => {
 		var td = new TextDecoder(cp);
-		this.conv = (h)=>{
+		this.conv = (h) => {
 			var h1 = new Uint8Array(h.length/2);
 			for (var i=0;i<h.length;i+=2) {
 				h1[i/2] = parseInt(h.substring(i,i+2),16);
@@ -47,7 +47,7 @@ var Eml = {
 		//td = new TextDecoder('utf-8')
 		//td.decode(by)
 		//lert(Eml.hexConv);
-		var cv = new Eml.hexConv(cp);
+		var cv = new hexConv(cp);
 		var r='',b='';
 		for (var i=0;i<s.length;i++) {
 			//if (i==0||s.charAt(i)=='=') {

@@ -38,6 +38,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	var _c = console.log;
 	var planetas = '☿ Mercúrio	♀ Vênus	⊕ Terra	♂ Marte	♃ Júpiter	♄ Saturno	♅ Urano	♆ Netuno';
 
+	function hexConv(cp) {
+		var td = new TextDecoder(cp);
+		this.conv = (h)=>{
+			var h1 = new Uint8Array(h.length/2);
+			for (var i=0;i<h.length;i+=2) {
+				h1[i/2] = parseInt(h.substring(i,i+2),16);
+			}
+			return td.decode(h1);
+		}
+	}
+
 	//***********************************************
 	// escape
 	function escape1(val) {

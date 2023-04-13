@@ -7,10 +7,10 @@
 	
 */
 
-var cpEst;
+/*var cpEst;*/
 
 var Eml = {
-	decodeQ:(s)=>{
+/*	decodeQ:(s)=>{
 		var r = '';
 		for (var i=0;i<s.length;i++) {
 			if (s.charAt(i)=='=') {
@@ -29,15 +29,16 @@ var Eml = {
 		}
 		return r;
 	}
-	,cpEst:()=>{return cpEst;}
-	,hexUtf:(cp,h)=> {
+	,cpEst:()=>{return cpEst;}*/
+	hexConv:(cp) => {
 		var td = new TextDecoder(cp);
-		//lert('hh='+h);
-		var h1 = new Uint8Array(h.length/2);
-		for (var i=0;i<h.length;i+=2) {
-			h1[i/2] = parseInt(h.substring(i,i+2),16);
+		this.conv = (h)=>{
+			var h1 = new Uint8Array(h.length/2);
+			for (var i=0;i<h.length;i+=2) {
+				h1[i/2] = parseInt(h.substring(i,i+2),16);
+			}
+			return td.decode(h1);
 		}
-		return td.decode(h1);
 	}
 	,decodIgu:(cp,s)=> {
 		//https://developer.mozilla.org/en-US/docs/Web/API/TextDecoder
@@ -45,6 +46,8 @@ var Eml = {
 		//by = new Uint8Array([parseInt('C3',16),parseInt('BA',16)]);
 		//td = new TextDecoder('utf-8')
 		//td.decode(by)
+		//lert(Eml.hexConv);
+		var cv = new Eml.hexConv(cp);
 		var r='',b='';
 		for (var i=0;i<s.length;i++) {
 			//if (i==0||s.charAt(i)=='=') {
@@ -55,7 +58,7 @@ var Eml = {
 				r += ' ';
 			} else {
 				if (b!='') {
-					r += Eml.hexUtf(cp,b);
+					r += cv.conv(b);
 					b = '';
 				}
 				r += s.charAt(i);
@@ -63,7 +66,7 @@ var Eml = {
 		}
 		return r;
 	}
-	,decodeFrag: (s)=>{
+/*	,decodeFrag: (s)=>{
 		var v = s.split('?');
 		v[0] = v[0].toLowerCase();
 		cpEst.inc(v[0]+' '+v[1],1);
@@ -84,9 +87,9 @@ var Eml = {
 			return Eml.decodeQ(v[2]);
 		}
 		return '=?'+s+'?=';
-	}
+	}*/
 	,decode: (s)=> {
-		if (!cpEst) cpEst = new estat('estat eml conv')
+		/*if (!cpEst) cpEst = new estat('estat eml conv')*/
 		var p = 0;
 		var i,f;
 		while ( (i=s.indexOf('=?',p))!=-1 ) {
@@ -94,7 +97,7 @@ var Eml = {
 			f = s.indexOf('?',i);
 			var cp = s.substring(i,f).toLowerCase();
 			var cm = s.substring(f+1,f+2).toLowerCase();
-			cpEst.inc(cp+' '+cm,1);
+			/*cpEst.inc(cp+' '+cm,1);*/
 			f += s.charAt(f+2)=='?'?3:2;
 			p = s.indexOf('?=',f);
 			//lert(cp+' '+cm+'\n\n'+s.substring(f,p));
@@ -124,7 +127,7 @@ var Eml = {
 		}
 		return s;
 	}
-	,decode1: (s)=> {
+/*	,decode1: (s)=> {
 		//"=?utf-8?B?SW50ZWzCriBTb2Z0d2FyZSBEZXZlbG9wZXIgWm9uZQ==?="
 		var p = 0;
 		var i,f;
@@ -140,6 +143,7 @@ var Eml = {
 		}
 		return s;
 	}
+	*/
 };
 
 

@@ -2,14 +2,160 @@
 	signey jun/2018 mai/2019 mai/2020 
 
 	// dom objects not work.
+	* 
+	* @sgnyjohn abr/2023 Eml
 	
 */
+
+var cpEst;
+
+var Eml = {
+	decodeQ:(s)=>{
+		var r = '';
+		for (var i=0;i<s.length;i++) {
+			if (s.charAt(i)=='=') {
+				var ii = parseInt(s.substring(i+1,i+3), 16);
+				if (ii>0) {
+					r += String.fromCharCode(ii);
+					i += 2;
+				} else {
+					r += s.charAt(i);
+				}
+			} else if (s.charAt(i)=='_') {
+				r += ' ';
+			} else {
+				r += s.charAt(i);
+			}
+		}
+		return r;
+	}
+	,cpEst:()=>{return cpEst;}
+	,hexUtf:(cp,h)=> {
+		var td = new TextDecoder(cp);
+		//lert('hh='+h);
+		var h1 = new Uint8Array(h.length/2);
+		for (var i=0;i<h.length;i+=2) {
+			h1[i/2] = parseInt(h.substring(i,i+2),16);
+		}
+		return td.decode(h1);
+	}
+	,decodIgu:(cp,s)=> {
+		//https://developer.mozilla.org/en-US/docs/Web/API/TextDecoder
+		//utf-8?QF0=9F=93=89Bradesco_sa=C3=BAde?=
+		//by = new Uint8Array([parseInt('C3',16),parseInt('BA',16)]);
+		//td = new TextDecoder('utf-8')
+		//td.decode(by)
+		var r='',b='';
+		for (var i=0;i<s.length;i++) {
+			//if (i==0||s.charAt(i)=='=') {
+			if (s.charAt(i)=='=') {
+				b += s.substring(i+1,i+3);
+				i += 2;
+			} else if (s.charAt(i)=='_') {
+				r += ' ';
+			} else {
+				if (b!='') {
+					r += Eml.hexUtf(cp,b);
+					b = '';
+				}
+				r += s.charAt(i);
+			}
+		}
+		return r;
+	}
+	,decodeFrag: (s)=>{
+		var v = s.split('?');
+		v[0] = v[0].toLowerCase();
+		cpEst.inc(v[0]+' '+v[1],1);
+		if (v.length==2&&v[1].charAt(0)=='Q') {
+			return Eml.decodIgu(v[0],v[1]);
+		}
+		v[1] = v[1].toLowerCase();
+		if (v.length!=3) {
+		} else if (v[1]=='b'&&v[0]=='utf-8') {
+			//https://developer.mozilla.org/en-US/docs/Glossary/Base64
+			return decodeURIComponent(escape(window.atob(v[2])));
+			//return decodeURIComponent(window.atob(v[2]));
+		} else if (v[1]=='q') {
+			alert(v[2]);
+			if (v[2].indexOf('=')!=-1) {
+				return Eml.decodIgu(v[0],v[1]);
+			}
+			return Eml.decodeQ(v[2]);
+		}
+		return '=?'+s+'?=';
+	}
+	,decode: (s)=> {
+		if (!cpEst) cpEst = new estat('estat eml conv')
+		var p = 0;
+		var i,f;
+		while ( (i=s.indexOf('=?',p))!=-1 ) {
+			i += 2;
+			f = s.indexOf('?',i);
+			var cp = s.substring(i,f).toLowerCase();
+			var cm = s.substring(f+1,f+2).toLowerCase();
+			cpEst.inc(cp+' '+cm,1);
+			f += s.charAt(f+2)=='?'?3:2;
+			p = s.indexOf('?=',f);
+			//lert(cp+' '+cm+'\n\n'+s.substring(f,p));
+			if (cm=='q') {
+				var t = Eml.decodIgu(cp,s.substring(f,p));
+				s = s.substring(0,i-2)
+					+t
+					+s.substring(p+2)
+				;
+				p = i-2+t.length;
+			} else if (cm=='b') { //base 64
+				if (cp=='utf-8') {
+					var t = decodeURIComponent(escape(window.atob(s.substring(f,p))));
+				} else {
+					//var td = new TextDecoder(cp); //td.decode
+					// então iso-8859-1 padrao microsoft ?
+					var t = (window.atob(s.substring(f,p)));
+				}
+				s = s.substring(0,i-2)
+					+t
+					+s.substring(p+2)
+				;
+				p = i-2+t.length;				
+			} else {
+				p = i;
+			}
+		}
+		return s;
+	}
+	,decode1: (s)=> {
+		//"=?utf-8?B?SW50ZWzCriBTb2Z0d2FyZSBEZXZlbG9wZXIgWm9uZQ==?="
+		var p = 0;
+		var i,f;
+		while ( (i=s.indexOf('=?',p))!=-1 && (f=s.indexOf('?=',i+2))>i ) {
+			alert('part='+s.substring(i+2,f));
+			var h = Eml.decodeFrag(s.substring(i+2,f));
+			//lert(h+'\n\n'+s);
+			s = (i==0?'':s.substring(0,i))
+				+h
+				+s.substring(f+2)
+			;
+			p = i+h.length;
+		}
+		return s;
+	}
+};
+
+
+var Dom = {
+	aguarde: (o)=>{
+		o.innerHTML = 'aguarde...';
+	}
+};
 
 var Lib = {
 	isFunction: (o)=>{return typeof(o)=='function'}
 	,ifFunc: (o)=>{return typeof(o)=='function'}
 	,isDom: (o)=>{return o && o.tagName;}
 	,isStr: (o)=>{return typeof(o)=='string';}
+	,isUnd: (o)=>{return typeof(o)=='undefined';}
+	,isObj: (o)=>{return typeof(o)=='object';}
 	,isNum: (str)=> {
 		if (typeof(str)=='number') {
 			return true;
@@ -31,6 +177,19 @@ var Lib = {
 				+strZero(d.getMinutes(),2)+':'+strZero(d.getSeconds(),2)
 			)
 		;		
+	}
+	,erro: (e)=>{
+		if (typeof(e)=='string' || typeof(e)=='undefined') {
+			//return (e+' (string)');
+			e = new Error(''+e);
+		}
+		return 'Erro='
+			+e.name
+			+(browse.ie?' ('+e.number+')':'')
+			+' '+e.message
+			+' '+(browse.ie?' '+e.description:'')
+			+(!browse.ie?(''+e.stack).replace('\n','\n\n'):'')
+		;
 	}
 };
 
@@ -80,7 +239,7 @@ var Obj = {
 if (!Date.prototype.getYearWeek) Date.prototype.getYearWeek = function(){
 	/* semana comunic começa na sexta.
 	 * dom 0 5
-	 * seg 1 4
+	 * seg 1 4 
 	 * ter 2 3
 	 * qua 3 2
 	 * qui 4 1
@@ -91,6 +250,7 @@ if (!Date.prototype.getYearWeek) Date.prototype.getYearWeek = function(){
 	var d0 = new Date(y, 0, 1);
 	//calcula a data que começa a semana 1 do ano.
 	d0.setTime(d0.getTime()+(d0.getDay()==6?6:5-d0.getDay())*24*3600000);
+	//d0.setTime(d0.getTime()+((8-d0.getDay())%7)*24*3600000);
 	//caso dt < d0 retorna semana do ultimo dia do ano anterior
 	if (this.getTime()<d0.getTime()) return (new Date(y-1, 11, 31)).getYearWeek();
   return y+'s'+strZero(Math.floor((this-d0)/7/24/3600000)+1,2);

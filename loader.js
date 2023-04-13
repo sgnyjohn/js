@@ -210,19 +210,74 @@ window.addEventListener('load',() => {
 		xhr.send(null);
 	}
 	//*******************************
+	function loadExecDivLoader(ob) {
+		// opcao loader permite q um objeto carregue outro.
+		// o objeto deve ser tratado pelo LOADER, tipo logon.
+		// para isto o loader precisa de lista de classes/objetos
+		var name = leftAt(ob.textContent,' ');
+		var func = trimm(substrAt(ob.textContent+' ',' '));
+		deb('obj '+app.name+' envia pacote para app '+name);
+		if (apps[name]) {
+			//executa 
+			exec(name,func);
+		} else {
+			//not loaded js, app nova, criar.
+			loadJs(jsDir+'/'+name,{load:()=>{
+				deb('load: '+name+'.js OK, criar obj ('+func+')');
+				//armazena app e apos executa
+				new ap({name:name});
+				//exec(nome,'init',func);
+			}});
+		}
+		//windows.init();
+	}
+	//*******************************
+	function loadExecDiv(ob) {
+		var h = ob.innerHTML;
+		var o = ob.className;
+		if (!o) {
+			if (typeof(h)!='string') {
+				//lixo na resposta...
+				return true;
+			} else {
+				alert('RESP server desconhecido: \n\n'+ob.outerHTML);
+			}
+		} else if (o=='loader') {
+			return loadExecDivLoader(ob);
+		} else if (o=='compil') {
+			var m = 'compil: '+ob.textContent;
+			_c(m);
+			if (dev()) alert(m);
+			return true;
+		} else {
+			//procura em todas apps.
+			for (k in apps) {
+				var a = apps[k];
+				if (typeof(a[o])=='function') {
+					a[o](h);
+					return true
+				}
+				//lert('procurando metodo... '+k+'.'+o+'='+typeof(a[o]));
+			}
+		}
+		return false;
+	}
+	//*******************************
 	// load e process reply from server
 	function load(Url,postString,app) {
+		//debJ('loader.load post='+postString);
 		var u = urlE(app,Url);
 		if (u.indexOf('undefined')!=-1) {
-			deb('name='+name+' u='+u+' '+aProp,aProp);
+			//deb('name='+name+' u='+u+' '+aProp,aProp);
+			deb('name='+name+' u='+u+' Url='+Url);
 		}
+		deb('pedido url='+Url+' postString='+postString);
 		var xhr = new XMLHttpRequest();
 		xhr.onreadystatechange = (a,b,tx) => {
-			deb('load ret url='+u+'\nresp(a='+a+' b='+b+')=\n'+tx);
+			//deb('load ret url='+u+'\nresp(a='+a+' b='+b+')=\n'+tx);
 			if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
 				//application/json
 				var mime = xhr.getResponseHeader('Content-Type');
-				//if (url=='json') { objNav(xhr);lert(xhr+' '+mime);}
 				_c('='+mime+'=');
 				if (equals(mime,'application/json')) {
 					_c(xhr.responseText);
@@ -236,65 +291,15 @@ window.addEventListener('load',() => {
 				tx = trimm(xhr.responseText);
 				var x = ms();
 				var d = document.createElement('div');
-				//objNav(a);
-				//lert('loadY: '+url+' a='+a+' b='+b+' tx='+tx);
 				d.innerHTML = tx;
-				deb('loadY: '+d.childNodes.length+'\n html: '+(d.innerHTML));
-				//lert(d.innerHTML);
 				for (var i=0;i<d.childNodes.length;i++) {
-					var ob = d.childNodes.item(i)
-					var h = ob.innerHTML;
-					var o = ob.className;
-					deb('load:Receive: '+i+' tg='+ob.tagName+' tg='+ob.outerHTML);
-					if (!o) {
-						if (typeof(h)!='string') {
-							//lixo na resposta...
-						} else {
-							alert('RESP server desconhecido: \n\n'+ob.outerHTML);
-						}
-					} else if (o=='loader') {
-						// opcao loader permite q um objeto carregue outro.
-						// o objeto deve ser tratado pelo LOADER, tipo logon.
-						// para isto o loader precisa de lista de classes/objetos
-						var name = leftAt(ob.textContent,' ');
-						var func = trimm(substrAt(ob.textContent+' ',' '));
-						deb('obj '+app.name+' envia pacote para app '+name);
-						if (apps[name]) {
-							//executa 
-							exec(name,func);
-						} else {
-							//not loaded js, app nova, criar.
-							loadJs(jsDir+'/'+name,{load:()=>{
-								deb('load: '+name+'.js OK, criar obj ('+func+')');
-								//armazena app e apos executa
-								new ap({name:name});
-								//exec(nome,'init',func);
-							}});
-						}
-						//windows.init();
-					} else if (o=='compil') {
-						var m = 'compil: '+ob.textContent;
-						_c(m);
-						if (dev()) alert(m);
-					//} else if (typeof(app.obj[o])=='function') {
-						// tem no app default?
-					//	app.obj[o](h);
-						//tem op default e aceitou
-					} else {
-						//procura em todas apps.
-						for (k in apps) {
-							var a = apps[k];
-							if (typeof(a[o])=='function') {
-								a[o](h);
-								return;
-							}
-							//lert('procurando metodo... '+k+'.'+o+'='+typeof(a[o]));
-						}
-	
+					var ob = d.childNodes.item(i);
+					if (false) deb('load:Receive: '+i+'/'+(d.childNodes.length-1)
+						+' tg='+ob.tagName+' tg='+ob.outerHTML
+					);
+					if (!loadExecDiv(ob)) {
 						alert('CLASS RESP '+i+'/'+d.childNodes.length
 							+' server desconhecido('+ob.outerHTML+')'
-							//+' app='+app.name
-							//+' appo='+app.obj[o]
 						);
 					}
 				}
@@ -302,12 +307,12 @@ window.addEventListener('load',() => {
 		}
 		//send request to server
 		if (postString) {
-			deb('POST url='+u+' post='+postString+' '+erro('carga errada'));
+			debJ('POST url='+u+' post='+postString.length+'='+postString);//+' '+erro('carga errada'));
 			xhr.open('POST', u, true);
 			xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
 			xhr.send(postString);
 		} else {
-			deb('GET url='+u);
+			debJ('GET url='+u);
 			xhr.open("GET", u, true);
 			xhr.send(null);
 		}

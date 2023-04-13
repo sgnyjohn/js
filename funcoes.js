@@ -37,6 +37,63 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	var browse = {};	
 	var _c = console.log;
 	var planetas = '☿ Mercúrio	♀ Vênus	⊕ Terra	♂ Marte	♃ Júpiter	♄ Saturno	♅ Urano	♆ Netuno';
+
+	//***********************************************
+	// escape
+	function escape1(val) {
+		return encodeURIComponent(val);
+	}
+	//***********************************************
+	function Uri(uri) {
+		var vs = 'prot :// user : pass @ serv : port / path'.split(' ');
+		//prot
+		this.prot = "imaps";
+		var p = uri.indexOf("://");
+		if (p!=-1) {
+			this.prot = uri.substring(0,p);
+			uri = uri.substring(p+3);
+		}
+		// serv e user
+		p = uri.lastIndexOf("@");
+		this.serv = uri.substring(p+1);
+		this.user = uri.substring(0,p);
+		//path
+		this.path = "";
+		p = this.serv.indexOf("/");
+		if (p!=-1) {
+			this.path = this.serv.substring(p);
+			this.serv = this.serv.substring(0,p+1);
+		}
+		//port
+		this.port = 143;
+		p = this.serv.indexOf(":");
+		if (p!=-1) {
+			this.port = 1*this.serv.substring(p+1);
+			this.serv = this.serv.substring(0,p);
+		}
+		//pass
+		this.pass = "";
+		p = this.user.indexOf(":");
+		if (p!=-1) {
+			this.pass = this.user.substring(p+1);
+			this.user = this.user.substring(0,p);
+		}
+		//decod params
+		aeval(vs,(v,n) => {
+			if (n%2==0&&n!=0) this[v] = decodeURIComponent(this[v]);
+		});
+		//===
+		this.getUri = () => {
+			var r = this.prot;
+			aeval(vs,(v,n) => {
+				if (n%2==0&&n!=0&&!vazio(this[v])) 
+					r += vs[n-1]+encodeURIComponent(this[v])
+				;
+			});
+			return r;
+		}
+	}
+	
 	//***********************************************
 	// object or json - return prop path del by .
 	function getObjPath(obj,path) {
@@ -1283,8 +1340,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		var ret;
 		if (typeof(p)=='string' && p.charAt(0)=='<') {
 			ret = domObj({tag:'div','':p}).firstChild;
-			if (!oo) return ret;
-			p = oo;
+			if (oo) oo.appendChild(ret);
+			return ret;
 		}
 		p.doc=(p.doc?p.doc:document);
 		p.tag=(p.tag?p.tag:'p');
@@ -1918,17 +1975,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	//**************************//
 	function styleSet(dom,key,value) {
 		var o = textObj(dom.style.cssText);
-		o[key] = value;
+		o[key] = value;//(!value?'':value);
 		dom.style.cssText = objText(o);
 	}
 	//**************************//
 	function objText(obj,delimElem,delimValue) {
 		delimElem = delimElem?delimElem:';'
 		delimValue = delimValue?delimValue:':'
+		var sd = '%'+delimElem+delimValue;
 		var r = '',nv=0;
 		for (var k in obj) {
-			nv++;
-			r += k+delimValue+obj[k]+delimElem;
+			r += hexEnc(k,sd)
+				+(Lib.isUnd(obj[k])?'':delimValue+hexEnc(obj[k],sd))
+				+delimElem;
 		}		
 		return r;
 	}
@@ -1936,16 +1995,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	function textObj(tex,delimElem,delimValue) {
 		var v = (tex?tex:'').split(delimElem?delimElem:';');
 		var r = {};
+		var dl = delimValue?delimValue:':';
 		for (var i=0;i<v.length;i++) {
-			var l = v[i].split(delimValue?delimValue:':');
-			l[0] = trimm(l[0]);
-			if (l.length==1) { 
-				if (l[0]!='') {
-					r[l[0]] = true;
-				}
+			var p = v[i].indexOf(dl);
+			if (p==-1) {
+				r[hexDEnc(v[i])] = undefined;
 			} else {
-				r[l[0]] = trimm(l[1]);
-			} 
+				r[ hexDEnc(v[i].substring(0,p)) ] 
+					= hexDEnc( hexDEnc(v[i].substring(p+dl.length)) )
+				;
+			}
 		}
 		return r;
 	}
@@ -2007,6 +2066,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		}
 		aeval(opDefault,function(x,k){typeof(op[k])=='undefined'?op[k]=opDefault[k]:false;});
 		return op;
+	}
+	// ==>
+	function mergeOptionsM(padrao,r) {
+		mergeOptions(padrao,r);
+		for (k in padrao) {
+			if (Lib.isStr(padrao[k])&&padrao[k].charAt(0)=='&'&&r[k]==padrao[k]) {
+				r[k] = r[padrao[k].substring(1)];
+			}
+		}
+		return r;
 	}
 	
 	//***********************************************
@@ -3101,6 +3170,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			//lert(' i1='+i1+' i2='+i2+' i3='+i3 );
 		}
 		//*********************************************
+		this.length = function() {
+			return valores.length;
+		}
 		this.count = function() {
 			return valores.length;
 		}
@@ -3528,20 +3600,61 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		nm = ''+nm;
 		return 1*(nm.substring(0,nm.indexOf('.')));
 	}
-
+	//**************************//
+	function hexDEnc(str) {
+		if (str.indexOf('%')==-1) 
+			return str;
+		var r = '';
+		for (var i=0;i<str.length;i++) {
+			if (str.charAt(i)=='%'&&i<str.length-2) {
+				var v = hexToDec(str.substring(i+1,i+3));
+				if (v==-1) {
+					r += str.charAt(i);
+				} else {
+					r += String.fromCharCode(v);
+					i += 2;
+				}
+			} else {
+				r += str.charAt(i);
+			}
+		}
+		return r;
+	}
+	//**************************//
+	function hexEnc(str,sDelims) {
+		if (!sDelims)
+			return hexDEnc(str);
+		var r = '';
+		for (var i=0;i<str.length;i++) {
+			if (sDelims.indexOf(str.charAt(i))!=-1) {
+				r += '%'+ascToHex(str.charAt(i));
+			} else {
+				r += str.charAt(i);
+			}
+		}
+		return r;
+	}	
 	//**************************//
 	function asc(c) {
 		return c.charCodeAt(0);
 	}
 	//**************************//
-	function hexToDec(c) {	
-		var c = trimm(c).toUpperCase();
+	function hexToDec(c) {
+		return parseInt(c,16);	
+		/*var c = trimm(c).toUpperCase();
 		var t = c.length;
 		var r = 0;
 		for (var i=0;i<t;i++) {
-			r += "0123456789ABCDEF".indexOf(c.substring(i,i+1))*Math.pow(16,(t-i-1));
+			var v = "0123456789ABCDEF".indexOf(c.substring(i,i+1));
+			if (v==-1) return v;
+			r += v*Math.pow(16,(t-i-1));
 		}
 		return r;
+		*/
+	}
+	//**************************//
+	function ascToHex(c) {
+		return decToHex(c.charCodeAt(0));
 	}
 	//**************************//
 	function decToHex(c) {

@@ -39,6 +39,7 @@ var Eml = {
 			}
 			return td.decode(h1);
 		}
+		return this;
 	}
 	,decodIgu:(cp,s)=> {
 		//https://developer.mozilla.org/en-US/docs/Web/API/TextDecoder
@@ -47,7 +48,7 @@ var Eml = {
 		//td = new TextDecoder('utf-8')
 		//td.decode(by)
 		//lert(Eml.hexConv);
-		var cv = new hexConv(cp);
+		var cv = Eml.hexConv(cp);
 		var r='',b='';
 		for (var i=0;i<s.length;i++) {
 			//if (i==0||s.charAt(i)=='=') {

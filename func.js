@@ -41,7 +41,7 @@ var Eml = {
 		}
 		return this;
 	}
-	,decodIgu:(cp,s)=> {
+	,decodQ:(cp,s)=> {
 		//https://developer.mozilla.org/en-US/docs/Web/API/TextDecoder
 		//utf-8?QF0=9F=93=89Bradesco_sa=C3=BAde?=
 		//by = new Uint8Array([parseInt('C3',16),parseInt('BA',16)]);
@@ -55,14 +55,12 @@ var Eml = {
 			if (s.charAt(i)=='=') {
 				b += s.substring(i+1,i+3);
 				i += 2;
-			} else if (s.charAt(i)=='_') {
-				r += ' ';
 			} else {
 				if (b!='') {
 					r += cv.conv(b);
 					b = '';
 				}
-				r += s.charAt(i);
+				r += s.charAt(i)=='_'?' ':s.charAt(i);
 			}
 		}
 		return r;
@@ -103,7 +101,7 @@ var Eml = {
 			p = s.indexOf('?=',f);
 			//lert(cp+' '+cm+'\n\n'+s.substring(f,p));
 			if (cm=='q') {
-				var t = Eml.decodIgu(cp,s.substring(f,p));
+				var t = Eml.decodQ(cp,s.substring(f,p));
 				s = s.substring(0,i-2)
 					+t
 					+s.substring(p+2)

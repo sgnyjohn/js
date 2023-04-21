@@ -371,6 +371,7 @@ window.addEventListener('load',() => {
 			deb('loadJs: já carregado: '+nome
 				+' miliSegs: '+format(t-jsVet[nome])
 			);
+			aeval(ev,(v,k)=>{if (k=='load') v();});
 			return;
 		}
 		jsVet[nome] = t;

@@ -770,7 +770,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	function deb(a,ob) {
 		if (!dev()) return;
 		if (typeof(ob)=='object') {
-			objNav(ob);
+			setTimeout(()=>{objNav(ob);},100);
 			if (confirm(a)) {
 				alert(erro());
 				return;
@@ -2830,10 +2830,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 						r[vc] = [ur];
 					}
 				} else if (uniq) {
-					alert('index: error, duplicate value of key '
-						+nomeCampo+'['+vc+' & '+this.get(nomeCampo,'?',''+r[vc])+']'
-						+' rg='+ur+' val='+valores[ur]
-					);
+					alert(erro('index: error, duplicate value of key'
+						+'\ncampo('+nomeCampo+')'
+						+'\nval('+vc+')'
+						+'\n\reg('+ur+' ('+valores[ur]+'))'
+					));
 				} else {
 					r[vc][r[vc].length] = ur;
 				}
@@ -3581,9 +3582,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		}
 		var segs = (Date.now()-t)/1000;
 		if (segs<3600) {
-			return Math.floor(segs/60)+' minutos';
+			//minutos
+			return Math.floor(segs/60);
 		} else if (segs/3600<24) {
-			return Math.floor(segs/3600)+':'+strZero(segs%3600/60);
+			//horas e minutos
+			return Math.floor(segs/3600)+':'+strZero(segs%3600/60,2);
 		}
 		return  new Date(t).toLocaleString();
 

@@ -7,29 +7,7 @@
 	
 */
 
-/*var cpEst;*/
-
-var Eml = {
-/*	decodeQ:(s)=>{
-		var r = '';
-		for (var i=0;i<s.length;i++) {
-			if (s.charAt(i)=='=') {
-				var ii = parseInt(s.substring(i+1,i+3), 16);
-				if (ii>0) {
-					r += String.fromCharCode(ii);
-					i += 2;
-				} else {
-					r += s.charAt(i);
-				}
-			} else if (s.charAt(i)=='_') {
-				r += ' ';
-			} else {
-				r += s.charAt(i);
-			}
-		}
-		return r;
-	}
-	,cpEst:()=>{return cpEst;}*/
+const Eml = {
 	hexConv: (cp) => {
 		var td = new TextDecoder(cp);
 		this.conv = (h) => {
@@ -43,15 +21,9 @@ var Eml = {
 	}
 	,decodQ:(cp,s)=> {
 		//https://developer.mozilla.org/en-US/docs/Web/API/TextDecoder
-		//utf-8?QF0=9F=93=89Bradesco_sa=C3=BAde?=
-		//by = new Uint8Array([parseInt('C3',16),parseInt('BA',16)]);
-		//td = new TextDecoder('utf-8')
-		//td.decode(by)
-		//lert(Eml.hexConv);
 		var cv = Eml.hexConv(cp);
 		var r='',b='';
 		for (var i=0;i<s.length;i++) {
-			//if (i==0||s.charAt(i)=='=') {
 			if (s.charAt(i)=='=') {
 				b += s.substring(i+1,i+3);
 				i += 2;
@@ -65,30 +37,7 @@ var Eml = {
 		}
 		return r;
 	}
-/*	,decodeFrag: (s)=>{
-		var v = s.split('?');
-		v[0] = v[0].toLowerCase();
-		cpEst.inc(v[0]+' '+v[1],1);
-		if (v.length==2&&v[1].charAt(0)=='Q') {
-			return Eml.decodIgu(v[0],v[1]);
-		}
-		v[1] = v[1].toLowerCase();
-		if (v.length!=3) {
-		} else if (v[1]=='b'&&v[0]=='utf-8') {
-			//https://developer.mozilla.org/en-US/docs/Glossary/Base64
-			return decodeURIComponent(escape(window.atob(v[2])));
-			//return decodeURIComponent(window.atob(v[2]));
-		} else if (v[1]=='q') {
-			alert(v[2]);
-			if (v[2].indexOf('=')!=-1) {
-				return Eml.decodIgu(v[0],v[1]);
-			}
-			return Eml.decodeQ(v[2]);
-		}
-		return '=?'+s+'?=';
-	}*/
 	,decode: (s)=> {
-		/*if (!cpEst) cpEst = new estat('estat eml conv')*/
 		var p = 0;
 		var i,f;
 		while ( (i=s.indexOf('=?',p))!=-1 ) {
@@ -111,8 +60,6 @@ var Eml = {
 				if (cp=='utf-8') {
 					var t = decodeURIComponent(escape(window.atob(s.substring(f,p))));
 				} else {
-					//var td = new TextDecoder(cp); //td.decode
-					// então iso-8859-1 padrao microsoft ?
 					var t = (window.atob(s.substring(f,p)));
 				}
 				s = s.substring(0,i-2)
@@ -126,35 +73,236 @@ var Eml = {
 		}
 		return s;
 	}
-/*	,decode1: (s)=> {
-		//"=?utf-8?B?SW50ZWzCriBTb2Z0d2FyZSBEZXZlbG9wZXIgWm9uZQ==?="
-		var p = 0;
-		var i,f;
-		while ( (i=s.indexOf('=?',p))!=-1 && (f=s.indexOf('?=',i+2))>i ) {
-			alert('part='+s.substring(i+2,f));
-			var h = Eml.decodeFrag(s.substring(i+2,f));
-			//lert(h+'\n\n'+s);
-			s = (i==0?'':s.substring(0,i))
-				+h
-				+s.substring(f+2)
-			;
-			p = i+h.length;
+};
+
+
+const Dom = {
+	aguarde: (o,tx)=>{
+		o.innerHTML = '<p class="domAguarde">'
+			+'aguarde...'
+			+(tx?'<br><br><b>'+tx+'</b>':'')
+		+'</p>';
+	}
+	//***********************************************
+	// add style id prefixo classe
+	, addStyleId: (cssText,id,prefix)=>{
+		var v = document.querySelectorAll('style#'+id);
+		if (v.length!=0) return false;
+		//
+		if (prefix) {
+			let f = Dom.folhaEstilo(cssText);
+			cssText = f.txt(prefix.trim());
+			alert(cssText);
 		}
-		return s;
+		//
+		var ne = document.createElement('style');
+		ne.id = id;
+		ne.innerHTML = cssText;
+		var x = document.querySelector('head style');
+		if (x) {
+			//style exist, insert before
+			x.parentNode.insertBefore(ne,x);
+		} else {
+			//append to head
+			document.querySelector('head').appendChild(ne);
+		}
+		return true;
 	}
+	//*********************************
+	// @sgnyjohn mar/2010
+	// objeto ESTILO 
+	/*********************************
+	, estilo: (key,tx)=>{
+		var ch = key;
+		this.v = Array();
+		this.i = Array();
+		//*********************************
+		this.merge = (tx)=>{
+			//lert('tx='+tx);
+			tx = trimm(tx,' ;');
+			if (tx!='') {
+				let vt = palavraA(tx,';');
+				//lert('vt='+vt);
+				for (let i=0;i<vt.length;i++) {
+					vt[i] = trimm(vt[i]);
+					if (vt[i].indexOf('(')!=-1&&vt[i].indexOf(')')==-1) {
+						//junta com a proxima
+						i++;
+						vt[i] = vt[i-1]+';'+vt[i];
+					}				
+					if (false && vt[i].substring(0,5)=='-moz-') {
+					} else if (vt[i].substring(0,5)=='{pos:') {
+						//this[vt[i].substring(1)] = trimm(substrAt(vt[i],':'));
+						this.pos = 1*trimm(substrAt(vt[i],':'));
+					} else if (vt[i].indexOf(':')!=-1) {
+						var pr = trimm(leftAt(vt[i],':')).toLowerCase();
+						this.put(pr,trimm(substrAt(vt[i],':')));
+					} else {
+						this.put(vt[i],'');
+					}
+				}
+			}
+		}
+		//*********************************
+		function voltaEstilo(nPr) {
+			if (this.alterado(nPr)) {
+				return 'volta voltaS'
+			} else if (this.temVolta(nPr)) {
+				return 'volta voltaN';
+			}
+			return 'volta';
+		}
+		//*********************************
+		function volta(nPr,o) {
+			if (!this.temVolta(nPr)) {
+				return false;
+			}
+			var i = this.i[nPr];
+			var v = this.v[i];
+			//v[1] = v[2][v[3]];
+			o.value = v[2][v[3]];
+			v[3]--;
+			if (v[3]<0) {
+				v[3] = v[2].length-1;
+			}
+			return true;
+		}
+		//*********************************
+		function norm(v) {
+			var n;
+			v = trocaTudo(trocaTudo(trimm(v),', ',','),'  ',' ');
+			var vt = palavraA(v,' '),r='';
+			for (var i=0;i<vt.length;i++) {
+				if (vt[i].length>4 && vt[i].substring(0,4)=='rgb(') {
+					vt[i] = corToHex(vt[i]);
+				}
+				r += ' '+vt[i];
+			}
+			return (r==''?r:r.substring(1));
+		}
+		//*********************************
+		function put(ch,v) {
+			var i = this.i[ch];
+			v = norm(v);
+			if (typeof(i)=='undefined') {
+				i = this.v.length;
+				this.i[ch] = i;
+				this.v[i] = Array(ch,v,Array(''+v),0);
+			} else {
+				//unddo...
+				try {
+					var vv = this.v[i][2],a=0;
+				} catch (e) {
+					alert('put attr? ch='+ch+' v='+v+' i='+i+' er='+e);
+				}
+				for (var x=0;x<vv.length;x++){
+					if (v==vv[x]) {
+						a = 1;
+						break;
+					}
+				}
+				if (a==0) {
+					vv[vv.length] = v;
+					this.v[i][3] = vv.length-2;
+				}
+				this.v[i] = Array(ch,v,vv,this.v[i][3]);
+			}
+		}
+		//*********************************
+		function temVolta(ch) {
+			var i = this.i[ch];
+			if (typeof(i)=='undefined') {
+				return false;
+			}
+			return this.v[i][2].length>1;
+		}
+		//*********************************
+		function alterado(ch) {
+			var i = this.i[ch];
+			if (typeof(i)=='undefined') {
+				return false;
+			}
+			return this.v[i][1]!=this.v[i][2][0];
+		}
+		//*********************************
+		function get(ch) {
+			var i = this.i[ch];
+			if (typeof(i)=='undefined') {
+				return null;
+			}
+			return this.v[i][1];
+		}
+		//*********************************
+		function tex() {
+			var r = '';
+			for (var i=0;i<this.v.length;i++) {
+				if (trimm(this.v[i][1])!='') {
+					r += this.v[i][0]+': '
+						+this.v[i][1]
+					+';';
+				}
+			}
+			return r;
+		}
+		this.tex = tex;
+		this.put = put;
+		this.get = get;
+		this.volta = volta;
+		this.pos = -1;
+		this.alterado = alterado;
+		this.temVolta = temVolta;
+		this.voltaEstilo = voltaEstilo;
+		this.merge = merge;
+		this.merge(tx);
+		alert(this+' fim estilo '+tx);
+		return this;
+	} //fim estilo
 	*/
+	, folhaEstilo: (tx)=>{
+		let eu = this;
+		let hV = []; //estilos
+		init(tx);
+		var lf = '\n';
+		//**************************************************
+		// compact = 1 classe por linha
+		this.txt = (prefix)=>{
+			let r = '';
+			for (let i=0;i<hV.length;i++) {
+				let e = hV[i][0]
+					+' {'+objText(hV[i][1])+'}'
+				;
+				let prf = '';
+				if (prefix&&!e.equals(prefix)) {
+					prf = prefix+' ';
+				}
+				r += prf+e+lf+lf;
+			}
+			return r;			
+		}
+		//*********************************************
+		function init(tx) {
+			//usar dom mesmo.
+			var ne = document.createElement('style');
+			ne.innerHTML = tx;
+			document.body.appendChild(ne);
+			for (let i=0;i<ne.sheet.cssRules.length;i++) {
+				let s = ne.sheet.cssRules.item(i);
+				//alert('ss='+s.cssText);
+				hV.push([
+					s.cssText.leftAt('{').trim()
+					,textObj(s.cssText.substrAtAt('{','}'))
+				]);
+			}
+			domRemove(ne);
+			alert('hv='+hV);
+		}
+		return this;
+	} //fim folhaEstilo
 };
 
-
-var Dom = {
-	aguarde: (o)=>{
-		o.innerHTML = 'aguarde...';
-	}
-};
-
-var Lib = {
+const Lib = {
 	isFunction: (o)=>{return typeof(o)=='function'}
-	,ifFunc: (o)=>{return typeof(o)=='function'}
+	,isFunc: (o)=>{return typeof(o)=='function'}
 	,isDom: (o)=>{return o && o.tagName;}
 	,isStr: (o)=>{return typeof(o)=='string';}
 	,isUnd: (o)=>{return typeof(o)=='undefined';}
@@ -330,13 +478,28 @@ if(!String.prototype.count) {
 	}
 }
 
+if(!String.prototype.removeAtAt) { 
+	String.prototype.removeAtAt = function(a,b) {
+		var r = this;
+		var p = 0;
+		while ( (p=r.indexOf(a,p))!=-1) {
+			var p1 = r.indexOf(b,p);
+			if (p1==-1) break;
+			r = r.substring(0,p)
+					+r.substring(p1+b.length)
+			;
+			p += a.length;
+		}
+		return r;
+	}
+}
 
 if(!String.prototype.replaceAll){ 
 	String.prototype.replaceAll = function(a,b) {
 		if (a==b) return this;
 		var r = this;
 		var p = 0;
-		while ( (p=r.indexOf(a,p))!=-+1) {
+		while ( (p=r.indexOf(a,p))!=-1) {
 			r = r.replace(a,b);
 			p = p+b.length;
 		}
@@ -444,7 +607,7 @@ if(!String.prototype.substrAtAt){
 if(!String.prototype.substrAt){  
 	String.prototype.substrAt = function(a){  
 		var i = this.indexOf(a);
-		if (i<0) return this;
+		if (i<0) return '';
 		return this.substring(i+a.length);
 	}
 }

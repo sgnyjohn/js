@@ -1337,62 +1337,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	/** x@constructor */
 	// param obj ou text+obj
 	function domObj(p,oo) {
-		var ret;
-		if (typeof(p)=='string' && p.charAt(0)=='<') {
-			ret = domObj({tag:'div','':p}).firstChild;
-			if (oo) oo.appendChild(ret);
-			return ret;
-		}
-		p.doc=(p.doc?p.doc:document);
-		p.tag=(p.tag?p.tag:'p');
-		if (ret) {
-		} else if (p.svg) {
-			var uSvg = 'http://www.w3.org/2000/svg';
-			//uSvg = 'org.w3c.dom.svg';
-			ret=p.doc.createElementNS(uSvg,p.tag);
-		} else {
-			if (p.tag.charAt(0)=='<') {
-				ret = domObj({tag:'div','':trimm(p.tag)}).firstChild;
-			} else {
-				ret=p.doc.createElement(p.tag);
-			}
-		}
-		//onsole.log(p);
-		for (var i in p) {
-			//onsole.log(i);
-			if (i=='innerHTML'||i=='') {
-				var oo = typeof(p[i])=='object';
-				//lert('oo='+oo);
-				if (oo && p[i].tagName) {
-					ret.appendChild(p[i]);
-				} else if (oo && typeof(p[i].length)=='number') {
-					aeval(p[i],function(v){ret.appendChild(v);});
-				} else {
-					ret.innerHTML = ''+p[i];
-				}
-			} else if (equals(i,'ev_')) {
-				var ev = substrAt(i,'_');
-				//lert('domObj.evento '+ev+'\n'+p[i]);
-				ret.addEventListener(ev,p[i]);
-			} else if ('-doc-tag-targ-svg-'.indexOf('-'+i+'-')==-1) {
-				if (false && p.svg) {
-					ret.setAttributeNS(uSvg,i,p[i]);
-				} else {
-					ret.setAttribute(i,p[i]);
-				}
-			}
-			//lert('dfsf='+i+' '+ret.outerHTML);
-		}
-		if (p['targ']) {
-			p['targ'].appendChild(ret);
-		}
-		/*if (p.svg) {
-			objNav(ret);alert('svg');
-		}
-		*/
-		return ret;
+		return Dom.obj(p,oo);
 	}
-
 	
 	//***********************************************
 	function Url(s) {

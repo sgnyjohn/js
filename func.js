@@ -92,7 +92,6 @@ const Dom = {
 		if (prefix) {
 			let f = Dom.folhaEstilo(cssText);
 			cssText = f.txt(prefix.trim());
-			alert(cssText);
 		}
 		//
 		var ne = document.createElement('style');
@@ -108,156 +107,6 @@ const Dom = {
 		}
 		return true;
 	}
-	//*********************************
-	// @sgnyjohn mar/2010
-	// objeto ESTILO 
-	/*********************************
-	, estilo: (key,tx)=>{
-		var ch = key;
-		this.v = Array();
-		this.i = Array();
-		//*********************************
-		this.merge = (tx)=>{
-			//lert('tx='+tx);
-			tx = trimm(tx,' ;');
-			if (tx!='') {
-				let vt = palavraA(tx,';');
-				//lert('vt='+vt);
-				for (let i=0;i<vt.length;i++) {
-					vt[i] = trimm(vt[i]);
-					if (vt[i].indexOf('(')!=-1&&vt[i].indexOf(')')==-1) {
-						//junta com a proxima
-						i++;
-						vt[i] = vt[i-1]+';'+vt[i];
-					}				
-					if (false && vt[i].substring(0,5)=='-moz-') {
-					} else if (vt[i].substring(0,5)=='{pos:') {
-						//this[vt[i].substring(1)] = trimm(substrAt(vt[i],':'));
-						this.pos = 1*trimm(substrAt(vt[i],':'));
-					} else if (vt[i].indexOf(':')!=-1) {
-						var pr = trimm(leftAt(vt[i],':')).toLowerCase();
-						this.put(pr,trimm(substrAt(vt[i],':')));
-					} else {
-						this.put(vt[i],'');
-					}
-				}
-			}
-		}
-		//*********************************
-		function voltaEstilo(nPr) {
-			if (this.alterado(nPr)) {
-				return 'volta voltaS'
-			} else if (this.temVolta(nPr)) {
-				return 'volta voltaN';
-			}
-			return 'volta';
-		}
-		//*********************************
-		function volta(nPr,o) {
-			if (!this.temVolta(nPr)) {
-				return false;
-			}
-			var i = this.i[nPr];
-			var v = this.v[i];
-			//v[1] = v[2][v[3]];
-			o.value = v[2][v[3]];
-			v[3]--;
-			if (v[3]<0) {
-				v[3] = v[2].length-1;
-			}
-			return true;
-		}
-		//*********************************
-		function norm(v) {
-			var n;
-			v = trocaTudo(trocaTudo(trimm(v),', ',','),'  ',' ');
-			var vt = palavraA(v,' '),r='';
-			for (var i=0;i<vt.length;i++) {
-				if (vt[i].length>4 && vt[i].substring(0,4)=='rgb(') {
-					vt[i] = corToHex(vt[i]);
-				}
-				r += ' '+vt[i];
-			}
-			return (r==''?r:r.substring(1));
-		}
-		//*********************************
-		function put(ch,v) {
-			var i = this.i[ch];
-			v = norm(v);
-			if (typeof(i)=='undefined') {
-				i = this.v.length;
-				this.i[ch] = i;
-				this.v[i] = Array(ch,v,Array(''+v),0);
-			} else {
-				//unddo...
-				try {
-					var vv = this.v[i][2],a=0;
-				} catch (e) {
-					alert('put attr? ch='+ch+' v='+v+' i='+i+' er='+e);
-				}
-				for (var x=0;x<vv.length;x++){
-					if (v==vv[x]) {
-						a = 1;
-						break;
-					}
-				}
-				if (a==0) {
-					vv[vv.length] = v;
-					this.v[i][3] = vv.length-2;
-				}
-				this.v[i] = Array(ch,v,vv,this.v[i][3]);
-			}
-		}
-		//*********************************
-		function temVolta(ch) {
-			var i = this.i[ch];
-			if (typeof(i)=='undefined') {
-				return false;
-			}
-			return this.v[i][2].length>1;
-		}
-		//*********************************
-		function alterado(ch) {
-			var i = this.i[ch];
-			if (typeof(i)=='undefined') {
-				return false;
-			}
-			return this.v[i][1]!=this.v[i][2][0];
-		}
-		//*********************************
-		function get(ch) {
-			var i = this.i[ch];
-			if (typeof(i)=='undefined') {
-				return null;
-			}
-			return this.v[i][1];
-		}
-		//*********************************
-		function tex() {
-			var r = '';
-			for (var i=0;i<this.v.length;i++) {
-				if (trimm(this.v[i][1])!='') {
-					r += this.v[i][0]+': '
-						+this.v[i][1]
-					+';';
-				}
-			}
-			return r;
-		}
-		this.tex = tex;
-		this.put = put;
-		this.get = get;
-		this.volta = volta;
-		this.pos = -1;
-		this.alterado = alterado;
-		this.temVolta = temVolta;
-		this.voltaEstilo = voltaEstilo;
-		this.merge = merge;
-		this.merge(tx);
-		alert(this+' fim estilo '+tx);
-		return this;
-	} //fim estilo
-	*/
 	, folhaEstilo: (tx)=>{
 		let eu = this;
 		let hV = []; //estilos
@@ -294,10 +143,65 @@ const Dom = {
 				]);
 			}
 			domRemove(ne);
-			alert('hv='+hV);
+			//lert('hv='+hV);
 		}
 		return this;
 	} //fim folhaEstilo
+	//***********************************************
+	/** x@constructor */
+	// param obj ou text+obj
+	, obj: (p,oo)=> {
+		var ret;
+		if (typeof(p)=='string' && p.charAt(0)=='<') {
+			ret = domObj({tag:'div','':p}).firstChild;
+			if (oo) oo.appendChild(ret);
+			return ret;
+		}
+		p.doc=(p.doc?p.doc:document);
+		p.tag=(p.tag?p.tag:'p');
+		if (ret) {
+		} else if (p.svg) {
+			var uSvg = 'http://www.w3.org/2000/svg';
+			//uSvg = 'org.w3c.dom.svg';
+			ret=p.doc.createElementNS(uSvg,p.tag);
+		} else {
+			if (p.tag.charAt(0)=='<') {
+				ret = domObj({tag:'div','':trimm(p.tag)}).firstChild;
+			} else {
+				ret=p.doc.createElement(p.tag);
+			}
+		}
+		//onsole.log(p);
+		for (var i in p) {
+			//onsole.log(i);
+			if (i=='innerHTML'||i=='') {
+				var oo = typeof(p[i])=='object';
+				//lert('oo='+oo);
+				if (oo && p[i].tagName) {
+					ret.appendChild(p[i]);
+				} else if (oo && typeof(p[i].length)=='number') {
+					aeval(p[i],function(v){ret.appendChild(v);});
+				} else {
+					ret.innerHTML = ''+p[i];
+				}
+			} else if (equals(i,'ev_')) {
+				var ev = substrAt(i,'_');
+				//lert('domObj.evento '+ev+'\n'+p[i]);
+				ret.addEventListener(ev,p[i]);
+			} else if ('-doc-tag-targ-svg-'.indexOf('-'+i+'-')==-1) {
+				if (false && p.svg) {
+					ret.setAttributeNS(uSvg,i,p[i]);
+				} else {
+					ret.setAttribute(i,p[i]);
+				}
+			}
+			//lert('dfsf='+i+' '+ret.outerHTML);
+		}
+		if (p['targ']) {
+			p['targ'].appendChild(ret);
+		}
+		return ret;
+	}
 };
 
 const Lib = {

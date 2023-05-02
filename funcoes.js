@@ -34,6 +34,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 //if (true) {
 
+	//***********************************************
+	var mergeOptions = Lib.optionsMerge;
+	var mergeOptionsM = Lib.optionsMergeM;
+
 	var browse = {};	
 	var _c = console.log;
 	var planetas = '☿ Mercúrio	♀ Vênus	⊕ Terra	♂ Marte	♃ Júpiter	♄ Saturno	♅ Urano	♆ Netuno';
@@ -2013,27 +2017,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		}
 	}
 
-
-	//***********************************************
-	// mescla objeto opcoes com obj opcoes padrao
-	function mergeOptions(opDefault,op) {
-		if (typeof(op)!='object') {
-			return opDefault;
-		}
-		aeval(opDefault,function(x,k){typeof(op[k])=='undefined'?op[k]=opDefault[k]:false;});
-		return op;
-	}
-	// ==>
-	function mergeOptionsM(padrao,r) {
-		mergeOptions(padrao,r);
-		for (k in padrao) {
-			if (Lib.isStr(padrao[k])&&padrao[k].charAt(0)=='&'&&r[k]==padrao[k]) {
-				r[k] = r[padrao[k].substring(1)];
-			}
-		}
-		return r;
-	}
-	
 	//***********************************************
 	function getElementIndex(o) {
 		var op = o.parentNode;

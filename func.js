@@ -229,9 +229,22 @@ const Eml = {
 	}
 };
 
-
 const Dom = {
-	aguarde: (domDs,tx)=>{
+	ini:{}
+	,dialogo: class {
+		open(ev) {
+			if (Dom.agent.mobile()) {
+				this.center(ev);
+			} else {
+				this.show(ev);
+			}
+		}
+		constructor(op) {
+			this.op = Lib.optionsDefault(op,{
+			});
+		}
+	}
+	,aguarde: (domDs,tx)=>{
 		o.innerHTML = '<p class="domAguarde">'
 			+'aguarde...'
 			+(tx?'<br><br><b>'+tx+'</b>':'')
@@ -449,7 +462,29 @@ const Dom = {
 };
 
 const Lib = {
-	isFunction: (o)=>{return typeof(o)=='function'}
+	ini:{}
+	// mescla objeto opcoes 
+	,optionsMergetM: (padrao,r)=>{
+		Lib.optionsMerge(padrao,r);
+		for (k in padrao) {
+			if (Lib.isStr(padrao[k])&&padrao[k].charAt(0)=='&'&&r[k]==padrao[k]) {
+				// o default é o mesmo que outro k 
+				r[k] = r[padrao[k].substring(1)];
+			}
+		}
+		return r;
+	}
+	// mescla objeto opcoes com obj opcoes padrao
+	,optionsMerge: (opDefault,op)=>{
+		if (typeof(op)!='object') {
+			return opDefault;
+		}
+		aeval(opDefault,(x,k)=>{
+			typeof(op[k])=='undefined'?op[k]=opDefault[k]:false;
+		});
+		return op;
+	}
+	,isFunction: (o)=>{return typeof(o)=='function'}
 	,isArr: (o)=>{return Lib.isObj(o)&&typeof(o.length)=='number'}
 	,isFunc: (o)=>{return typeof(o)=='function'}
 	,isFun: (o)=>{return typeof(o)=='function'}

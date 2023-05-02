@@ -7,8 +7,162 @@
 	
 */
 
+/* para tentar entender 
+ * https://developer.mozilla.org/pt-BR/docs/Web/JavaScript/Reference/Global_Objects/Promise 
+ * desde 2014
+*/
+class promessa {
+	#ex = -1;
+	#ret;
+	#er = false;
+	p;
+	then(f) {
+		this.#exec();
+		if (this.#er===0) {
+			//se não erro exec argumento com arq retorno
+			f(this.#ret)
+		}
+		//retorna ele mesmo
+		return this;
+	}
+	catch(f) {
+		this.#exec();
+		// exec o argumento caso ERRO
+		if (this.#ex===1) {
+			f(this.er);
+		}
+		return this;
+	}
+	#exec() {
+		if (this.#ex!=-1) return;
+		try {
+			//inicia a exec promessa
+			this.#ret = p();
+			this.#ex = 0;
+		} catch (e) {
+			//erro, registra o erro
+			this.#ex = 1;
+			this.#er = e;
+		}
+	}
+	constructor(p) {
+		//ou o constructor lança 
+		//	o proc em seg plano
+		this.p = p;
+	}
+	// é mais interessante as estáticas q acompanham
+	static All(arr) {
+		//opa interable?
+		let nf = 0;
+		for (k in arr) {
+			setTimeout(()=>{
+				arr[k]();
+			});	
+		}
+	}
+}
+
+class Conv {
+	static fromquoted_printable(str,charSet) {
+		var cv = Eml.hexConv(charSet);
+		let t = str.length;
+		let r = '';
+		for (let i=0;i<t;i++) {
+			if (str.charAt(i)=='=') {
+				if (i+1<t&&str.charAt(i+1)=='\n') {
+					//ignora = no fim da linha e
+					i++;
+				} else if (i+1<t&&str.charAt(i+1)=='\r') {
+					//ignora = no fim da linha e
+					i += 2;
+				} else if (i+2<t) {
+					r += cv.conv(str.substring(i+1,i+3));
+					i += 2;
+				}
+			} else {
+				r += str.charAt(i);
+			}
+		}
+		return r;
+	}
+	/*static fromquoted_printable(str) {
+		str = str
+			.replaceAll('=\n','')
+			.replaceAll('=\r','')
+			.replaceAll('%','%25')
+			.replaceAll('=','%')
+		;
+		alert('q '+str);
+		try {
+			return decodeURI(str);
+		} catch (e) {
+			alert('erro str '+str);
+		}
+	}*/
+	static fromHtml(str) {
+   return str.replace(/&/g, "&amp;")
+         .replace(/</g, "&lt;")
+         .replace(/>/g, "&gt;")
+         .replace(/"/g, "&quot;")
+         .replace(/'/g, "&#39;")
+    ;
+	}
+	static toHtml(str) {
+   return str.replace(/&lt;/g,'<')
+         .replace(/&gt;/g,'>')
+         .replace(/&quot;/g,'"')
+         .replace(/&#39;/g,"'")
+         .replace(/&amp;/g,'&')
+    ;
+	}
+	static toBase64(str) {
+		return window.btoa(unescape(encodeURIComponent(str)));
+	}
+	static fromBase64(str) {
+		return decodeURIComponent(escape(window.atob(str)));
+	}
+}
+
 const Eml = {
-	hexConv: (cp) => {
+	//addEventListener("contextmenu",
+	htmlSanitize:class {
+		txtHtml(txHtml) {
+			let r = false;
+			var d = (new DOMParser()).parseFromString(tx,'text/html');
+			//deb('htsdf',d);
+			var fu=(o)=>{
+				if (o.hasAttributes && o.hasAttributes()) {
+					for (const a of o.attributes) {
+						if (',innerHTML,outerHTML,'.indexOf(a.name)==-1) {
+							var t = ''+a.value;
+							var p = t.indexOf('://');
+							if (p>-1&&p<10) {
+								eee.inc1(o.tagName
+									+' '+a.name
+									+' '+t.substring(0,p)
+								);
+							}
+						}
+					}
+				}
+				//recursivo
+				o = o.childNodes;
+				if (o&&o.length) for (var i=0;i<o.length;i++) {
+					fu(o.item(i));
+				}
+			}
+			fu(d);		
+			return d;
+		}
+		// usar? https://developer.mozilla.org/en-US/docs/Web/API/HTML_Sanitizer_API
+		// 2023-05-01 ff em dev, chrome desde o 105 (agora 112), android não, o esr é 102.
+		// W3C => https://wicg.github.io/sanitizer-api/#sanitizer-api
+		// 		testsuite - https://wpt.fyi/results/sanitizer-api
+		constructor(parent) {
+			this.parent = parent;
+		}
+	}	
+	,hexConv: (cp) => {
 		var td = new TextDecoder(cp);
 		this.conv = (h) => {
 			var h1 = new Uint8Array(h.length/2);
@@ -77,11 +231,94 @@ const Eml = {
 
 
 const Dom = {
-	aguarde: (o,tx)=>{
+	aguarde: (domDs,tx)=>{
 		o.innerHTML = '<p class="domAguarde">'
 			+'aguarde...'
 			+(tx?'<br><br><b>'+tx+'</b>':'')
 		+'</p>';
+	}
+	,remove: (ob)=>{
+		ob.parentNode.removeChild(ob);
+	}
+	//***************************************************
+	, getParentByTagName: (o,nome,limit)=>{
+		if (isEvent(o)) o = o.target;
+		nome = nome.toUpperCase();
+		//while ((o=o.parentNode) && o.tagName.toUpperCase()!=nome);
+		while (o) {
+			if (o.tagName && o.tagName.toUpperCase()==nome) {
+				return o;
+			} else if (limit && limit==o) {
+				return null;
+			}
+			o = o.parentNode;
+		}
+		return o;
+	}
+	//***************************************************
+	// retorna o parent que possui o attributo setado
+	, getParentByAttr: (o,nomeAtr,limit)=>{
+		//obj é evento?
+		if (Dom.isEvent(o)) o = Dom.getTarget(o);
+		var oa = o;
+		while (o) {
+			if (o.getAttribute 
+				&& o.getAttribute(nomeAtr)
+				&& o.getAttribute(nomeAtr)!=null ) {
+				return o;
+			} else if (o[nomeAtr]) {
+				return o;
+			} else if (limit && o==limit) {
+				return null;
+			}
+			o = o.parentNode;
+		}
+		return o;
+	}
+	//***************************************************
+	// retorna o parent que possui o attributo setado
+	, getParentAttr: (O,nomeAtr,limit)=>{
+		var o = Dom.getParentByAttr(O,nomeAtr,limit);
+		if ( !o ) {
+		} else if (o.getAttribute && o.getAttribute(nomeAtr) && o.getAttribute(nomeAtr)!=null ) {
+			return o.getAttribute(nomeAtr);
+		} else if (o[nomeAtr]) {
+			return o[nomeAtr];
+		}
+		return;
+	}
+	//*********************************
+	, getTarget: (ev)=>{
+		if (ev.value && ev.tagName) {
+			return ev;
+		}
+		var v = Array('target','srcElement','originalTarget','currentTarget',
+		'explicitOriginalTarget','relatedTarget');
+		//localiza obj destino
+		for (var i=0;i<v.length;i++) {
+			try {
+				var o = ev[v[i]];
+				if (o!=null) {
+					return o;
+				}
+			} catch (e) {
+			}
+		}
+		return null;
+	}
+	, isEvent(o) {
+		return (o && o.target && o.type);
+	}
+	, stylePropOnOff(dom,str) {
+		var r = false;
+		var t = dom.style.cssText;
+		if (t.indexOf(str)==-1) {
+			dom.style.cssText += str;
+			r = true;
+		} else {
+			dom.style.cssText = t.replace(str,'');
+		}
+		return r;
 	}
 	//***********************************************
 	// add style id prefixo classe
@@ -165,8 +402,11 @@ const Dom = {
 			//uSvg = 'org.w3c.dom.svg';
 			ret=p.doc.createElementNS(uSvg,p.tag);
 		} else {
+			//tag é html ?
 			if (p.tag.charAt(0)=='<') {
-				ret = domObj({tag:'div','':trimm(p.tag)}).firstChild;
+				ret = p.doc.createElement('div');
+				ret.innerHTML = p.tag.trimm();
+				ret = ret.firstChild;
 			} else {
 				ret=p.doc.createElement(p.tag);
 			}
@@ -180,7 +420,11 @@ const Dom = {
 				if (oo && p[i].tagName) {
 					ret.appendChild(p[i]);
 				} else if (oo && typeof(p[i].length)=='number') {
-					aeval(p[i],function(v){ret.appendChild(v);});
+					try {
+						aeval(p[i],function(v){ret.appendChild(v);});
+					} catch (e) {
+						alert(objText(p[i])+'\n\n'+erro(e));
+					}
 				} else {
 					ret.innerHTML = ''+p[i];
 				}
@@ -206,7 +450,9 @@ const Dom = {
 
 const Lib = {
 	isFunction: (o)=>{return typeof(o)=='function'}
+	,isArr: (o)=>{return Lib.isObj(o)&&typeof(o.length)=='number'}
 	,isFunc: (o)=>{return typeof(o)=='function'}
+	,isFun: (o)=>{return typeof(o)=='function'}
 	,isDom: (o)=>{return o && o.tagName;}
 	,isStr: (o)=>{return typeof(o)=='string';}
 	,isUnd: (o)=>{return typeof(o)=='undefined';}
@@ -219,6 +465,7 @@ const Lib = {
 		}
 		return false;
 	}
+	,if: (a,b)=>{return a?a:b;}
 	,dateSql: (a,semHora)=>{
 		var d = vazio(a)?new Date():a;
 		if (typeof(a)=='string') {
@@ -235,16 +482,21 @@ const Lib = {
 	}
 	,erro: (e)=>{
 		if (typeof(e)=='string' || typeof(e)=='undefined') {
-			//return (e+' (string)');
 			e = new Error(''+e);
 		}
-		return 'Erro='
-			+e.name
-			+(browse.ie?' ('+e.number+')':'')
-			+' '+e.message
-			+' '+(browse.ie?' '+e.description:'')
-			+(!browse.ie?(''+e.stack).replace('\n','\n\n'):'')
-		;
+		try {
+			return ''//'Erro:('
+				+'\nnome: '+e.name
+				+'\nmessage: '+e.message
+				+'\n\nstack: ====== \n'+(''+e.stack).replaceAll(
+						(window.location+'').leftAtAt('://','/')
+						,'h '
+					)
+				+')'
+			;
+		} catch (e) {
+			alert('ERRO em erro '+e+'\n\n'+e.stack);
+		}
 	}
 };
 
@@ -382,6 +634,17 @@ if(!String.prototype.count) {
 	}
 }
 
+if(!String.prototype.leftAtAt) { 
+	String.prototype.leftAtAt = function(a,b) {
+		let p = this.indexOf(a);
+		if (p==-1) return;
+		p = this.indexOf(b,p+a.length);
+		if (p==-1) return;
+		return this.substring(0,p);
+	}
+}
+
+
 if(!String.prototype.removeAtAt) { 
 	String.prototype.removeAtAt = function(a,b) {
 		var r = this;
@@ -439,7 +702,7 @@ if(!String.prototype.localToNumber){
 }
 if(!String.prototype.trimm){  
   String.prototype.trimm = function(b){  
-    var i,t,a=this;
+    var i,t,a=this.toString();
 		if (typeof(a)=='undefined') {
 			return '';
 		}

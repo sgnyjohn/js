@@ -1336,9 +1336,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	//***********************************************
 	/** x@constructor */
 	// param obj ou text+obj
-	function domObj(p,oo) {
+	/*function domObj(p,oo) {
 		return Dom.obj(p,oo);
-	}
+	}*/
+	var domObj = Dom.obj;
 	
 	//***********************************************
 	function Url(s) {
@@ -1928,12 +1929,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	function objText(obj,delimElem,delimValue) {
 		delimElem = delimElem?delimElem:';'
 		delimValue = delimValue?delimValue:':'
-		var sd = '%'+delimElem+delimValue;
-		var r = '',nv=0;
-		for (var k in obj) {
+		let sd = '%'+delimElem+delimValue;
+		let r = '',nv=0;
+		for (let k in obj) {
+			var o = obj[k];
 			r += hexEnc(k,sd)
-				+(Lib.isUnd(obj[k])?'':delimValue+hexEnc(obj[k],sd))
-				+delimElem;
+				+(Lib.isUnd(o)
+					?''
+					:delimValue
+						+(Lib.isFun(o)
+							?'function(?)'
+							:hexEnc(''+o,sd)
+						)
+				)
+				+delimElem
+			;
 		}		
 		return r;
 	}
@@ -1945,10 +1955,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		for (var i=0;i<v.length;i++) {
 			var p = v[i].indexOf(dl);
 			if (p==-1) {
-				r[hexDEnc(v[i])] = undefined;
+				r[hexDEnc(v[i].trimm())] = undefined;
 			} else {
-				r[ hexDEnc(v[i].substring(0,p)) ] 
-					= hexDEnc( hexDEnc(v[i].substring(p+dl.length)) )
+				r[ hexDEnc(v[i].substring(0,p).trimm()) ] 
+					= hexDEnc( hexDEnc(v[i].substring(p+dl.length).trimm()) )
 				;
 			}
 		}
@@ -4750,39 +4760,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		}
 	}
 	//***************************************************
-	// retorna o parent que possui o attributo setado
-	function getParentAttr(O,nomeAtr,limit) {
-		var o = getParentNodeAttr(O,nomeAtr,limit);
-		if ( !o ) {
-		} else if (o.getAttribute && o.getAttribute(nomeAtr) && o.getAttribute(nomeAtr)!=null ) {
-			return o.getAttribute(nomeAtr);
-		} else if (o[nomeAtr]) {
-			return o[nomeAtr];
-		}
-		var r;
-		return r;
-	}	
+	// retorna o valor do attributo na tag ou parent
+	var getParentAttr = Dom.getParentAttr;
 	//***************************************************
-	// retorna o parent que possui o attributo setado
-	var getParentByAttr = getParentNodeAttr;
-	function getParentNodeAttr(o,nomeAtr,limit) {
-		//obj é evento?
-		if (o && o.target && o.type) {
-			o = targetEvent(o);
-		}
-		var oa = o;
-		while (o) {
-			if (o.getAttribute && o.getAttribute(nomeAtr) && o.getAttribute(nomeAtr)!=null ) {
-				return o;
-			} else if (o[nomeAtr]) {
-				return o;
-			} else if (limit && o==limit) {
-				return null;
-			}
-			o = o.parentNode;
-		}
-		return o;
-	}
+	// retorna o parent que possui o attributo 
+	var getParentByAttr		= Dom.getParentByAttr;
+	var getParentNodeAttr	= Dom.getParentByAttr;
 
 	//**************************//
 	function html(a) {
@@ -4889,26 +4872,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		return s.substring(s.length-t,s.length);
 	}
 
-	//*********************************
-	function targetEvent(ev) {
-		if (ev.value && ev.tagName) {
-			return ev;
-		}
-		var v = Array('target','srcElement','originalTarget','currentTarget',
-		'explicitOriginalTarget','relatedTarget');
-		//localiza obj destino
-		for (var i=0;i<v.length;i++) {
-			try {
-				var o = ev[v[i]];
-				if (o!=null) {
-					return o;
-				}
-			} catch (e) {
-			}
-		}
-		return null;
-	}
-
+	var targetEvent = Dom.getTarget;
 
 	//***************************************************
 	//
@@ -4991,20 +4955,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		return o;
 	}
 	//***************************************************
-	function getParentByTagName(o,nome,limit) {
-		if (isEvent(o)) o = o.target;
-		nome = nome.toUpperCase();
-		//while ((o=o.parentNode) && o.tagName.toUpperCase()!=nome);
-		while (o) {
-			if (o.tagName && o.tagName.toUpperCase()==nome) {
-				return o;
-			} else if (limit && limit==o) {
-				return null;
-			}
-			o = o.parentNode;
-		}
-		return o;
-	}
+	var getParentByTagName = Dom.getParentByTagName;
 	//*******************************//
 	function vazio(a) {
 		try {
@@ -5031,22 +4982,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		return ( typeof(a)=='undefined' || a==null );
 	}
 	//*******************************//
-	function erro(e) {
-		//objNav(e);
-		//http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Reference:Global_Objects:Error
-		if (typeof(e)=='string' || typeof(e)=='undefined') {
-			//return (e+' (string)');
-			e = new Error(''+e);
-		}
-		return 'Erro='
-			+e.name
-			+(browse.ie?' ('+e.number+')':'')
-			+' '+e.message
-			+' '+(browse.ie?' '+e.description:'')
-			+(!browse.ie?(''+e.stack).replace('\n','\n\n'):'')
-		;
-		//return 'erro='+troca(''+e.stack,'@','\n');
-	}
+	var erro = Lib.erro;
 
 	//*********************************
 	var _debJ = 0;

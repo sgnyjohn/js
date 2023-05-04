@@ -35,6 +35,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //if (true) {
 
 	//***********************************************
+	var getElementIndex = Dom.getElementIndex;
+
+	//***********************************************
 	var mergeOptions = Lib.optionsMerge;
 	var mergeOptionsM = Lib.optionsMergeM;
 
@@ -773,6 +776,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	}
 	function deb(a,ob) {
 		if (!dev()) return;
+		if (Lib.isObj(a)) {
+			console.log(a);
+			return;
+		}
 		if (typeof(ob)=='object') {
 			setTimeout(()=>{objNav(ob);},100);
 			if (confirm(a)) {
@@ -1269,7 +1276,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			styleSet(f,'top',(th-tho)/2+'px');
 		}
 		//*************************
-		this.center = function() {
+		this.center = function(ev,fClick) {
+			this.click = fClick;
 			if (visible) {
 				eu.hide();
 				return;
@@ -1291,7 +1299,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			browse.mostra(f);
 		}
 		//*************************
-		this.show = function(ev) {
+		this.show = function(ev,fClick) {
+			this.click = fClick;
 			if (visible) {
 				eu.hide();
 				return;
@@ -2017,16 +2026,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		}
 	}
 
-	//***********************************************
-	function getElementIndex(o) {
-		var op = o.parentNode;
-		for (var i=0;i<op.childNodes.length;i++) {
-			if (op.childNodes[i]==o) {
-				return i;
-			}
-		}
-		return -1;
-	}
+
 	//***********************************************
 	// pagination
 	function pages(pgA,tm,fim) {

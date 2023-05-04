@@ -231,7 +231,33 @@ const Eml = {
 
 const Dom = {
 	ini:{}
-	,dialogo: class {
+	,scrollToVisible: (element)=>{
+		var e = element;
+		var t = element.ownerDocument.documentElement;
+		if (t.scrollTop>element.offsetTop) {
+			t.scroll({
+				top: element.offsetTop-element.offsetHeight*0.07
+				,behavior: "smooth"
+			});			
+		} else if (t.scrollTop
+				< element.offsetTop-t.clientHeight+element.offsetHeight) {
+			t.scroll({
+				top: element.offsetTop-t.clientHeight+element.offsetHeight*1.07
+				,behavior: "smooth"
+			});					
+		}
+	}
+	//***********************************************
+	,getElementIndex: (o)=>{
+		var op = o.parentNode.childNodes;
+		for (var i=0;i<op.length;i++) {
+			if (op[i]==o) {
+				return i;
+			}
+		}
+		return -1;
+	}
+	,dialogo_Dev: class {
 		open(ev) {
 			if (Dom.agent.mobile()) {
 				this.center(ev);

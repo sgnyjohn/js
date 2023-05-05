@@ -234,17 +234,30 @@ const Dom = {
 	,scrollToVisible: (element)=>{
 		var e = element;
 		var t = element.ownerDocument.documentElement;
-		if (t.scrollTop>element.offsetTop) {
+		var p = element.offsetTop-element.offsetHeight*0.07;
+		if (t.scrollTop>p) {
 			t.scroll({
-				top: element.offsetTop-element.offsetHeight*0.07
+				top: p
 				,behavior: "smooth"
-			});			
-		} else if (t.scrollTop
-				< element.offsetTop-t.clientHeight+element.offsetHeight) {
+			});
+			return;
+		}
+		//? e.scrollHeight e.offsetParent
+		p =  element.offsetTop-t.clientHeight+element.offsetHeight*2;
+		//eb(e);
+		/*var d = t.scrollTop+' < '+p
+			+' et='+element.offsetTop
+			+' -ch='+t.clientHeight
+			+' +eoh*1.07='+element.offsetHeight*1.07
+		;*/
+		if (t.scrollTop<p) {
+			//eb('s '+d);
 			t.scroll({
-				top: element.offsetTop-t.clientHeight+element.offsetHeight*1.07
+				top: p+element.offsetHeight
 				,behavior: "smooth"
 			});					
+		} else {
+			//eb('n '+d);
 		}
 	}
 	//***********************************************
@@ -489,6 +502,26 @@ const Dom = {
 
 const Lib = {
 	ini:{}
+	,vazio:(xx)=>{
+		try {
+			//if ((a==null || isNaN(a) || typeof(a)=='undefined')) {
+			if (a==null || typeof(a)=='undefined') {
+				return true;
+			} else if (typeof(a)=='string') {
+				return trimm(a)=='';
+			} else if (typeof(a)=='number') {
+				return isNaN(a) || !isFinite(a);
+			} else if (typeof(a)=='object') {
+				return a == {};
+			} else {
+				return false;
+			}
+		} catch (e) {
+			//lert('erro testando vazio(): '+erro(e)+' obj='+a);
+			//objNav(e);
+			return true;
+		}		
+	}
 	// mescla objeto opcoes 
 	,optionsMergetM: (padrao,r)=>{
 		Lib.optionsMerge(padrao,r);
@@ -528,7 +561,7 @@ const Lib = {
 	}
 	,if: (a,b)=>{return a?a:b;}
 	,dateSql: (a,semHora)=>{
-		var d = vazio(a)?new Date():a;
+		var d = Lib.vazio(a)?new Date():a;
 		if (typeof(a)=='string') {
 			d = strToData(a);
 		} else if (typeof(a)=='number') {
@@ -561,8 +594,76 @@ const Lib = {
 	}
 };
 
+var Obj = {
+	ini:{}
+	//**************************//
+	,toHtml: (obj)=>{ //,strTagElem,strTagValue) {
+		//strTagElem = strTagElem?strTagElem:' '
+		//strTagValue = strTagValue?strTagValue:'span'
+		let r = '';
+		for (let k in obj) {
+			r += '<span class="_label">'+k+'</span> '+obj[k]+' ';
+		}
+		return r;
+	}
+	,fromText: (tex,delimElem,delimValue)=>{
+		var v = (tex?tex:'').split(delimElem?delimElem:';');
+		var r = {};
+		var dl = delimValue?delimValue:':';
+		for (var i=0;i<v.length;i++) {
+			var p = v[i].indexOf(dl);
+			if (p==-1) {
+				r[hexDEnc(v[i].trimm())] = undefined;
+			} else {
+				r[ hexDEnc(v[i].substring(0,p).trimm()) ] 
+					= hexDEnc( hexDEnc(v[i].substring(p+dl.length).trimm()) )
+				;
+			}
+		}
+		return r;
+	}
+	//**************************//
+	,toText: (obj,delimElem,delimValue)=>{
+		delimElem = delimElem?delimElem:';'
+		delimValue = delimValue?delimValue:':'
+		let sd = '%'+delimElem+delimValue;
+		let r = '',nv=0;
+		for (let k in obj) {
+			var o = obj[k];
+			r += hexEnc(k,sd)
+				+(Lib.isUnd(o)
+					?''
+					:delimValue
+						+(Lib.isFun(o)
+							?'function(?)'
+							:hexEnc(''+o,sd)
+						)
+				)
+				+delimElem
+			;
+		}
+		return r;
+	}
+	// recebe js obj/json aplica a func
+	//   passando vlr e ch e add em array
+	//	 se func retorna verdadeiro.
+	,getElements: (Obj,Func,_arr) => {
+		function a(obj,func,arr) {
+			aeval(obj,(v,k)=>{
+				if (func(v,k)) {
+					arr.push(v);
+				}
+				if (typeof(v)=='object') {
+					a(v,func,arr);
+				}
+			});
+			return arr;
+		}
+		return a(Obj,Func,_arr?_arr:[]);
+	}
+};
 /*
- * todos os objetos terão propriedade tipo "funcion"
+ * todos os objetos terão esta propriedade tipo "funcion"
  * 	e meus codigos podem dar problema... estat ja deu.
  * 	pois uso muito "for (k in obj)" ...
  * 
@@ -584,25 +685,8 @@ if (!Object.prototype.getElements)
 ;
 */
 
-var Obj = {
-	// recebe js obj/json aplica a func
-	//   passando vlr e ch e add em array
-	//	 se func retorna verdadeiro.
-	getElements: (Obj,Func,_arr) => {
-		function a(obj,func,arr) {
-			aeval(obj,(v,k)=>{
-				if (func(v,k)) {
-					arr.push(v);
-				}
-				if (typeof(v)=='object') {
-					a(v,func,arr);
-				}
-			});
-			return arr;
-		}
-		return a(Obj,Func,_arr?_arr:[]);
-	}
-};
+
+
 
 if (!Date.prototype.getYearWeek) Date.prototype.getYearWeek = function(){
 	/* semana comunic começa na sexta.
@@ -905,41 +989,4 @@ if(!String.prototype.hexVal){
 		return r;
 	}
 }
-//*************************************
-var dom = {
-	new: function(tg,html,attrs,ob) {
-		//alert('co='+typeof(document));
-		var p = dom.newElement(tg,ob);
-		//se input
-		if (dom.input(tg)) {
-			p.value = html;
-		} else {
-			p.innerHTML = html;
-		}
-		for (var i in attrs) {
-			//evento?
-			if (typeof(attrs[i])=='function') {
-				p.addEventListener(i,attrs[i]);
-			} else {
-				p.setAttribute(i,attrs[i]);
-			}
-		}
-		if (ob) {
-			ob.appendChild(p);
-		}
-		return p;
-	}
-	,newElement: function(tg,doc) {
-		if (typeof(doc)=='object') {
-			while (doc && (''+doc).indexOf('HTMLDocument')==-1) doc = doc.parentNode;
-		} else {
-			doc = document;
-		}
-		return doc.createElement(tg);
-	}
-	,input:function(tag) {
-		if (typeof(tag)=='object') tag = tag.tagName;
-		return '-input-select-option-textarea-'.indexOf('-'+tag+'-')!=-1;
-	}
-};
 

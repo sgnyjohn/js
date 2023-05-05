@@ -34,12 +34,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 //if (true) {
 
+	//**************************//
+	var objText = Obj.toText;
+	//**************************//
+	var textObj = Obj.fromText;
+
 	//***********************************************
 	var getElementIndex = Dom.getElementIndex;
 
 	//***********************************************
 	var mergeOptions = Lib.optionsMerge;
 	var mergeOptionsM = Lib.optionsMergeM;
+
+	var domObj = Dom.obj;
+
 
 	var browse = {};	
 	var _c = console.log;
@@ -1199,6 +1207,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		if (!document.getElementById(cl)) {
 			addStyleId('DIV.'+cl+' {'
 				+'position:fixed;' //xdisplay:none;xz-index:100;
+				+'z-index:10;'
 				+'background-color:var(--corFd);'//#f0f0f0;' //xborder:2px solid blue;'
 				+'overflow:auto;'
 				+'border-radius:7px;'
@@ -1224,6 +1233,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		}
 		if (op.click) {
 			f.addEventListener('click',op.click);
+		}
+		//*************************
+		this.setDom = (domObj)=>{
+			f.innerHTML = '';
+			f.appendChild(domObj);
+			//f = domObj;
 		}
 		//*************************
 		this.text = text;
@@ -1352,7 +1367,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	/*function domObj(p,oo) {
 		return Dom.obj(p,oo);
 	}*/
-	var domObj = Dom.obj;
 	
 	//***********************************************
 	function Url(s) {
@@ -1938,46 +1952,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		o[key] = value;//(!value?'':value);
 		dom.style.cssText = objText(o);
 	}
-	//**************************//
-	function objText(obj,delimElem,delimValue) {
-		delimElem = delimElem?delimElem:';'
-		delimValue = delimValue?delimValue:':'
-		let sd = '%'+delimElem+delimValue;
-		let r = '',nv=0;
-		for (let k in obj) {
-			var o = obj[k];
-			r += hexEnc(k,sd)
-				+(Lib.isUnd(o)
-					?''
-					:delimValue
-						+(Lib.isFun(o)
-							?'function(?)'
-							:hexEnc(''+o,sd)
-						)
-				)
-				+delimElem
-			;
-		}		
-		return r;
-	}
-	//**************************//
-	function textObj(tex,delimElem,delimValue) {
-		var v = (tex?tex:'').split(delimElem?delimElem:';');
-		var r = {};
-		var dl = delimValue?delimValue:':';
-		for (var i=0;i<v.length;i++) {
-			var p = v[i].indexOf(dl);
-			if (p==-1) {
-				r[hexDEnc(v[i].trimm())] = undefined;
-			} else {
-				r[ hexDEnc(v[i].substring(0,p).trimm()) ] 
-					= hexDEnc( hexDEnc(v[i].substring(p+dl.length).trimm()) )
-				;
-			}
-		}
-		return r;
-	}
-
 	//**************************//
 	function objDebug(o,Op) {
 		var op = mergeOptions({lim:200,filt:function(){return true;}},Op);

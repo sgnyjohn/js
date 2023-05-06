@@ -1,10 +1,8 @@
 /*
 	signey jun/2018 mai/2019 mai/2020 
-
 	// dom objects not work.
 	* 
 	* @sgnyjohn abr/2023 Eml
-	
 */
 
 /* para tentar entender 
@@ -124,12 +122,73 @@ class Conv {
 }
 
 const Eml = {
+	ini:{}
 	//addEventListener("contextmenu",
-	htmlSanitize:class {
-		txtHtml(txHtml) {
-			let r = false;
-			var d = (new DOMParser()).parseFromString(tx,'text/html');
-			//deb('htsdf',d);
+	,htmlSanitize:class {
+		static oU = {};
+		static vU = [];
+		static urlCod(url) {
+			var v = this.oU[url];
+			if (!v) {
+				//url,cod,nvHtml,nvClick
+				v = [url,this.vU.length,0,0];
+				this.vU.push(v);
+				this.oU[url] = v;
+			}
+			v[2]++;
+			return v[1];
+		}
+		// usar? https://developer.mozilla.org/en-US/docs/Web/API/HTML_Sanitizer_API
+		// 2023-05-01 ff em dev, chrome desde o 105 (agora 112), android não, o esr é 102.
+		// W3C => https://wicg.github.io/sanitizer-api/#sanitizer-api
+		// 		testsuite - https://wpt.fyi/results/sanitizer-api
+		// https://wpt.fyi/interop-2023
+		// substitui o atr por _atr com codigo da url
+		// o DOMParser não processa partes <!--[if mso | IE]> q são destinadas
+		//		a outro navegador
+		// 		<v:fill origin="0.5, 0" position="0.5, 0" src="https://ae01.mlicdn.com/kf/H119729f115ef4e32a1f5b6501c20b50cb/1200x576.png" type="tile" size="100%,100%" />
+		// falta tag style inline <div style="background:url(https://ae01.mlicdn.com/kf/H119729f115ef4e32a1f5b6501c20b50cb/1200x576.png) center top / 100% 100% repeat;background-position:center top;background-repeat:repeat;background-size:100% 100%;margin:0px auto;max-width:600px;">
+		// ideal seria procurar links nos textos finais tb
+		sao(h) {
+			return h.indexOf('://')==-1
+				&& h.search(new RegExp("<script", "i"))==-1
+			;
+		}
+		htmlSao() {
+			var fu=(o)=>{
+				if (o.hasAttributes && o.hasAttributes()) {
+					for (const a of o.attributes) {
+						if (',innerHTML,outerHTML,'.indexOf(a.name)==-1) {
+							var t = ''+a.value;
+							var p = t.indexOf('://');
+							if (p>-1&&p<10) {
+								o.setAttribute('_url',a.name);
+								var c = Eml.htmlSanitize.urlCod(t);
+								o.removeAttribute(a.name);
+								o.setAttribute('_'+a.name,''+c);
+							}
+						}
+					}
+					//há ref no css?
+					if (o.tagName=='STYLE') {
+						o.innerHTML = (o.innerHTML+'')
+							.replaceAll('http://','ptth_//x')
+							.replaceAll('https://','sptth_//x')
+							.replaceAll('url(','lru(')
+						;
+					}
+				}
+				//recursivo
+				o = o.childNodes;
+				if (o&&o.length) for (var i=0;i<o.length;i++) {
+					fu(o.item(i));
+				}
+			}
+			fu(this.d);
+			return this.d.documentElement.outerHTML;
+		}
+		estat() {
+			var eee = new estat('links no html');
 			var fu=(o)=>{
 				if (o.hasAttributes && o.hasAttributes()) {
 					for (const a of o.attributes) {
@@ -151,15 +210,13 @@ const Eml = {
 					fu(o.item(i));
 				}
 			}
-			fu(d);		
-			return d;
+			fu(this.d);
+			return eee;		
 		}
-		// usar? https://developer.mozilla.org/en-US/docs/Web/API/HTML_Sanitizer_API
-		// 2023-05-01 ff em dev, chrome desde o 105 (agora 112), android não, o esr é 102.
-		// W3C => https://wicg.github.io/sanitizer-api/#sanitizer-api
-		// 		testsuite - https://wpt.fyi/results/sanitizer-api
-		constructor(parent) {
+		constructor(parent,html) {
+			this.h = html;
 			this.parent = parent;
+			this.d = (new DOMParser()).parseFromString(this.h,'text/html');
 		}
 	}	
 	,hexConv: (cp) => {

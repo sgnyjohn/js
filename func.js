@@ -8,6 +8,8 @@
 /* para tentar entender 
  * https://developer.mozilla.org/pt-BR/docs/Web/JavaScript/Reference/Global_Objects/Promise 
  * desde 2014
+ * 
+
 */
 class promessa {
 	#ex = -1;
@@ -61,7 +63,39 @@ class promessa {
 }
 
 class Conv {
+	//https://codereview.stackexchange.com/questions/181017/decoder-for-content-transfer-encoding-and-quoted-printable
+	static fromquoted_printable1(str) {
+		let t = str.length;
+		let r = '';
+		for (let i=0;i<t;i++) {
+			if (str.charAt(i)=='=') {
+				if (i+1<t&&str.charAt(i+1)=='\n') {
+					//ignora = no fim da linha e
+					i++;
+				} else if (i+1<t&&str.charAt(i+1)=='\r') {
+					//ignora = no fim da linha e
+					i += 2;
+				} else if (i+2<t) {
+					r += String.fromCharCode(parseInt(str.substring(i+1,i+3),16));
+					i += 2;
+				}
+			} else {
+				r += str.charAt(i);
+			}
+		}
+		try {
+			return decodeURIComponent(escape(r));
+		} catch (e) {
+			try {
+				return decodeURIComponent((r));
+			} catch (e1) {
+				deb('erro fromquoted_printable '+e);
+				return r;
+			}
+		}
+	}
 	static fromquoted_printable(str,charSet) {
+		//toDo o %u ->> %uD83D%uDE04
 		var cv = Eml.hexConv(charSet);
 		let t = str.length;
 		let r = '';
@@ -117,14 +151,70 @@ class Conv {
 		return window.btoa(unescape(encodeURIComponent(str)));
 	}
 	static fromBase64(str) {
-		return decodeURIComponent(escape(window.atob(str)));
+		try {
+			var s = window.atob(str);
+			s = escape(s);
+			return decodeURIComponent(s);
+		} catch (e) {
+			alert('erri frombase 64:'+e+'\n\n'+str);
+		}
+		
 	}
 }
 
 const Eml = {
 	ini:{}
 	//addEventListener("contextmenu",
+	,convContentTxt:(tx,enc,charset)=>{
+		if (enc=='base64') {
+			tx = Conv.fromBase64(tx);
+		} else if (enc=='7bit') {
+		} else if (enc=='8bit') {
+			// ha utf-8 com sequs Ã§Ã£ 
+			try {
+				var td = new TextDecoder(charset.toUpperCase());
+				if (td) tx = td.decode(tx);
+			} catch (e) {
+				alert('8bit df='+e);
+			}
+		} else if (enc=='quoted-printable') {
+			var r = Conv.fromquoted_printable1(tx);
+			if (r.indexOf('Ã£')!=-1||r.indexOf('Ã§')!=-1) {
+				deb('convContentTxt Ã£ -- ');
+				r = Conv.fromquoted_printable(tx);
+			}
+			return r;
+		}
+		return tx;
+	}
+	,convContent:(tx,enc,charset)=>{
+		// https://en.wikipedia.org/wiki/Data_URI_scheme#Syntax
+		// data:[<media type>][;charset=<character set>][;base64],<data>
+		
+		/*var d = new DOMParser();
+		d.parseFromString('text/html;charset='+charset+';'+enc+','+tx,'text/html');
+		if (d) return d.documentElement.outerHTML;
+		*/
+		
+		if (enc=='base64') {
+			tx = Conv.fromBase64(tx);
+		} else if (enc=='7bit') {
+		} else if (enc=='8bit') {
+		} else if (enc=='quoted-printable') {
+			//var ct = textObj
+			tx = Conv.fromquoted_printable(tx);
+			/*if (r.indexOf('Ã£')!=-1||r.indexOf('Ã§')!=-1) {
+				r = Conv.fromquoted_printable1(tx);
+			}
+			tx = r;
+			*/
+			//tx = decodeURI(escape(tx.replaceAll('=','%')));
+			//tx = decodeQuotedPrintable(tx);
+		}
+		return tx;
+	}
 	,htmlSanitize:class {
+		//falta <table style="background-image: url('https://baglink.baguet
 		static oU = {};
 		static vU = [];
 		static urlCod(url) {
@@ -149,13 +239,23 @@ const Eml = {
 		// 		<v:fill origin="0.5, 0" position="0.5, 0" src="https://ae01.mlicdn.com/kf/H119729f115ef4e32a1f5b6501c20b50cb/1200x576.png" type="tile" size="100%,100%" />
 		// falta tag style inline <div style="background:url(https://ae01.mlicdn.com/kf/H119729f115ef4e32a1f5b6501c20b50cb/1200x576.png) center top / 100% 100% repeat;background-position:center top;background-repeat:repeat;background-size:100% 100%;margin:0px auto;max-width:600px;">
 		// ideal seria procurar links nos textos finais tb
+		// 2023-5 achei eml que o codigo não pega o href de um "a" e não possui if
 		sao(h) {
 			return h.indexOf('://')==-1
 				&& h.search(new RegExp("<script", "i"))==-1
 			;
 		}
 		htmlSao() {
-			var fu=(o)=>{
+			//varre obj do DOMParser a procura de refs externas
+			//  monta bd na mem com urls substituidas
+			//	toDo -> embutir js com urls para usu ter acesso a links e imagens
+			function fu(o) {
+				function fu1(s) {
+					return s.replaceAll('http://','ptth_//x')
+						.replaceAll('https://','sptth_//x')
+						.replaceAll('url(','lru(')
+					;
+				}
 				if (o.hasAttributes && o.hasAttributes()) {
 					for (const a of o.attributes) {
 						if (',innerHTML,outerHTML,'.indexOf(a.name)==-1) {
@@ -166,17 +266,17 @@ const Eml = {
 								var c = Eml.htmlSanitize.urlCod(t);
 								o.removeAttribute(a.name);
 								o.setAttribute('_'+a.name,''+c);
+							} else if (p>-1&&a.name.toUpperCase()=='STYLE') {
+								a.value = fu1(a.value);
 							}
 						}
 					}
-					//há ref no css?
-					if (o.tagName=='STYLE') {
-						o.innerHTML = (o.innerHTML+'')
-							.replaceAll('http://','ptth_//x')
-							.replaceAll('https://','sptth_//x')
-							.replaceAll('url(','lru(')
-						;
-					}
+				} else {
+					//
+				}
+				//há ref no css?
+				if (o.tagName=='STYLE') {
+					o.innerHTML = fu1(o.innerHTML+'');
 				}
 				//recursivo
 				o = o.childNodes;
@@ -185,7 +285,20 @@ const Eml = {
 				}
 			}
 			fu(this.d);
-			return this.d.documentElement.outerHTML;
+			//tem body, isola apenas este conteúdo
+			var b = this.d.documentElement.getElementsByTagName('body');
+			deb('B O D Y length='+b.length);
+			var r;
+			if (b.length==0) {
+				r = this.d.documentElement.outerHTML;
+			} else if (b.length==1) {
+				r = b[0].innerHTML;
+			} else {
+				r = '<h1>mais de um body  '+b.length+'</h1>'
+					+'<pre>'+html(this.d.documentElement.outerHTML)+'</pre>'
+				;
+			}
+			return r;
 		}
 		estat() {
 			var eee = new estat('links no html');
@@ -220,14 +333,28 @@ const Eml = {
 		}
 	}	
 	,hexConv: (cp) => {
-		var td = new TextDecoder(cp);
-		this.conv = (h) => {
-			var h1 = new Uint8Array(h.length/2);
-			for (var i=0;i<h.length;i+=2) {
-				h1[i/2] = parseInt(h.substring(i,i+2),16);
-			}
-			return td.decode(h1);
+		var td;
+		try {
+			td = new TextDecoder(cp.toUpperCase());
+		} catch (e) {
+			//lert('charset '+cp+' invalido?');
 		}
+		this.conv = (h) => {
+			if (td) {
+				var h1 = new Uint8Array(h.length/2);
+				for (var i=0;i<h.length;i+=2) {
+					h1[i/2] = parseInt(h.substring(i,i+2),16);
+				}
+				return td.decode(h1);
+			} else {
+				var r = '';
+				for (var i=0;i<h.length;i+=2) {
+					r += String.fromCharCode(parseInt(h.substring(i,i+2),16));
+				}
+				return r;
+			}
+		}
+		//func constructor deve retornar this
 		return this;
 	}
 	,decodQ:(cp,s)=> {
@@ -559,7 +686,7 @@ const Dom = {
 
 const Lib = {
 	ini:{}
-	,vazio:(xx)=>{
+	,vazio:(a)=>{
 		try {
 			//if ((a==null || isNaN(a) || typeof(a)=='undefined')) {
 			if (a==null || typeof(a)=='undefined') {
@@ -976,7 +1103,7 @@ if(!String.prototype.substrAtAt){
 if(!String.prototype.substrAt){  
 	String.prototype.substrAt = function(a){  
 		var i = this.indexOf(a);
-		if (i<0) return '';
+		if (i==-1) return '';
 		return this.substring(i+a.length);
 	}
 }

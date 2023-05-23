@@ -62,6 +62,181 @@ class promessa {
 	}
 }
 
+//debug
+const Deb = {
+	ini:{}
+	,nav: (ob,jan)=>{ //antigo objNav
+		if (typeof(this)=='undefined') {
+			new Deb.nav(ob,jan);
+			return this;
+		}
+		//lert(this);
+		var limite=800;
+		if (typeof(jan)!='undefined') {
+			//this.filtro = o;
+			this.o = ob;
+			this.jan = jan;
+			//metodos
+			this.mostra = mostra;
+			this.filtrar = filtrar;
+			this.pula = pula;
+			this.mItem = mItem;
+			this.item = item;
+			//this.mostra();
+		} else {
+			init(ob);
+		}
+		//**************************
+		function mItem(prop,z) {
+			var r='';
+			var t = typeof(z);
+			if (t=='function' && (''+z).length>40) {
+				z = ''+z;
+				z = z.substring(0,40)+'...(+'+z.length+')';
+			}
+			if (!this.tp[t]) {
+				this.tp[t] = 0;
+			}
+			this.tp[t]++;
+			if (!this.filtro || t==this.filtro) {
+				r += '<tr><td><font size=2 color=darkgreen><b>'+t+'</b></font> '
+				+'<a href=javascript:este.pula("'+prop+'");>'+prop+'</a>: '
+				+'<font size=2>'+(t=='string' || t=='function'?html(''+z):z)
+				;
+			}
+			if (t=='function' && ''+prop=='item') {
+				//lert('item...');
+				r += this.item();
+			}
+			return r;
+		}
+		//**************************
+		function item() {
+			//lert('item');
+			var r = '';
+			for (var i=0;i<this.o.length;i++) {
+				r += this.mItem('item_'+i+'',this.o.item(i));
+			}
+			return r;
+		}
+		//**************************
+		function pula(o) {
+			var ds;
+			if (o.substring(0,5)=='item_') {
+				ds = this.o.item(1*o.substring(6));
+			} else {
+				ds = this.o[o];
+			}
+			new Deb.nav(ds);
+		}
+		//**************************
+		function init(o) {
+			if (Lib.vazio(o)) {
+				this.tit = 'objeto VAZIO...';
+			} else {
+				this.tit = (o.name?' '+o.name:'')
+					+(o.tagName?' '+o.tagName:'')
+					+' '+o
+				;
+			}
+			var r = '<html><head><title>'
+				+this.tit+' - objNav </title></head>'
+			+'<script language="JavaScript" '
+			+'src="/js/func.js"></script>'
+			+'<script language="JavaScript" '
+			+'src="/js/funcoes.js"></script>'
+			+'<body><table border=1><tr><td>'
+			+'<font size=3>Objeto: <font color=red>'+o
+			+'<tr><td id=dad>'
+			+'</table>'
+			+'<scr'+''+'ipt>var este1;'
+			+' function objNavInit() {'
+			//+'  lert("teste o"+este);'
+			+'  este.mostra();'
+			//+'  este=new objNav();'
+			//+'  //lert(objNav);'
+			+' }'
+			+' setTimeout("objNavInit();",1000);'
+			+'</scr'+''+'ipt>'
+			+'</body>'
+			+'</html>'
+			;
+			//lert('objnav: ');
+			//lert(objNav);
+			//objA(window.document.objNav);
+			var w = window.open('about:blank','_blank',
+				'width=600,height=700,resizable=yes,scrollbars=yes,status=1'
+			);
+			//lert(window);
+			setTimeout(()=>{
+				try {
+					w.document.write(r);
+					//w.objNav = objNav;
+					//objNavAlvo = o;
+					//var zzz;
+					w.este = new Deb.nav(o,w);
+				} catch (e) {
+					Lib.alertErro(e);
+				}
+			},1000);
+		}
+		//**************************
+		function filtrar(f) {
+			if (typeof(f)!='string') {
+				alert('filtro por chave');
+				return;
+			}
+			this.filtro = f;
+			this.mostra();
+		}
+		//**************************
+		function mostra() {
+			this.tp = new Array;
+			var o = this.o;
+			var filtro = this.filtro;
+			var i=0,z;
+			var r = '';
+			for(var prop in o) {
+				try {
+					z = o[prop];
+					//z = objNavR(prop);
+					//z = eval('este.o.'+prop);
+				} catch (e) {
+					z = '?erro:'+e;
+					//objA(o);
+					//alertErro(e);
+					//break;
+				}
+				r += this.mItem(prop,z);
+				i++;
+				if (i>limite) break;
+			}
+			//mostra totais por tipo
+			var r1 = '<tr><td colspan=2><b>'+i
+			+' (limite '+limite+') </b>';
+			r1 += '(<b><a href=javascript:este.filtrar("");>'
+			+'Todos</a></b>='+i+') ';
+			for(var prop in this.tp) {
+				var z = this.tp[prop];
+				r1 += '(<b><a href=javascript:este.filtrar("'+prop+'");>'
+				+prop+'</a></b>='+z+') ';
+			}
+			r1 += '<br><b>Chave</b>: '
+			+'<input size=10 onChange=este.filtrar(this)>';
+			r = '<table border=1>'+r1+r+'</table>FIM...';
+			//var w = window.open('about:blank','_blank',
+			// 'width=400,height=700,resizable=yes,scrollbars=yes,status=0'
+			//);
+			//w.document.write(r);
+			var ds=browse.getId('dad',this.jan.document);
+			ds.innerHTML = r;
+   
+			return r;
+		}
+		return this;
+	}
+}
+
 class Conv {
 	//https://codereview.stackexchange.com/questions/181017/decoder-for-content-transfer-encoding-and-quoted-printable
 	static fromquoted_printable1(str) {
@@ -228,6 +403,49 @@ const Eml = {
 			v[2]++;
 			return v[1];
 		}
+		static eu() {
+			//retorna classe
+			return this;
+		}
+		static eventsDom(dom) {
+			// html sanit foi carregado no dom
+			// procura em toda estrutura dom e cria eventos click
+			function fu(eu,o) {
+				if (o.hasAttributes && o.hasAttributes()) {
+					for (const a of o.attributes) {
+						if (',innerHTML,outerHTML,'.indexOf(a.name)==-1) {
+							var t = ''+a.value;
+							var p = t.indexOf('://');
+							if (p>-1&&p<10) {
+								o.setAttribute('_url',a.name);
+								var c = Eml.htmlSanitize.urlCod(t);
+								o.removeAttribute(a.name);
+								o.setAttribute('_'+a.name,''+c);
+							} else if (p>-1&&a.name.toUpperCase()=='STYLE') {
+								a.value = eu.sanForce(a.value);
+							}
+						}
+					}
+				} else {
+					//
+				}
+				//há ref no css?
+				if (o.tagName=='STYLE') {
+					o.innerHTML = eu.sanForce(o.innerHTML+'');
+				}
+				//recursivo
+				let f = o.childNodes;
+				if (f&&f.length) {
+					for (var i=0;i<f.length;i++) {
+						fu(eu,f.item(i));
+					}
+				} else if (o.innerHTML) {
+					//sanit innerHTML
+					o.innerHTML = eu.sanForce(s);
+				}
+			}
+			fu(this,this.d);
+		}
 		// usar? https://developer.mozilla.org/en-US/docs/Web/API/HTML_Sanitizer_API
 		// 2023-05-01 ff em dev, chrome desde o 105 (agora 112), android não, o esr é 102.
 		// W3C => https://wicg.github.io/sanitizer-api/#sanitizer-api
@@ -245,17 +463,17 @@ const Eml = {
 				&& h.search(new RegExp("<script", "i"))==-1
 			;
 		}
+		sanForce(s) {
+			return s.replaceAll('http://','ptth_//x')
+				.replaceAll('https://','sptth_//x')
+				.replaceAll('url(','lru(')
+			;
+		}
 		htmlSao() {
 			//varre obj do DOMParser a procura de refs externas
 			//  monta bd na mem com urls substituidas
 			//	toDo -> embutir js com urls para usu ter acesso a links e imagens
-			function fu(o) {
-				function fu1(s) {
-					return s.replaceAll('http://','ptth_//x')
-						.replaceAll('https://','sptth_//x')
-						.replaceAll('url(','lru(')
-					;
-				}
+			function fu(eu,o) {
 				if (o.hasAttributes && o.hasAttributes()) {
 					for (const a of o.attributes) {
 						if (',innerHTML,outerHTML,'.indexOf(a.name)==-1) {
@@ -267,7 +485,7 @@ const Eml = {
 								o.removeAttribute(a.name);
 								o.setAttribute('_'+a.name,''+c);
 							} else if (p>-1&&a.name.toUpperCase()=='STYLE') {
-								a.value = fu1(a.value);
+								a.value = eu.sanForce(a.value);
 							}
 						}
 					}
@@ -276,15 +494,20 @@ const Eml = {
 				}
 				//há ref no css?
 				if (o.tagName=='STYLE') {
-					o.innerHTML = fu1(o.innerHTML+'');
+					o.innerHTML = eu.sanForce(o.innerHTML+'');
 				}
 				//recursivo
-				o = o.childNodes;
-				if (o&&o.length) for (var i=0;i<o.length;i++) {
-					fu(o.item(i));
+				let f = o.childNodes;
+				if (f&&f.length) {
+					for (var i=0;i<f.length;i++) {
+						fu(eu,f.item(i));
+					}
+				} else if (o.innerHTML) {
+					//sanit innerHTML
+					o.innerHTML = eu.sanForce(s);
 				}
 			}
-			fu(this.d);
+			fu(this,this.d);
 			//tem body, isola apenas este conteúdo
 			var b = this.d.documentElement.getElementsByTagName('body');
 			deb('B O D Y length='+b.length);
@@ -686,6 +909,9 @@ const Dom = {
 
 const Lib = {
 	ini:{}
+	,alertErro: (e)=>{
+		alert(Lib.erro(e));
+	}
 	,vazio:(a)=>{
 		try {
 			//if ((a==null || isNaN(a) || typeof(a)=='undefined')) {
@@ -846,6 +1072,7 @@ var Obj = {
 		return a(Obj,Func,_arr?_arr:[]);
 	}
 };
+
 /*
  * todos os objetos terão esta propriedade tipo "funcion"
  * 	e meus codigos podem dar problema... estat ja deu.
@@ -1096,7 +1323,8 @@ if(!String.prototype.leftRat){
 	}
 }
 if(!String.prototype.substrAtAt){  
-	String.prototype.substrAtAt = function(a,b){  
+	String.prototype.substrAtAt = function(a,b){
+		if (Lib.isUnd(b)) b=a;
 		return this.substrAt(a).leftAt(b);
 	}
 }

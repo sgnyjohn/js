@@ -33,6 +33,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 //if (true) {
+	var objNav = Deb.nav;
+	var alertErro = Lib.alertErro;
 
 	//**************************//
 	var objText = Obj.toText;
@@ -3723,10 +3725,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	}	
 
 	//***********************************************
-	function alertErro(e) {
-		alert(erro(e));
-	}
-	//***********************************************
 	function nada() {}
 	//***********************************************
 	function css(ev) {
@@ -4988,7 +4986,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	}
 
 	//funcoes DEBUG
-	//**************************//
+	/*
+	/***************************
 	function objNav(ob,jan) {
 		var limite=800;
 		if (typeof(jan)!='undefined') {
@@ -5005,7 +5004,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		} else {
 			init(ob);
 		}
-		//**************************//
+		//**************************
 		function mItem(prop,z) {
 			var r='';
 			var t = typeof(z);
@@ -5029,7 +5028,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			}
 			return r;
 		}
-		//**************************//
+		//**************************
 		function item() {
 			//lert('item');
 			var r = '';
@@ -5038,7 +5037,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			}
 			return r;
 		}
-		//**************************//
+		//**************************
 		function pula(o) {
 			var ds;
 			if (o.substring(0,5)=='item_') {
@@ -5048,7 +5047,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			}
 			objNav(ds);
 		}
-		//**************************//
+		//**************************
 		function init(o) {
 			if (vazio(o)) {
 				this.tit = 'objeto VAZIO...';
@@ -5097,7 +5096,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 				}
 			},1000);
 		}
-		//**************************//
+		//**************************
 		function filtrar(f) {
 			if (typeof(f)!='string') {
 				alert('filtro por chave');
@@ -5106,7 +5105,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			this.filtro = f;
 			this.mostra();
 		}
-		//**************************//
+		//**************************
 		function mostra() {
 			this.tp = new Array;
 			var o = this.o;
@@ -5151,7 +5150,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			return r;
 		}
 	}
-	//**************************//
+	*/
+	
+	//**************************
 	function objA(o,filtro) {
 		var r = '';
 		var i=0,tp=new Array(),z;

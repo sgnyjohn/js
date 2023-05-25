@@ -392,7 +392,13 @@ const Eml = {
 		//falta <table style="background-image: url('https://baglink.baguet
 		static oU = {};
 		static vU = [];
-		static urlCod(url) {
+		static codToUrl(cod) {
+			return this.vU[cod]
+				?this.vU[cod][0]
+				:false
+			;
+		}
+		static urlToCod(url) {
 			var v = this.oU[url];
 			if (!v) {
 				//url,cod,nvHtml,nvClick
@@ -408,43 +414,43 @@ const Eml = {
 			return this;
 		}
 		static eventsDom(dom) {
+			//lert('ini san events '+dom);
 			// html sanit foi carregado no dom
 			// procura em toda estrutura dom e cria eventos click
-			function fu(eu,o) {
-				if (o.hasAttributes && o.hasAttributes()) {
-					for (const a of o.attributes) {
-						if (',innerHTML,outerHTML,'.indexOf(a.name)==-1) {
-							var t = ''+a.value;
-							var p = t.indexOf('://');
-							if (p>-1&&p<10) {
-								o.setAttribute('_url',a.name);
-								var c = Eml.htmlSanitize.urlCod(t);
-								o.removeAttribute(a.name);
-								o.setAttribute('_'+a.name,''+c);
-							} else if (p>-1&&a.name.toUpperCase()=='STYLE') {
-								a.value = eu.sanForce(a.value);
-							}
-						}
-					}
-				} else {
-					//
+			function fu(o) {
+				let at = o.getAttribute?o.getAttribute('_url'):false;
+				if (at) {
+					Dom.stylePropOnOff(o,'mouse:pointer;');
+					o.addEventListener('click',(ev)=>{
+						//var u = Dom.getParentAttr(ev,'_url');
+						let r = [];
+						aeval(at.split('~'),(v)=>{
+							let cod = o.getAttribute('_'+v);
+							r.push([v
+								,cod
+								,Eml.htmlSanitize.codToUrl(cod)
+							]);
+						});
+						alert(at+'\n'+r);
+						//console.log(ev.target);
+					});
 				}
-				//há ref no css?
-				if (o.tagName=='STYLE') {
+				//nada fazer aqui?
+				/*if (o.tagName=='STYLE') {
 					o.innerHTML = eu.sanForce(o.innerHTML+'');
-				}
+				}*/
 				//recursivo
 				let f = o.childNodes;
 				if (f&&f.length) {
 					for (var i=0;i<f.length;i++) {
-						fu(eu,f.item(i));
+						fu(f.item(i));
 					}
 				} else if (o.innerHTML) {
-					//sanit innerHTML
-					o.innerHTML = eu.sanForce(s);
+					//nada fazer aqui?
+					//o.innerHTML = eu.sanForce(s);
 				}
 			}
-			fu(this,this.d);
+			fu(dom);
 		}
 		// usar? https://developer.mozilla.org/en-US/docs/Web/API/HTML_Sanitizer_API
 		// 2023-05-01 ff em dev, chrome desde o 105 (agora 112), android não, o esr é 102.
@@ -480,8 +486,10 @@ const Eml = {
 							var t = ''+a.value;
 							var p = t.indexOf('://');
 							if (p>-1&&p<10) {
-								o.setAttribute('_url',a.name);
-								var c = Eml.htmlSanitize.urlCod(t);
+								//varios attr na tag podem ter ref 
+								let va = o.getAttribute('_url');
+								o.setAttribute('_url',(va?va+'~':'')+a.name);
+								var c = Eml.htmlSanitize.urlToCod(t);
 								o.removeAttribute(a.name);
 								o.setAttribute('_'+a.name,''+c);
 							} else if (p>-1&&a.name.toUpperCase()=='STYLE') {
@@ -1040,17 +1048,22 @@ var Obj = {
 		let r = '',nv=0;
 		for (let k in obj) {
 			var o = obj[k];
-			r += hexEnc(k,sd)
-				+(Lib.isUnd(o)
-					?''
-					:delimValue
-						+(Lib.isFun(o)
-							?'function(?)'
-							:hexEnc(''+o,sd)
-						)
-				)
-				+delimElem
-			;
+			try {
+				r += hexEnc(k,sd)
+					+(Lib.isUnd(o)
+						?''
+						:delimValue
+							+(Lib.isFun(o)
+								?'function(?)'
+								:hexEnc(''+o,sd)
+							)
+					)
+					+delimElem
+				;
+			} catch (e) {
+				console.log(obj,k,o);
+				r += k+delimValue+o+delimElem;
+			}
 		}
 		return r;
 	}

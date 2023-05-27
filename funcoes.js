@@ -36,6 +36,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	var objNav = Deb.nav;
 	var alertErro = Lib.alertErro;
 
+
+	//**************************//
+	var dateSql = Tempo.dataSort;
+	var dataSql = Tempo.dataSort;
+
+
 	//**************************//
 	var objText = Obj.toText;
 	//**************************//
@@ -3801,25 +3807,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			return new Date();
 		}
 	}
-	//**************************//
-	var dataSql = dateSql;
-	function dateSql(a,semHora) {
-		//fuso d.setTime( d.getTime() + d.getTimezoneOffset()*60*1000 );
-		//getDay = dia semana.
-		var d = vazio(a)?new Date():a;
-		//bjNav(a);
-		//lert(a+' '+typeof(a)+' '+d);
-		if (typeof(a)=='string') {
-			d = strToData(a);
-		} else if (typeof(a)=='number') {
-			d = new Date(a);
-		}
-		return takeYear(d)+'-'+strZero(d.getMonth()+1,2)
-			+'-'+strZero(d.getDate(),2)
-			+(semHora?'':' '+strZero(d.getHours(),2)+':'
-				+strZero(d.getMinutes(),2)+':'+strZero(d.getSeconds(),2)
-			);
-	}
+
 	//**************************//
 	function takeYear(theDate) {
 		var x = theDate.getYear();

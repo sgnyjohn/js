@@ -62,6 +62,28 @@ class promessa {
 	}
 }
 
+class Tempo {
+	static recente(d) {
+		return Tempo.dataSort(d);
+	}
+	static éHoje() {
+	}
+	static dataSort(tempo,semHora) {
+		//fuso d.setTime( d.getTime() + d.getTimezoneOffset()*60*1000 );
+		//getDay = dia semana.
+		var d = vazio(tempo)?new Date():tempo;
+		if (typeof(tempo)=='string') {
+			d = strToData(tempo);
+		} else if (typeof(tempo)=='number') {
+			d = new Date(tempo);
+		}
+		return takeYear(d)+'-'+strZero(d.getMonth()+1,2)
+			+'-'+strZero(d.getDate(),2)
+			+(semHora?'':' '+strZero(d.getHours(),2)+':'
+				+strZero(d.getMinutes(),2)+':'+strZero(d.getSeconds(),2)
+		);
+	}
+}
 //debug
 const Deb = {
 	ini:{}

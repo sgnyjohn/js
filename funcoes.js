@@ -33,6 +33,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 //if (true) {
+	var styleSet = Dom.styleSet;
+	var setCss = styleSet;
+
 	var objNav = Deb.nav;
 	var alertErro = Lib.alertErro;
 
@@ -55,6 +58,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	var mergeOptionsM = Lib.optionsMergeM;
 
 	var domObj = Dom.obj;
+
+	//***************************************************
+	// retorna o valor do attributo na tag ou parent
+	var getParentAttr = Dom.getParentAttr;
+	//***************************************************
+	// retorna o parent que possui o attributo 
+	var getParentByAttr		= Dom.getParentByAttr;
+	var getParentNodeAttr	= Dom.getParentByAttr;
+
 
 
 	var browse = {};	
@@ -657,7 +669,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	}
 	//fim strPesq
 
-	setCss = styleSet;
 	/**************************
 	function setCss(obj,nomep,vlr) {
 		
@@ -1954,12 +1965,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	}
 	
 
-	//**************************//
-	function styleSet(dom,key,value) {
-		var o = textObj(dom.style.cssText);
-		o[key] = value;//(!value?'':value);
-		dom.style.cssText = objText(o);
-	}
 	//**************************//
 	function objDebug(o,Op) {
 		var op = mergeOptions({lim:200,filt:function(){return true;}},Op);
@@ -4702,13 +4707,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			return (' '+t+' ').indexOf(' '+cl+' ')!=-1;
 		}
 	}
-	//***************************************************
-	// retorna o valor do attributo na tag ou parent
-	var getParentAttr = Dom.getParentAttr;
-	//***************************************************
-	// retorna o parent que possui o attributo 
-	var getParentByAttr		= Dom.getParentByAttr;
-	var getParentNodeAttr	= Dom.getParentByAttr;
 
 	//**************************//
 	function html(a) {

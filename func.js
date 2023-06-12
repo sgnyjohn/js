@@ -362,17 +362,33 @@ class Conv {
 const Eml = {
 	ini:{}
 	//addEventListener("contextmenu",
+	,convContentTxtT:(tx,enc,charset)=>{
+		var fr = document.createElement('iframe');
+		// data:[<media type>][;charset=<character set>][;base64],<data>
+		fr.src = "data:text/plain;charset="+charset+";"+enc+","+tx;
+		deb(fr);
+		return fr;
+	}
 	,convContentTxt:(tx,enc,charset)=>{
 		if (enc=='base64') {
 			tx = Conv.fromBase64(tx);
 		} else if (enc=='7bit') {
 		} else if (enc=='8bit') {
 			// ha utf-8 com sequs Ã§Ã£ 
-			try {
+			try { //produÃ§Ã£o
+				//eb('8bit '+charset);
 				var td = new TextDecoder(charset.toUpperCase());
-				if (td) tx = td.decode(tx);
+				function str2ab(str) {
+						var buf = new ArrayBuffer(str.length*2); // 2 bytes for each char
+						var bufView = new Int32Array(buf);//new Uint16Array(buf);
+						for (var i=0, strLen=str.length; i < strLen; i++) {
+							bufView[i] = str.charCodeAt(i);
+						}
+						return buf;
+				}				
+				if (td) tx = td.decode(str2ab(tx));
 			} catch (e) {
-				alert('8bit df='+e);
+				alert('8bit df='+Lib.erro(e));
 			}
 		} else if (enc=='quoted-printable') {
 			var r = Conv.fromquoted_printable1(tx);
@@ -399,7 +415,7 @@ const Eml = {
 		} else if (enc=='8bit') {
 		} else if (enc=='quoted-printable') {
 			//var ct = textObj
-			tx = Conv.fromquoted_printable(tx);
+			tx = Conv.fromquoted_printable1(tx);
 			/*if (r.indexOf('Ã£')!=-1||r.indexOf('Ã§')!=-1) {
 				r = Conv.fromquoted_printable1(tx);
 			}
@@ -668,7 +684,7 @@ const Eml = {
 
 const Dom = {
 	ini:{}
-	,scrollToVisible: (element)=>{
+	, scrollToVisible: (element)=>{
 		var e = element;
 		var t = element.ownerDocument.documentElement;
 		var p = element.offsetTop-element.offsetHeight*0.07;
@@ -698,7 +714,7 @@ const Dom = {
 		}
 	}
 	//***********************************************
-	,getElementIndex: (o)=>{
+	, getElementIndex: (o)=>{
 		var op = o.parentNode.childNodes;
 		for (var i=0;i<op.length;i++) {
 			if (op[i]==o) {
@@ -707,7 +723,7 @@ const Dom = {
 		}
 		return -1;
 	}
-	,dialogo_Dev: class {
+	, dialogo_Dev: class {
 		open(ev) {
 			if (Dom.agent.mobile()) {
 				this.center(ev);
@@ -720,13 +736,13 @@ const Dom = {
 			});
 		}
 	}
-	,aguarde: (domDs,tx)=>{
+	, aguarde: (domDs,tx)=>{
 		o.innerHTML = '<p class="domAguarde">'
 			+'aguarde...'
 			+(tx?'<br><br><b>'+tx+'</b>':'')
 		+'</p>';
 	}
-	,remove: (ob)=>{
+	, remove: (ob)=>{
 		ob.parentNode.removeChild(ob);
 	}
 	//***************************************************
@@ -795,10 +811,18 @@ const Dom = {
 		}
 		return null;
 	}
-	, isEvent(o) {
+	, isEvent: (o)=>{
 		return (o && o.target && o.type);
 	}
-	, stylePropOnOff(dom,str) {
+	, styleSet: (dom,key,value)=>{
+		var o = Obj.fromText(dom.style.cssText);
+		if (o[key] == value) return false;
+		o[key] = value;//(!value?'':value);
+		dom.style.cssText = Obj.toText(o);
+		//051lert('ss1 d='+dom.style.cssText+'\n\nsf='+Obj.toText(o));
+		return true;
+	}
+	, stylePropOnOff: (dom,str)=>{
 		var r = false;
 		var t = dom.style.cssText;
 		if (t.indexOf(str)==-1) {
@@ -1050,8 +1074,9 @@ var Obj = {
 		var v = (tex?tex:'').split(delimElem?delimElem:';');
 		var r = {};
 		var dl = delimValue?delimValue:':';
-		for (var i=0;i<v.length;i++) {
-			var p = v[i].indexOf(dl);
+		for (let i=0;i<v.length;i++) {
+			if (v[i].trim()=='') continue;
+			let p = v[i].indexOf(dl);
 			if (p==-1) {
 				r[hexDEnc(v[i].trimm())] = undefined;
 			} else {
@@ -1134,7 +1159,7 @@ if (!Object.prototype.getElements)
 
 
 
-if (!Date.prototype.getYearWeek) Date.prototype.getYearWeek = function(){
+if (!Date.prototype.getYearWeek) Date.prototype.getYearWeek = function(num){
 	/* semana comunic começa na sexta.
 	 * dom 0 5
 	 * seg 1 4 
@@ -1150,8 +1175,10 @@ if (!Date.prototype.getYearWeek) Date.prototype.getYearWeek = function(){
 	d0.setTime(d0.getTime()+(d0.getDay()==6?6:5-d0.getDay())*24*3600000);
 	//d0.setTime(d0.getTime()+((8-d0.getDay())%7)*24*3600000);
 	//caso dt < d0 retorna semana do ultimo dia do ano anterior
-	if (this.getTime()<d0.getTime()) return (new Date(y-1, 11, 31)).getYearWeek();
-  return y+'s'+strZero(Math.floor((this-d0)/7/24/3600000)+1,2);
+	if (this.getTime()<d0.getTime()) return (new Date(y-1, 11, 31)).getYearWeek(num);
+	let s = Math.floor((this-d0)/7/24/3600000)+1;
+	if (num) return s;
+  return y+'s'+strZero(s,2);
 };
 
 if (!Number.prototype.format) {

@@ -1250,6 +1250,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 				f.innerHTML = op.html;
 			}
 		}
+		this.dom = f;
 		if (op.click) {
 			f.addEventListener('click',op.click);
 		}

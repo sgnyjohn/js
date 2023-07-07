@@ -5,11 +5,58 @@
 	* @sgnyjohn abr/2023 Eml
 */
 
+class oRecursivo {
+	#dom = [];
+	#type = 'type';
+	//final #id; 
+	#id;
+	#parent = false; //object
+	#child = {}; //array object by id.
+	//deve saber o proprio tipo pare ref interface
+	type() {
+		return this.#type;
+	}
+	// 
+	childSet(o) {
+		this.#child[o.type()][o.id()] = o;
+	}
+	// 
+	child(id,type) {
+		return this.#child[type][id];
+	}
+	// id in parent.
+	id() {
+		return this.#id;
+	}
+	//string get.
+	idPath(ev) {
+		return (this.#parent ? this.#parent.idPath()+'&' : '')
+			+ this.#type+'='+this.#id
+		;
+	}
+	domId() {
+		var r=document.createElement('p');
+		r.innerHTML = id;
+		return r;
+	}
+	domTr() {
+		var r=document.createElement('tr');
+		r.innerHTML = id;
+		return r;
+	}
+	cmdSrv() {
+		//recursivo do global para o privado
+	}
+	constructor(Parent,Id) {
+		id = Id;
+		parent = Parent;
+	}
+}
+
+
 /* para tentar entender 
  * https://developer.mozilla.org/pt-BR/docs/Web/JavaScript/Reference/Global_Objects/Promise 
  * desde 2014
- * 
-
 */
 class promessa {
 	#ex = -1;
@@ -84,6 +131,7 @@ class Tempo {
 		);
 	}
 }
+
 //debug
 const Deb = {
 	ini:{}

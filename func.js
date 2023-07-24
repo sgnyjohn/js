@@ -1343,6 +1343,15 @@
 
 
 
+	if (!Array.prototype.indexOfOld) {
+		Array.prototype.indexOfOld = Array.prototype.indexOf;
+		Array.prototype.indexOf = function(par){
+			if (typeof(par)!='function') return this.indexOfOld(par);
+			for (let i=0;i<this.length;i++) {
+				if (par(this[i])) return i;
+			}
+		}
+	}
 	if (!Array.prototype.split) Array.prototype.split = function(del){
 		for (k in this) {
 			if (this[k].split) this[k] = this[k].split(del);

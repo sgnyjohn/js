@@ -33,6 +33,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 //if (true) {
+	var strZero = Lib.strZero;
+
+	//**************************//
+	var strToData = Tempo.fromStr;
+	var strToDate = strToData;
+
+	var aeval = Lib.aeval;
+
+	//**************************//
+	var ms = Tempo.ms;
+
 	var styleSet = Dom.styleSet;
 	var setCss = styleSet;
 
@@ -1218,7 +1229,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			);
 			return;
 		}
-		var op = mergeOptions({pW:0.8,pH:0.8,container:true},Op);
+		var op = mergeOptions({pW:0.8,pH:0.8,container:true,class:'pdr'},Op);
 		this.op = op;
 		
 		//style exists ?
@@ -1239,20 +1250,37 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		
 		var f = op.dom;
 		if (!f||op.container) {
-			f = document.createElement('div');
-			f.className = cl+(op.class?' '+op.class:'');
-
-			//add in document
-			document.body.appendChild(f);
-			if (op.dom) {
-				f.appendChild(op.dom);
-			} else if (op.html) {
-				f.innerHTML = op.html;
+			//cria
+			/*let tt = document.querySelectorAll('.'+cl);
+			aeval(tt,(v)=>{
+					if ((' '+v.className+' ').indexOf(' '+op.class+' ')!=-1) {
+						alert('v='+v.className);
+						f = v;
+					}
+			});
+			*/
+			//if (f.length.querySelectorAll('.'+op.class);
+			f = document.querySelector('.'+cl+'.'+op.class);
+			if (true || !f) {
+				//lert('criando ...\n\n'+'.'+cl+'.'+op.class);
+				f = document.createElement('div');
+				f.className = cl+(op.class?' '+op.class:'');
+				//add in document
+				document.body.appendChild(f);
+			} else {
+				//f = f[0];
 			}
+			if (op.html) f.innerHTML = op.html;
 		}
+		
 		this.dom = f;
 		if (op.click) {
 			f.addEventListener('click',op.click);
+		}
+		//*************************
+		this.destroy = ()=>{
+			this.hide();
+			Dom.remove(this.dom);
 		}
 		//*************************
 		this.setDom = (domObj)=>{
@@ -3479,26 +3507,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		}
 		return r;
 	}
-	//*******************************************
-	function aeval(arr,func) {
-		var nv = 0;
-		if (typeof(arr)=='undefined') {
-			return;
-		} else if (typeof(arr.length)=='number') {
-			for (var i=0;i<arr.length;i++) {
-				func(arr[i],i);
-			}
-		} else if (false && typeof(arr.forEach)=='function') {
-			alert('fore');
-			arr.forEach((v,i)=>{
-				func(v,i);
-			});
-		} else {
-			for (i in arr) {
-				func(arr[i],i,nv++);
-			}
-		}
-	}
+
 	//################################
 	//retorna data formatada tipo facebook
 	function dataRecente(d) {
@@ -3777,54 +3786,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			elem.attachEvent('on'+eve, fun);
 		}
 	}
-	//**************************//
-	var strToDate = strToData;
-	function strToData(str) {
-		if (!str) {
-			//lert('erro strToData(), data invalida '+str);
-			return new Date(); 
-		}
-		try {
-			//lert('strToData: '+str);
-			//falta hora?
-			if (str.indexOf(' ')==-1) {
-				var h = [0,0,0,0];
-			} else {
-				var h = palavraA(substrAt(str,' ')+':0:0:0',':');
-				if (h[2].indexOf('.')!=-1) {
-					h[3] = substrAt(h[2],'.');
-					h[2] = leftAt(h[2],'.');
-				} else {
-					h[3] = '0';
-				}
-			}
-			// d/m/y 
-			if (str.indexOf('/')!=-1) {
-				var d = palavraA(leftAt(str,' '),'/');
-				return new Date(1*d[2],1*d[1]-1,1*d[0],1*h[0],1*h[1],1*h[2],1*h[3]);
-			}
-			// y-m-d 
-			var d = palavraA(leftAt(str,' '),'-');
-			var r = new Date(1*d[0],1*d[1]-1,1*d[2],1*h[0],1*h[1],1*h[2],1*h[3]);
-			//lert('d='+d+' h='+h+' '+r);
-			return r;
-		} catch (e) {
-			alert('erro strToData '+erro(e));
-			return new Date();
-		}
-	}
 
 	//**************************//
+	//?
 	function takeYear(theDate) {
-		var x = theDate.getYear();
+		return theData.getFullYear();
+		/*var x = theDate.getYear();
 		var y = x % 100;
 		y += (y < 38) ? 2000 : 1900;
 		return y;
+		*/
 	}
-	//**************************//
-	function strZero(nr,t) {
-		return right('0000000000'+Math.floor(nr+0.5),t);
-	}
+
 	//************************************
 	/* preciso armazenar objetos ligados a tags 
 		até onde eu sei não podem ser armazenados 
@@ -3853,10 +3826,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	}
 
 
-	//**************************//
-	function ms() {
-		return (new Date()).getTime();
-	}
 	//********************
 	//retira da url o host menos www
 	function host(url) {

@@ -289,7 +289,7 @@ window.addEventListener('load',() => {
 				//receive response from server
 				a = xhr.readyState;
 				tx = trimm(xhr.responseText);
-				var x = ms();
+				var x = (new Date()).getTime();
 				var d = document.createElement('div');
 				d.innerHTML = tx;
 				for (var i=0;i<d.childNodes.length;i++) {
@@ -350,7 +350,7 @@ window.addEventListener('load',() => {
 		if (appProp.css) {
 			appProp.css = (typeof(appProp.css)=='object'&&appProp.css.length?appProp.css:[appProp.css]);
 			aeval(appProp.css,(cs)=>{
-				domObj({tag:'link',targ:head,rel:'StyleSheet',href:cs+'?ms='+ms()});
+				domObj({tag:'link',targ:head,rel:'StyleSheet',href:cs+'?ms='+(new Date()).getTime()});
 			});
 		}
 		try {

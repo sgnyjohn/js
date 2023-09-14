@@ -5,8 +5,7 @@
 	* @sgnyjohn abr/2023 Eml
 */
 
-
-
+/* metodo privado incompativer com machintoch?
 	class oRecursivo {
 		#dom = [];
 		#type = 'type';
@@ -54,12 +53,12 @@
 			parent = Parent;
 		}
 	}
-
+*/
 
 	/* para tentar entender 
 	 * https://developer.mozilla.org/pt-BR/docs/Web/JavaScript/Reference/Global_Objects/Promise 
 	 * desde 2014
-	*/
+	
 	class promessa {
 		#ex = -1;
 		#ret;
@@ -110,6 +109,7 @@
 			}
 		}
 	}
+	*/
 
 	class Tempo {
 		static fromStr(str) {
@@ -177,8 +177,8 @@
 	//debug
 	const Deb = {
 		ini:{}
-		,log: (s)=>{
-			console.log(s);
+		,log: function(s){
+			console.log(arguments);
 		}
 		,nav: (ob,jan)=>{ //antigo objNav
 			if (typeof(this)=='undefined') {
@@ -822,8 +822,32 @@
 
 	const Dom = {
 		ini:{}
+		,	isEvent: (o)=>{
+			return o instanceof Event;
+		}
+		, addCssToStyle: (url,id,prefix)=>{
+			Lib.load(url,(tx,ok)=>{
+				if (!ok) {
+				}
+				//lert(ok+' '+tx);
+				Dom.addStyleId(tx,id,prefix);
+			});
+
+		}
+		, addCss: (url)=>{
+			Dom.obj({tag:'link'
+				,targ:document.querySelector('head')
+				,rel:'StyleSheet'
+				,href:url+'?ms='+(new Date()).getTime()
+			});
+		}
+		, clickCancelContext: (ev)=>{
+			return !Lib.vazio(window.getSelection().toString()) //seleção
+				|| ev.ctrlKey //cssEdit
+			;
+		}
 		, clickCancel: (ev)=>{
-			return !vazio(window.getSelection().toString()) //seleção
+			return !Lib.vazio(window.getSelection().toString()) //seleção
 				|| ev.ctrlKey //cssEdit
 				|| ev.button>1 //so 0 e 1 (central)
 			;
@@ -880,18 +904,29 @@
 				});
 			}
 		}
-		, aguarde: (domDs,tx)=>{
-			o.innerHTML = '<p class="domAguarde">'
+		, aguarde: (domDs,txOUfun)=>{ //mostra msg "carregando"
+			//não é uma idéia correta, dirigida a evento.
+			domDs.innerHTML = '<p class="domAguarde">'
 				+'aguarde...'
-				+(tx?'<br><br><b>'+tx+'</b>':'')
-			+'</p>';
+				+(Lib.isStr(txOUfun)?'<br><br><b>'+txOUfun+'</b>':'')
+				+'</p>'
+			;
+			if (Lib.isFun(txOUfun)) {
+				let vl = txOUfun();
+				if (Lib.isStr(vl)) {
+					domDs = vl;
+				} else if (vl.tagName) {
+					domDs.innerHTML = '';
+					domDs.appendChild(vl);
+				}
+			}
 		}
 		, remove: (ob)=>{
 			ob.parentNode.removeChild(ob);
 		}
 		//***************************************************
 		, getParentByTagName: (o,nome,limit)=>{
-			if (isEvent(o)) o = o.target;
+			if (Dom.isEvent(o)) o = o.target;
 			nome = nome.toUpperCase();
 			//while ((o=o.parentNode) && o.tagName.toUpperCase()!=nome);
 			while (o) {
@@ -1012,7 +1047,7 @@
 				let r = '';
 				for (let i=0;i<hV.length;i++) {
 					let e = hV[i][0]
-						+' {'+objText(hV[i][1])+'}'
+						+' {'+Obj.toText(hV[i][1])+'}'
 					;
 					let prf = '';
 					if (prefix&&!e.equals(prefix)) {
@@ -1080,7 +1115,7 @@
 						try {
 							aeval(p[i],function(v){ret.appendChild(v);});
 						} catch (e) {
-							alert(objText(p[i])+'\n\n'+erro(e));
+							alert(Obj.toText(p[i])+'\n\n'+erro(e));
 						}
 					} else {
 						ret.innerHTML = ''+p[i];
@@ -1105,11 +1140,269 @@
 		}
 	};
 
-	const Lib = {
+	var Lib = {
 		ini:{}
+		,pedido:class {
+			url;
+			urlB;
+			urlP;
+			urlJ;
+			param = {};
+			paramJ = {};
+			//******************************	
+			atalho() {
+				let r = '';
+				for (let k in this.param) {
+					//lert('k('+k.length+')'); 
+					r += '&'+k+'='+encodeURIComponent(this.param[k]); 
+				}
+				let r1 = '';
+				for (let k in this.paramJ) {
+					r1 += '#'+k+'='+encodeURIComponent(this.paramJ[k]); 
+				}
+				return this.urlB
+					+(r==''?r:'?'+r.substring(1))
+					+r1
+				;
+			}
+			//******************************	
+			setJ(ch,valor) {
+				paramJ[ch] = valor;
+				return this;
+			}
+			//******************************	
+			getJ(ch,defaul) {
+				if (paramJ[ch]) return paramJ[ch];
+				return defaul;
+			}
+			//******************************	
+			set(ch,valor) {
+				param[ch] = valor;
+				return this;
+			}
+			//******************************	
+			get(ch,defaul) {
+				if (param[ch]) return param[ch];
+				return defaul;
+			}
+			//******************************	
+			init1() {
+				// #s
+				var vj=this.urlJ.split0('#');
+				for (var i=0;i<vj.length;i++) {
+					try {
+						this.paramJ[vj[i].leftAt('=')] = decodeURIComponent(vj[i].substrAt('='));
+					} catch (e) {
+						this.paramJ[vj[i].leftAt('=')] = (vj[i].substrAt('='));
+					}
+				}
+				// &?
+				var v = this.urlP.split0('&');
+				for (var i=0;i<v.length;i++) {
+					let np = v[i].leftAt('=');
+					let vl = v[i].substrAt('=');
+					if (Lib.vazio(np)) {
+						//ignora
+					} else {
+						this.param[np] = decodeURIComponent(vl.replaceAll('+',' '));
+					}
+				}
+			}
+			init(doc) {
+				if (typeof(doc)=='undefined') {
+					doc = document;
+				}
+				this.doc = doc;
+				if (typeof(doc)=='string') {
+					this.url = doc;
+				} else {
+					this.url = ''+doc.location;
+				}
+				this.protocolo = this.url.leftAt(':');
+				this.host = (this.url+'/').substrAtAt('://','/'); 
+				//parametros
+				var p = this.url.indexOf('?');
+				if (p!=-1) {
+					this.urlB = this.url.substring(0,p);
+					this.urlP = this.url.substring(p+1);
+				} else {
+					this.urlB = this.url;
+					this.urlP = '';
+				}
+				//parametros Internos JS
+				var p = this.urlP.indexOf('#');
+				if (p!=-1) {
+					this.urlJ = this.urlP.substring(p+1);
+					this.urlP = this.urlP.substring(0,p);
+				} else if (this.urlP==''&&(p=this.urlB.indexOf('#'))!=-1) {
+					//não há '?' ?
+					this.urlJ = this.urlB.substring(p+1);
+					this.urlB = this.urlB.substring(0,p);
+				} else {
+					//this.urlP = this.urlP;
+					this.urlJ = '';
+				}
+				this.init1();
+			}
+			constructor(doc) {
+				this.init(doc);
+			}
+		}
+		/*
+			//******************************
+			getHash() {
+				return param;
+			}
+			//getV = this.getHash;
+			//******************************
+			getHashJ() {
+				return paramJ;
+			}
+			//******************************
+			formToParam(ob,strParam) {
+				var alvo = getParentByTagName(ob,'form');
+				//if (!alvo) return;
+				for (var i=0;i<alvo.elements.length;i++) {
+					if (alvo.elements[i].name) {
+						//lert('i='+i+' ='+alvo.elements[i].name+"= v="+alvo.elements[i].value);
+						put(alvo.elements[i].name,alvo.elements[i].value);
+					}
+				}
+				if (strParam) {
+					var v = strParam.split('&');
+					for (var i=0;i<v.length;i++) {
+						var v1 = v[i].split('=');
+						if (v1.length==1) {
+							param[v1[0]] = null;
+						} else {
+							param[v1[0]] = v1[1];
+						}
+					}
+				}
+			}
+			//******************************
+			paramToForm(frm,duplica) {
+				for(var prop in param) {
+					if (param[prop]!=null) {
+						if (duplica || !frm[prop]) {
+							//frm.appendChild(input(prop,param[prop]));
+							alert('migra adv... func input não existe');
+						} else {
+							frm[prop].value = param[prop];
+						}
+					}
+				}
+			}
+			//******************************
+			host() {
+				return substrAtAt(this.url,'://','/');
+			}
+			//******************************
+			atalhoJ() {
+				var r = '';
+				for(var prop in paramJ) {
+					if (paramJ[prop]==null) {
+					} else if (typeof(paramJ[prop])!='object') {
+						r += '#'+prop+'='+encodeURIComponent(paramJ[prop]);
+					} else {
+						for(var p in paramJ[prop]) {
+							r += '#'+prop+'='+encodeURIComponent(paramJ[prop][p]);
+						}
+					}
+				}
+				//lert(troca(r,'&','\n')+' pg='+param['pg']);
+				return r;
+			}
+			//******************************
+			atalho() {
+				var r = '';
+				for(var prop in param) {
+					if (param[prop]==null) {
+					} else if (typeof(param[prop])!='object') {
+						//r += '&'+prop+'='+escape(param[prop]);
+						r += '&'+prop+'='+encodeURIComponent(param[prop]);
+					} else {
+						for(var p in param[prop]) {
+							//r += '&'+prop+'='+escape(param[prop][p]);
+							r += '&'+prop+'='+encodeURIComponent(param[prop][p]);
+						}
+					}
+				}
+				return this.url
+					+(r.length==0?'':'?'+r.substring(1))
+					+eu.atalhoJ()
+				;
+			}
+			//******************************
+			remove(ch) {
+				param[ch] = null;
+			}
+			//******************************
+			getNum(a,b) {
+				var r = ''+param[a]; //.localToNumber();
+				return isNaN(r)?b:1*r;
+			}
+			//******************************
+			get(a,b) {
+				var r = param[a];
+				if (vazio(r) && !nulo(b)) {
+					return b;
+				}
+				return r;
+			}
+			//******************************
+			getJ(a,b) {
+				var r = paramJ[a];
+				if (vazio(r) && !nulo(b)) {
+					return b;
+				}
+				return r;
+			}
+			//******************************
+			refresh() {
+				this.put('segs',ms());
+				doc.location = this.atalho();
+			}
+			//******************************
+			putNum(a,b) {
+				//lert('set a='+a+' b='+b);
+				param[a] = (''+b).localToNumber();
+			}
+			//******************************
+			put(a,b) {
+				//lert('set a='+a+' b='+b);
+				param[a] = b;
+			}
+			//******************************
+			putJ(name,value) {
+				//lert('set a='+a+' b='+b);
+				paramJ[name] = value;
+				if (this.updUrlJ) {
+					//lert('atalhoJ'+this.atalhoJ());
+					window.location = leftAt(''+window.location,'#')+this.atalhoJ();
+				}
+			}
+			//this.setJ = this.putJ;
+		} //fim pedido
+		*/
+		,load: (url,func) => {
+			var xhr = new XMLHttpRequest();
+			xhr.onreadystatechange = (a) => {
+				//lert(a);
+				if (xhr.readyState === XMLHttpRequest.DONE) {
+					func(xhr.responseText,xhr.status==200,xhr);
+				}
+			}
+			//se ? executa classe servidor
+			xhr.open("GET", url.charAt(0)=='?' ? urlE(app,url) : url , true);
+			xhr.send(null);
+		}
 		,aguarde: (fuLogic,fu) => {
-			var t = 50;
-			var f = ()=>{
+			//fica em timeout até 1a func retornar algo
+			// usado para dar delay a resposta clicks
+			//lert('Lib.aguarde');
+			let t = 50;
+			let f = ()=>{
 				if (fuLogic()) {
 					fu();
 				} else {
@@ -1341,8 +1634,7 @@
 	*/
 
 
-
-
+	//arrays
 	if (!Array.prototype.indexOfOld) {
 		Array.prototype.indexOfOld = Array.prototype.indexOf;
 		Array.prototype.indexOf = function(par){
@@ -1418,7 +1710,12 @@
 	}
 
 	//Strings
-
+	if(!String.prototype.split0) { 
+		String.prototype.split0 = function(del) {
+			if (this.length==0) return [];
+			return this.split(del);
+		}	
+	}
 	if(!String.prototype.mergeChars) { 
 		String.prototype.mergeChars = function(masc,coringa) {
 			coringa = coringa?coringa:'*';

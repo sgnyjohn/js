@@ -33,6 +33,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 //if (true) {
+	//***********************************************
+	// add style id 
+
+
+	var isEvent = Dom.isEvent;
+
+	var addStyleId = Dom.addStyleId;
+
 	var strZero = Lib.strZero;
 
 	//**************************//
@@ -83,6 +91,247 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	var browse = {};	
 	var _c = console.log;
 	var planetas = '☿ Mercúrio	♀ Vênus	⊕ Terra	♂ Marte	♃ Júpiter	♄ Saturno	♅ Urano	♆ Netuno';
+
+
+	//******************************
+	// objeto Pedido
+	// retorna parametros conforme 
+	// location e permite reatribuir
+	// com fins de montar novo location
+	//******************************
+	function pedido(doc) {
+		var eu = this;
+		this.atalho = atalho;
+		this.remove = remove;
+		this.get = get;
+		this.put = put;
+		this.param = get;
+		this.paramPut = put;
+		this.set = put;
+		this.paramToForm = paramToForm;
+		this.refresh = refresh;
+		this.url = ''; //host
+		var url = ''; //parametros
+		var urlJ;
+	 
+		//lert(typeof(doc));
+		if (typeof(doc)=='undefined') {
+			doc = window;
+		}
+		try {
+			if (typeof(doc)=='string') {
+				var url = doc;
+				this.doc = window;
+			} else {
+				this.doc = doc;
+				var url=''+doc.location;
+			}
+		} catch (e) {
+			var url = '';
+			//alertErro(e);
+		}
+		var param = {};
+		var paramJ = {};
+		this.url = url;
+		this.protocolo = leftAt(url,':');
+		this.host = substrAtAt(url+'/','://','/'); 
+		var p = url.indexOf('?');
+		if (p!=-1) {
+			this.url = url.substring(0,p);
+			url = url.substring(p+1);
+		} else if (url.indexOf('://')<10 && url.indexOf('://')!=-1) {
+			//nao tem ? e tem http
+			this.url = url;
+			url = '';
+		} else {
+			url = url.substring(p+1);
+		}
+		setParam();
+		//******************************	
+		this.addParams =  function(strGet) {
+			var uk = url;
+			url = strGet;
+			setParam();
+			url = uk;
+		}	
+		//******************************	
+		function setParam() {
+			//tem parametros JS ? // sj 09/2015
+			urlJ = '';
+			if (url.indexOf('#')!=-1) {
+				urlJ = substrAt(url,'#');
+				url = leftAt(url,'#');
+			} else if (eu.url.indexOf('#')!=-1) {
+				urlJ = substrAt(eu.url,'#');
+				eu.url = leftAt(eu.url,'#');
+			}
+			if (!vazio(urlJ)) {
+				//lert(urlJ);
+				var vj=palavraA(urlJ,'#');
+				for (var i=0;i<vj.length;i++) {
+					try {
+						paramJ[leftAt(vj[i],'=')] = decodeURIComponent(substrAt(vj[i],'='));
+					} catch (e) {
+						paramJ[leftAt(vj[i],'=')] = (substrAt(vj[i],'='));
+					}
+				}
+				//lert(vj+' p='+paramJ);
+			}
+			var v = palavraA(url,'&');
+			var c;
+			for (var i=0;i<v.length;i++) {
+				c = palavraA(v[i]+'=','=');
+				var np = c[0];
+				if (vazio(np)) {
+					//ignora
+				} else if (!param[np] || vazio(param[np])) {
+					param[np] = decodeURIComponent(troca(c[1],'+',' '));
+				} else {
+					if (typeof(param[np])=='string') {
+						param[np] = new Array(param[np]);
+					}
+					param[np][param[np].length] = decodeURIComponent(troca(c[1],'+',' '));
+					//lert(param[np]);
+				}
+			}
+		}
+		//******************************
+		this.getHash = () => {
+			return param;
+		}
+		this.getV = this.getHash;
+		//******************************
+		this.getHashJ = () => {
+			return paramJ;
+		}
+		//******************************
+		this.formToParam = function(ob,strParam) {
+			var alvo = getParentByTagName(ob,'form');
+			//if (!alvo) return;
+			for (var i=0;i<alvo.elements.length;i++) {
+				if (alvo.elements[i].name) {
+					//lert('i='+i+' ='+alvo.elements[i].name+"= v="+alvo.elements[i].value);
+					put(alvo.elements[i].name,alvo.elements[i].value);
+				}
+			}
+			if (strParam) {
+				var v = strParam.split('&');
+				for (var i=0;i<v.length;i++) {
+					var v1 = v[i].split('=');
+					if (v1.length==1) {
+						param[v1[0]] = null;
+					} else {
+						param[v1[0]] = v1[1];
+					}
+				}
+			}
+		}
+		//******************************
+		function paramToForm(frm,duplica) {
+			for(var prop in param) {
+				if (param[prop]!=null) {
+					if (duplica || !frm[prop]) {
+						//frm.appendChild(input(prop,param[prop]));
+						alert('migra adv... func input não existe');
+					} else {
+						frm[prop].value = param[prop];
+					}
+				}
+			}
+		}
+		//******************************
+		this.host = function() {
+			return substrAtAt(this.url,'://','/');
+		}
+		//******************************
+		this.atalhoJ = function() {
+			var r = '';
+			for(var prop in paramJ) {
+				if (paramJ[prop]==null) {
+				} else if (typeof(paramJ[prop])!='object') {
+					r += '#'+prop+'='+encodeURIComponent(paramJ[prop]);
+				} else {
+					for(var p in paramJ[prop]) {
+						r += '#'+prop+'='+encodeURIComponent(paramJ[prop][p]);
+					}
+				}
+			}
+			//lert(troca(r,'&','\n')+' pg='+param['pg']);
+			return r;
+		}
+		//******************************
+		function atalho() {
+			var r = '';
+			for(var prop in param) {
+				if (param[prop]==null) {
+				} else if (typeof(param[prop])!='object') {
+					//r += '&'+prop+'='+escape(param[prop]);
+					r += '&'+prop+'='+encodeURIComponent(param[prop]);
+				} else {
+					for(var p in param[prop]) {
+						//r += '&'+prop+'='+escape(param[prop][p]);
+						r += '&'+prop+'='+encodeURIComponent(param[prop][p]);
+					}
+				}
+			}
+			return this.url
+				+(r.length==0?'':'?'+r.substring(1))
+				+eu.atalhoJ()
+			;
+		}
+		//******************************
+		function remove(ch) {
+			param[ch] = null;
+		}
+		//******************************
+		this.getNum = function(a,b) {
+			var r = ''+param[a]; //.localToNumber();
+			return isNaN(r)?b:1*r;
+		}
+		//******************************
+		function get(a,b) {
+			var r = param[a];
+			if (vazio(r) && !nulo(b)) {
+				return b;
+			}
+			return r;
+		}
+		//******************************
+		this.getJ = function(a,b) {
+			var r = paramJ[a];
+			if (vazio(r) && !nulo(b)) {
+				return b;
+			}
+			return r;
+		}
+		//******************************
+		function refresh() {
+			this.put('segs',ms());
+			doc.location = this.atalho();
+		}
+		//******************************
+		this.putNum = function (a,b) {
+			//lert('set a='+a+' b='+b);
+			param[a] = (''+b).localToNumber();
+		}
+		//******************************
+		function put(a,b) {
+			//lert('set a='+a+' b='+b);
+			param[a] = b;
+		}
+		//******************************
+		this.putJ = function(name,value) {
+			//lert('set a='+a+' b='+b);
+			paramJ[name] = value;
+			if (this.updUrlJ) {
+				//lert('atalhoJ'+this.atalhoJ());
+				window.location = leftAt(''+window.location,'#')+this.atalhoJ();
+			}
+		}
+		this.setJ = this.putJ;
+	}
+
+
 
 	//***********************************************
 	// escape
@@ -511,11 +760,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		return !!( elem.offsetWidth || elem.offsetHeight || elem.getClientRects().length );
 	}
 	
-	//################################
-	//é evento
-	function isEvent(o) {
-		return o instanceof Event;
-	}
 
 
 	//################################
@@ -543,6 +787,23 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		var vex = ',.,+,*,?,^,$,(,),[,],{,},\.,'; //aceita |,
 		var vr,vrNot,tx;
 		init();
+		this.ajuda='espaço - um E outro'
+			+'\n| - um OU outro'
+			+'\n^ - prefixo palavra inteira'
+			+'\n~ - prefixo para indical palavra iniciando em '
+			+'\n_ - substitui espaços em literais'
+		;		
+		//################################
+		// palavra inteira ia /(^|\s)ia(\s|$)/
+		this.pesq = function(s) {
+			//var s = s1.toLowerCase();
+			for (var i=0;i<vr.length;i++) {
+				if ( vrNot[i] == vr[i].test(s) ) {
+					return false;
+				}
+			}
+			return true;
+		}
 		function init() {
 			var a = trimm(o);
 			// o ou é embutido dentro da expressao
@@ -560,7 +821,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 				v[i] = trimm(v[i]);
 				vrNot[i] = v[i].charAt(0)=='-'; //negativo, não?
 				if (vrNot[i]) v[i] = v[i].substring(1);
-				vr[i] = new RegExp(rExpr(v[i]),'i');
+				if (v[i].charAt(0)=='~') {
+					// prefixo palavra
+					vr[i] = new RegExp('([!-\/]|^|\\s)'+v[i].substring(1),'i');
+				} else if (v[i].charAt(0)=='^') {
+					//palavra
+					vr[i] = new RegExp('([!-\/]|^|\\s)'+v[i].substring(1)+'(\\s|$|[!-\/])','i');
+				} else {
+					vr[i] = new RegExp(rExpr(v[i]),'i');
+				}
 			}
 		}
 		//###################################
@@ -662,16 +931,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			var s1 = tiraAcentos(s).toLowerCase();
 			for (var i=0;i<v.length;i++) {
 				if ( s1.indexOf(v[i]) == -1 ) {
-					return false;
-				}
-			}
-			return true;
-		}
-		//################################
-		this.pesq = function(s) {
-			//var s = s1.toLowerCase();
-			for (var i=0;i<vr.length;i++) {
-				if ( vrNot[i] == vr[i].test(s) ) {
 					return false;
 				}
 			}
@@ -1249,28 +1508,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		}
 		
 		var f = op.dom;
-		if (!f||op.container) {
+		if (!f || op.container) {
 			//cria
-			/*let tt = document.querySelectorAll('.'+cl);
-			aeval(tt,(v)=>{
-					if ((' '+v.className+' ').indexOf(' '+op.class+' ')!=-1) {
-						alert('v='+v.className);
-						f = v;
-					}
-			});
-			*/
-			//if (f.length.querySelectorAll('.'+op.class);
 			f = document.querySelector('.'+cl+'.'+op.class);
-			if (true || !f) {
-				//lert('criando ...\n\n'+'.'+cl+'.'+op.class);
-				f = document.createElement('div');
-				f.className = cl+(op.class?' '+op.class:'');
-				//add in document
-				document.body.appendChild(f);
-			} else {
-				//f = f[0];
+			f = document.createElement('div');
+			f.className = cl+(op.class?' '+op.class:'');
+			//add in document
+			document.body.appendChild(f);
+			if (op.dom) {
+				f.appendChild(op.dom);
+			} else if (op.html) {
+				f.innerHTML = op.html;
 			}
-			if (op.html) f.innerHTML = op.html;
 		}
 		
 		this.dom = f;
@@ -1523,25 +1772,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			oDm.innerHTML = vDm;
 			//lert('fim '+nv+' t='+(ms()-ti));
 		}
-	}
-
-	//***********************************************
-	// add style id 
-	function addStyleId(cssText,id) {
-		var v = document.querySelectorAll('style#'+id);
-		if (v.length!=0) return false;
-		var ne = document.createElement('style');
-		ne.id = id;
-		ne.innerHTML = cssText;
-		var x = document.querySelector('head style');
-		if (x) {
-			//style exist, insert before
-			x.parentNode.insertBefore(ne,x);
-		} else {
-			//append to head
-			document.querySelector('head').appendChild(ne);
-		}
-		return true;
 	}
 
 	//***********************************************
@@ -4283,245 +4513,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		*/
 	}
 	var cookieSet = cookiePut;
-
-
-	//******************************
-	// objeto Pedido
-	// retorna parametros conforme 
-	// location e permite reatribuir
-	// com fins de montar novo location
-	//******************************
-	function pedido(doc) {
-		var eu = this;
-		this.atalho = atalho;
-		this.remove = remove;
-		this.get = get;
-		this.put = put;
-		this.param = get;
-		this.paramPut = put;
-		this.set = put;
-		this.paramToForm = paramToForm;
-		this.refresh = refresh;
-		this.url = ''; //host
-		var url = ''; //parametros
-		var urlJ;
-	 
-		//lert(typeof(doc));
-		if (typeof(doc)=='undefined') {
-			doc = window;
-		}
-		try {
-			if (typeof(doc)=='string') {
-				var url = doc;
-				this.doc = window;
-			} else {
-				this.doc = doc;
-				var url=''+doc.location;
-			}
-		} catch (e) {
-			var url = '';
-			//alertErro(e);
-		}
-		var param = {};
-		var paramJ = {};
-		this.url = url;
-		this.protocolo = leftAt(url,':');
-		this.host = substrAtAt(url+'/','://','/'); 
-		var p = url.indexOf('?');
-		if (p!=-1) {
-			this.url = url.substring(0,p);
-			url = url.substring(p+1);
-		} else if (url.indexOf('://')<10 && url.indexOf('://')!=-1) {
-			//nao tem ? e tem http
-			this.url = url;
-			url = '';
-		} else {
-			url = url.substring(p+1);
-		}
-		setParam();
-		//******************************	
-		this.addParams =  function(strGet) {
-			var uk = url;
-			url = strGet;
-			setParam();
-			url = uk;
-		}	
-		//******************************	
-		function setParam() {
-			//tem parametros JS ? // sj 09/2015
-			urlJ = '';
-			if (url.indexOf('#')!=-1) {
-				urlJ = substrAt(url,'#');
-				url = leftAt(url,'#');
-			} else if (eu.url.indexOf('#')!=-1) {
-				urlJ = substrAt(eu.url,'#');
-				eu.url = leftAt(eu.url,'#');
-			}
-			if (!vazio(urlJ)) {
-				//lert(urlJ);
-				var vj=palavraA(urlJ,'#');
-				for (var i=0;i<vj.length;i++) {
-					try {
-						paramJ[leftAt(vj[i],'=')] = decodeURIComponent(substrAt(vj[i],'='));
-					} catch (e) {
-						paramJ[leftAt(vj[i],'=')] = (substrAt(vj[i],'='));
-					}
-				}
-				//lert(vj+' p='+paramJ);
-			}
-			var v = palavraA(url,'&');
-			var c;
-			for (var i=0;i<v.length;i++) {
-				c = palavraA(v[i]+'=','=');
-				var np = c[0];
-				if (vazio(np)) {
-					//ignora
-				} else if (!param[np] || vazio(param[np])) {
-					param[np] = decodeURIComponent(troca(c[1],'+',' '));
-				} else {
-					if (typeof(param[np])=='string') {
-						param[np] = new Array(param[np]);
-					}
-					param[np][param[np].length] = decodeURIComponent(troca(c[1],'+',' '));
-					//lert(param[np]);
-				}
-			}
-		}
-		//******************************
-		this.getHash = () => {
-			return param;
-		}
-		this.getV = this.getHash;
-		//******************************
-		this.getHashJ = () => {
-			return paramJ;
-		}
-		//******************************
-		this.formToParam = function(ob,strParam) {
-			var alvo = getParentByTagName(ob,'form');
-			//if (!alvo) return;
-			for (var i=0;i<alvo.elements.length;i++) {
-				if (alvo.elements[i].name) {
-					//lert('i='+i+' ='+alvo.elements[i].name+"= v="+alvo.elements[i].value);
-					put(alvo.elements[i].name,alvo.elements[i].value);
-				}
-			}
-			if (strParam) {
-				var v = strParam.split('&');
-				for (var i=0;i<v.length;i++) {
-					var v1 = v[i].split('=');
-					if (v1.length==1) {
-						param[v1[0]] = null;
-					} else {
-						param[v1[0]] = v1[1];
-					}
-				}
-			}
-		}
-		//******************************
-		function paramToForm(frm,duplica) {
-			for(var prop in param) {
-				if (param[prop]!=null) {
-					if (duplica || !frm[prop]) {
-						//frm.appendChild(input(prop,param[prop]));
-						alert('migra adv... func input não existe');
-					} else {
-						frm[prop].value = param[prop];
-					}
-				}
-			}
-		}
-		//******************************
-		this.host = function() {
-			return substrAtAt(this.url,'://','/');
-		}
-		//******************************
-		this.atalhoJ = function() {
-			var r = '';
-			for(var prop in paramJ) {
-				if (paramJ[prop]==null) {
-				} else if (typeof(paramJ[prop])!='object') {
-					r += '#'+prop+'='+encodeURIComponent(paramJ[prop]);
-				} else {
-					for(var p in paramJ[prop]) {
-						r += '#'+prop+'='+encodeURIComponent(paramJ[prop][p]);
-					}
-				}
-			}
-			//lert(troca(r,'&','\n')+' pg='+param['pg']);
-			return r;
-		}
-		//******************************
-		function atalho() {
-			var r = '';
-			for(var prop in param) {
-				if (param[prop]==null) {
-				} else if (typeof(param[prop])!='object') {
-					//r += '&'+prop+'='+escape(param[prop]);
-					r += '&'+prop+'='+encodeURIComponent(param[prop]);
-				} else {
-					for(var p in param[prop]) {
-						//r += '&'+prop+'='+escape(param[prop][p]);
-						r += '&'+prop+'='+encodeURIComponent(param[prop][p]);
-					}
-				}
-			}
-			return this.url
-				+(r.length==0?'':'?'+r.substring(1))
-				+eu.atalhoJ()
-			;
-		}
-		//******************************
-		function remove(ch) {
-			param[ch] = null;
-		}
-		//******************************
-		this.getNum = function(a,b) {
-			var r = ''+param[a]; //.localToNumber();
-			return isNaN(r)?b:1*r;
-		}
-		//******************************
-		function get(a,b) {
-			var r = param[a];
-			if (vazio(r) && !nulo(b)) {
-				return b;
-			}
-			return r;
-		}
-		//******************************
-		this.getJ = function(a,b) {
-			var r = paramJ[a];
-			if (vazio(r) && !nulo(b)) {
-				return b;
-			}
-			return r;
-		}
-		//******************************
-		function refresh() {
-			this.put('segs',ms());
-			doc.location = this.atalho();
-		}
-		//******************************
-		this.putNum = function (a,b) {
-			//lert('set a='+a+' b='+b);
-			param[a] = (''+b).localToNumber();
-		}
-		//******************************
-		function put(a,b) {
-			//lert('set a='+a+' b='+b);
-			param[a] = b;
-		}
-		//******************************
-		this.putJ = function(name,value) {
-			//lert('set a='+a+' b='+b);
-			paramJ[name] = value;
-			if (this.updUrlJ) {
-				//lert('atalhoJ'+this.atalhoJ());
-				window.location = leftAt(''+window.location,'#')+this.atalhoJ();
-			}
-		}
-		this.setJ = this.putJ;
-	}
 
 	//***********************************************************
 	function hasClass(ob,estilo) {

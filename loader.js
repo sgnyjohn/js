@@ -34,7 +34,7 @@ window.addEventListener('load',() => {
 		var a = o.getElementsByTagName(t);
 		if (a.length==0) {
 			deb('create element '+t+' em '+o);
-			var r = domObj({tag:t,targ:o});
+			var r = Dom.obj({tag:t,targ:o});
 		} else {
 			r = a[0];
 		}
@@ -47,7 +47,7 @@ window.addEventListener('load',() => {
 			return true;
 		}
 		//lert('onlogon: '+onLogon.length);
-		aeval(onLogonA,(f,i)=>{
+		Lib.aeval(onLogonA,(f,i)=>{
 			//lert(i+' '+f);
 			//setTimeout(()=>{});
 			f[0].apply(f[1],f[2]);
@@ -82,7 +82,7 @@ window.addEventListener('load',() => {
 				initApp();
 
 			} catch (e) {
-				alert('erro criando objeto: new '+nom+'()\n\n'+erro(e));
+				alert('erro criando objeto: new '+nom+'()\n\n'+Lib.erro(e));
 			}
 		//});
 		//****************************************************
@@ -170,7 +170,7 @@ window.addEventListener('load',() => {
 			try {
 				eval(func);
 			} catch (e) {
-				alert('APP '+nomeApp+' not func and eval error expr ('+func+')\n\n'+erro(e));
+				alert('APP '+nomeApp+' not func and eval error expr ('+func+')\n\n'+Lib.erro(e));
 			}
 		}
 	}
@@ -307,7 +307,7 @@ window.addEventListener('load',() => {
 		}
 		//send request to server
 		if (postString) {
-			debJ('POST url='+u+' post='+postString.length+'='+postString);//+' '+erro('carga errada'));
+			debJ('POST url='+u+' post='+postString.length+'='+postString);//+' '+Lib.erro('carga errada'));
 			xhr.open('POST', u, true);
 			xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
 			xhr.send(postString);
@@ -320,7 +320,8 @@ window.addEventListener('load',() => {
 	//****************************************************
 	function urlE(app,u) {
 		var s = app.urlServer?app.urlServer:appProp.urlServer;
-		//eb('urlE: '+s);
+		console.log(app);
+		deb(app.urlServer+' urlE: '+s);
 		return s+u;
 	}
 	//****************************************************
@@ -339,24 +340,24 @@ window.addEventListener('load',() => {
 		//eb('head='+h.innerHTML);
 		//h.innerHTML = ''; // 👍
 		ret(head,'title').innerHTML = (appProp.title?appProp.title:appProp.name);
-		domObj({tag:'meta','http-equiv':"Content-Type",content:"text/html; charset=UTF-8",targ:head});
+		Dom.obj({tag:'meta','http-equiv':"Content-Type",content:"text/html; charset=UTF-8",targ:head});
 		// problema q objetos não são reajustados ? zoom apenas fonte ?
 		// https://developer.mozilla.org/en-US/docs/Web/HTML/Viewport_meta_tag
 		//omObj({tag:'viewport',content:"width=device-width,initial-scale=1,user-scalable",targ:h});
 		if (appProp.favicon) {
-			domObj({tag:'link',rel:"shortcut icon",href:appProp.favicon,targ:head});
-			domObj({tag:'link',rel:"icon",href:appProp.favicon,targ:head});
+			Dom.obj({tag:'link',rel:"shortcut icon",href:appProp.favicon,targ:head});
+			Dom.obj({tag:'link',rel:"icon",href:appProp.favicon,targ:head});
 		}
 		if (appProp.css) {
 			appProp.css = (typeof(appProp.css)=='object'&&appProp.css.length?appProp.css:[appProp.css]);
-			aeval(appProp.css,(cs)=>{
-				domObj({tag:'link',targ:head,rel:'StyleSheet',href:cs+'?ms='+(new Date()).getTime()});
+			Lib.aeval(appProp.css,(cs)=>{
+				Dom.obj({tag:'link',targ:head,rel:'StyleSheet',href:cs+'?ms='+(new Date()).getTime()});
 			});
 		}
 		try {
 			oApp = new ap(appProp);
 		} catch (e) {
-			alert('erro init app '+objText(appProp)+'\n\n'+erro(e));
+			alert('erro init app '+Obj.toText(appProp)+'\n\n'+Lib.erro(e));
 		}
 	}
 	//****************************************************
@@ -371,7 +372,7 @@ window.addEventListener('load',() => {
 			deb('loadJs: já carregado: '+nome
 				+' miliSegs: '+format(t-jsVet[nome])
 			);
-			aeval(ev,(v,k)=>{if (k=='load') v();});
+			Lib.aeval(ev,(v,k)=>{if (k=='load') v();});
 			return;
 		}
 		jsVet[nome] = t;

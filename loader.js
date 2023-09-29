@@ -27,6 +27,11 @@ window.addEventListener('load',() => {
 	var apps = {};
 	var jsVet = {}; //js carregados
 	var onLogonA = [];
+	document.body.className += 
+		navigator.userAgent.toLowerCase().indexOf('mobile')!=-1
+		?'mobile'
+		:'desktop'
+	;
 	function dev() {
 		return (''+window.location).indexOf('://dv.')!=-1;
 	}
@@ -69,7 +74,7 @@ window.addEventListener('load',() => {
 			var nom = appPr.name;
 			if (!Lib.isFunction(window[nom])) nom = appPr.js[appPr.js.length-1].substrRat('/');
 			if (!Lib.isFunction(window[nom])) {
-				alert('erro APP: não existe function com nome '+appPr.name+' ou '+nom);
+				Deb.log('erro APP: não existe function com nome '+appPr.name+' ou '+nom);
 				return;
 			}
 			//cria a app REAL

@@ -177,8 +177,12 @@
 	//debug
 	const Deb = {
 		ini:{}
-		,log: function(s){
-			console.log(arguments);
+		,log: function(){
+			if (arguments.length==1) {
+				console.log(arguments[0]);
+			} else {
+				console.log(arguments);
+			}
 		}
 		,nav: (ob,jan)=>{ //antigo objNav
 			if (typeof(this)=='undefined') {
@@ -563,9 +567,9 @@
 				//procura todos no dom sanitizado attr _url
 				let ur = doc.querySelectorAll('[_url]');
 				//lert('_url='+ur.length);
-				aeval(ur,(o)=>{
+				Lib.aeval(ur,(o)=>{
 					let at = o.getAttribute('_url').split('~');
-					aeval(at,(v)=> {
+					Lib.aeval(at,(v)=> {
 						let cod = o.getAttribute(v);
 						let url = Eml.htmlSanitize.codToUrl(cod);
 						ob.push([v
@@ -822,6 +826,211 @@
 
 	const Dom = {
 		ini:{}
+		, getDPI: ()=>{
+			// 2023-09 retorna sempre 96x96 inclusive em celular.
+			//    no firefox e base chrome 
+			if (Dom.getDPI__) {
+				if (Lib.isObj(Dom.getDPI__)) {
+					let x = Dom.getDPI__.clientWidth+'x'+Dom.getDPI__.clientHeight;
+					Dom.getDPI__ = x;
+				}
+				return Dom.getDPI__;
+			}
+			Dom.getDPI__=Dom.obj('<div style="width:1in;border:2px solid;'
+				+'height: 1in;">teste </div>',document.body)
+			;
+			return Dom.getDPI();
+		}
+		, dialog: function(Op) {
+				var eu = this;
+				var visible = false;
+				if (typeof(Op)!='object'||Op.tagName) {
+					alert('parametro errado: passar objeto com:'
+						+'\nhtml or dom: conteúdo'
+						+'\nclick: envento on click'
+						+'\npW or pH: %/100 max w e h 0.8'
+						+'\ncontainer: add container'
+						+'\nclass: class container'
+					);
+					return;
+				}
+				var op = Lib.optionsMerge({pW:0.8,pH:0.8,container:true,class:'pdr'},Op);
+				this.op = op;
+				
+				//style exists ?
+				var cl = '_contextDiv';
+				if (!document.getElementById(cl)) {
+					Dom.addStyleId('DIV.'+cl+' {'
+						+'position:fixed;' //xdisplay:none;xz-index:100;
+						+'z-index:10;'
+						+'background-color:var(--corFd);'//#f0f0f0;' //xborder:2px solid blue;'
+						+'overflow:auto;'
+						+'border-radius:7px;'
+						+'padding:5px 10px;'
+						+'top:0;left:-300%;'
+						+'border:5px solid dark;'
+						+'}'
+					,cl);
+				}
+				
+				var f = op.dom;
+				if (!f || op.container) {
+					//cria
+					f = document.querySelector('.'+cl+'.'+op.class);
+					f = document.createElement('div');
+					f.className = cl+(op.class?' '+op.class:'');
+					//add in document
+					document.body.appendChild(f);
+					if (op.dom) {
+						f.appendChild(op.dom);
+					} else if (op.html) {
+						f.innerHTML = op.html;
+					}
+				}
+				
+				this.dom = f;
+				if (op.click) {
+					f.addEventListener('click',op.click);
+				}
+				//*************************
+				this.destroy = ()=>{
+					this.hide();
+					Dom.remove(this.dom);
+				}
+				//*************************
+				this.setDom = (domObj)=>{
+					f.innerHTML = '';
+					f.appendChild(domObj);
+					//f = domObj;
+				}
+				//*************************
+				this.text = text;
+				function text(html) {
+					if (html) f.innerHTML = html;
+					return f.innerHTML;
+				}
+				//*************************
+				this.visible = function() {
+					return visible;
+				}
+				//*************************
+				function limitWidthHeight() {
+					var tw = window.innerWidth;//browse.getTX(document.body);
+					var two = browse.getTX(f);
+					//limita Largura ?
+					two = (two<1?eu.two:two)*1.05; //para o scroll
+					if (two>tw*op.pW) {
+						two = tw*op.pW;
+					}
+					styleSet(f,'width',two+'px');
+					//limita algura
+					var th = window.innerHeight;//browse.getTY(window);
+					var tho = browse.getTY(f);
+					tho = (tho==0?eu.tho:tho);
+					if (tho>th*op.pH) {
+						tho = th*op.pH;
+						styleSet(f,'height',tho+'px');
+					}			
+				}
+				//*************************
+				this.reCenter = function() {
+					var tw = window.innerWidth;//browse.getTX(document.body);
+					var two = browse.getTX(f);
+					//limita Largura ?
+					two = (two<1?eu.two:two)*1.05; //para o scroll
+					if (two>tw*op.pW) {
+						two = tw*op.pW;
+					}
+					styleSet(f,'width',two+'px');
+					//limita algura
+					var th = window.innerHeight;//browse.getTY(window);
+					var tho = browse.getTY(f);
+					tho = (tho==0?eu.tho:tho);
+					if (tho>th*op.pH) {
+						tho = th*op.pH;
+						styleSet(f,'height',tho+'px');
+					}
+					styleSet(f,'left',(tw-two)/2+'px');
+					styleSet(f,'top',(th-tho)/2+'px');
+				}
+				//*************************
+				this.center = function(ev,fClick) {
+					this.click = fClick;
+					if (visible) {
+						eu.hide();
+						return;
+					}
+					var two = browse.getTX(f);
+					if (two<1 && !eu.recalc) {
+						//precisa calc tamanho
+						//eb('recalc='+two);
+						eu.recalc = true;
+						browse.mostra(f);
+						setTimeout(eu.center,100);
+						return;
+					}
+					visible = true;
+					eu.recalc = false;
+					
+					eu.reCenter();
+					
+					browse.mostra(f);
+				}
+				//*************************
+				this.show = function(ev,fClick) {
+					this.click = fClick;
+					if (visible) {
+						eu.hide();
+						return;
+					}
+					visible = true;
+					if (!ev) {
+						alertDev('contextDiv.show(event): missing event, use .center()');
+						eu.center();
+						return;
+					}
+					//screenX: 2679 screenY: 292
+					var nx, ny;
+					if ( eu.queryAlign && (nx=ev.target.closest(eu.queryAlign)) ) {
+						//_c(nx);
+						ny = nx.offsetTop;//browse.getY(nx);//
+						nx = browse.getAbsX(nx); //browse.getX(nx)-browse.getTX(f);
+					} else {
+						nx = ev.x-browse.getTX(f); //ev.x ev.screenX
+						if (nx<0) nx=ev.x;
+						ny = ev.y-browse.getTY(f);
+						if (ny<0) ny=ev.y;
+					}
+					styleSet(f,'left',nx+'px');
+					styleSet(f,'top',ny+'px');
+					//_c(f);
+					setTimeout(limitWidthHeight,100);
+					browse.mostra(f);
+				}
+				//*************************
+				this.hide = function() {
+					visible = false;
+					//guarda ultimo tamanho
+					eu.two = browse.getTX(f);
+					eu.tho = browse.getTY(f);
+					//zeras tamanhos
+					styleSet(f,'width');//lert('retirou width');
+					styleSet(f,'height');
+					//esconde
+					//eb('esconde '+f+' '+erro());
+					browse.esconde(f);
+				}
+				this.close = this.hide;
+			}
+		, evPercHoriz: (ev,oEl)=> {
+			if (!oEl) oEl = ev.target;
+			var bb = oEl.getBoundingClientRect();
+			return (ev.clientX - bb.left) / bb.width;
+		}
+		,	isInput: (o)=>{
+			if (o instanceof Event) o = o.target;
+			return o.tagName=='INPUT';
+		}
 		,	isEvent: (o)=>{
 			return o instanceof Event;
 		}
@@ -1113,7 +1322,7 @@
 						ret.appendChild(p[i]);
 					} else if (oo && typeof(p[i].length)=='number') {
 						try {
-							aeval(p[i],function(v){ret.appendChild(v);});
+							Lib.aeval(p[i],function(v){ret.appendChild(v);});
 						} catch (e) {
 							alert(Obj.toText(p[i])+'\n\n'+erro(e));
 						}
@@ -1142,6 +1351,16 @@
 
 	var Lib = {
 		ini:{}
+		,isMobile: ()=>{
+			return navigator.userAgent.toLowerCase().indexOf('mobile')!=-1;
+		}
+		,fSort: (a,b,desc)=>{
+			if (desc) {
+				return (b>a?1:(b<a?-1:0));
+			} else {
+				return (a>b?1:(a<b?-1:0));
+			}
+		}
 		,pedido:class {
 			url;
 			urlB;
@@ -1479,7 +1698,7 @@
 			if (typeof(op)!='object') {
 				return opDefault;
 			}
-			aeval(opDefault,(x,k)=>{
+			Lib.aeval(opDefault,(x,k)=>{
 				typeof(op[k])=='undefined'?op[k]=opDefault[k]:false;
 			});
 			return op;
@@ -1555,10 +1774,10 @@
 				if (v[i].trim()=='') continue;
 				let p = v[i].indexOf(dl);
 				if (p==-1) {
-					r[hexDEnc(v[i].trimm())] = undefined;
+					r[unescape(v[i].trimm())] = undefined;
 				} else {
-					r[ hexDEnc(v[i].substring(0,p).trimm()) ] 
-						= hexDEnc( hexDEnc(v[i].substring(p+dl.length).trimm()) )
+					r[ unescape(v[i].substring(0,p).trimm()) ] 
+						= unescape( unescape(v[i].substring(p+dl.length).trimm()) )
 					;
 				}
 			}
@@ -1573,13 +1792,13 @@
 			for (let k in obj) {
 				var o = obj[k];
 				try {
-					r += hexEnc(k,sd)
+					r += escape(k)
 						+(Lib.isUnd(o)
 							?''
 							:delimValue
 								+(Lib.isFun(o)
 									?'function(?)'
-									:hexEnc(''+o,sd)
+									:escape(''+o,sd)
 								)
 						)
 						+delimElem
@@ -1596,7 +1815,7 @@
 		//	 se func retorna verdadeiro.
 		,getElements: (Obj,Func,_arr) => {
 			function a(obj,func,arr) {
-				aeval(obj,(v,k)=>{
+				Lib.aeval(obj,(v,k)=>{
 					if (func(v,k)) {
 						arr.push(v);
 					}

@@ -35,7 +35,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //if (true) {
 	//***********************************************
 	// add style id 
+	
+	var fSort = Lib.fSort;
 
+	var contextDiv = Dom.dialog;
 
 	var isEvent = Dom.isEvent;
 
@@ -1473,189 +1476,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		return text;
 	}
 
-	//***********************************************
-	// .addEventListener('contextmenu', e => {e.preventDefault();})
-	function contextDiv(Op) {
-		var eu = this;
-		var visible = false;
-		if (typeof(Op)!='object'||Op.tagName) {
-			alert('parametro errado: passar objeto com:'
-				+'\nhtml or dom: conteúdo'
-				+'\nclick: envento on click'
-				+'\npW or pH: %/100 max w e h 0.8'
-				+'\ncontainer: add container'
-				+'\nclass: class container'
-			);
-			return;
-		}
-		var op = mergeOptions({pW:0.8,pH:0.8,container:true,class:'pdr'},Op);
-		this.op = op;
-		
-		//style exists ?
-		var cl = '_contextDiv';
-		if (!document.getElementById(cl)) {
-			addStyleId('DIV.'+cl+' {'
-				+'position:fixed;' //xdisplay:none;xz-index:100;
-				+'z-index:10;'
-				+'background-color:var(--corFd);'//#f0f0f0;' //xborder:2px solid blue;'
-				+'overflow:auto;'
-				+'border-radius:7px;'
-				+'padding:5px 10px;'
-				+'top:0;left:-300%;'
-				+'border:5px solid dark;'
-				+'}'
-			,cl);
-		}
-		
-		var f = op.dom;
-		if (!f || op.container) {
-			//cria
-			f = document.querySelector('.'+cl+'.'+op.class);
-			f = document.createElement('div');
-			f.className = cl+(op.class?' '+op.class:'');
-			//add in document
-			document.body.appendChild(f);
-			if (op.dom) {
-				f.appendChild(op.dom);
-			} else if (op.html) {
-				f.innerHTML = op.html;
-			}
-		}
-		
-		this.dom = f;
-		if (op.click) {
-			f.addEventListener('click',op.click);
-		}
-		//*************************
-		this.destroy = ()=>{
-			this.hide();
-			Dom.remove(this.dom);
-		}
-		//*************************
-		this.setDom = (domObj)=>{
-			f.innerHTML = '';
-			f.appendChild(domObj);
-			//f = domObj;
-		}
-		//*************************
-		this.text = text;
-		function text(html) {
-			if (html) f.innerHTML = html;
-			return f.innerHTML;
-		}
-		//*************************
-		this.visible = function() {
-			return visible;
-		}
-		//*************************
-		function limitWidthHeight() {
-			var tw = window.innerWidth;//browse.getTX(document.body);
-			var two = browse.getTX(f);
-			//limita Largura ?
-			two = (two<1?eu.two:two)*1.05; //para o scroll
-			if (two>tw*op.pW) {
-				two = tw*op.pW;
-			}
-			styleSet(f,'width',two+'px');
-			//limita algura
-			var th = window.innerHeight;//browse.getTY(window);
-			var tho = browse.getTY(f);
-			tho = (tho==0?eu.tho:tho);
-			if (tho>th*op.pH) {
-				tho = th*op.pH;
-				styleSet(f,'height',tho+'px');
-			}			
-		}
-		//*************************
-		this.reCenter = function() {
-			var tw = window.innerWidth;//browse.getTX(document.body);
-			var two = browse.getTX(f);
-			//limita Largura ?
-			two = (two<1?eu.two:two)*1.05; //para o scroll
-			if (two>tw*op.pW) {
-				two = tw*op.pW;
-			}
-			styleSet(f,'width',two+'px');
-			//limita algura
-			var th = window.innerHeight;//browse.getTY(window);
-			var tho = browse.getTY(f);
-			tho = (tho==0?eu.tho:tho);
-			if (tho>th*op.pH) {
-				tho = th*op.pH;
-				styleSet(f,'height',tho+'px');
-			}
-			styleSet(f,'left',(tw-two)/2+'px');
-			styleSet(f,'top',(th-tho)/2+'px');
-		}
-		//*************************
-		this.center = function(ev,fClick) {
-			this.click = fClick;
-			if (visible) {
-				eu.hide();
-				return;
-			}
-			var two = browse.getTX(f);
-			if (two<1 && !eu.recalc) {
-				//precisa calc tamanho
-				//eb('recalc='+two);
-				eu.recalc = true;
-				browse.mostra(f);
-				setTimeout(eu.center,100);
-				return;
-			}
-			visible = true;
-			eu.recalc = false;
-			
-			eu.reCenter();
-			
-			browse.mostra(f);
-		}
-		//*************************
-		this.show = function(ev,fClick) {
-			this.click = fClick;
-			if (visible) {
-				eu.hide();
-				return;
-			}
-			visible = true;
-			if (!ev) {
-				alertDev('contextDiv.show(event): missing event, use .center()');
-				eu.center();
-				return;
-			}
-			//screenX: 2679 screenY: 292
-			var nx, ny;
-			if ( eu.queryAlign && (nx=ev.target.closest(eu.queryAlign)) ) {
-				//_c(nx);
-				ny = nx.offsetTop;//browse.getY(nx);//
-				nx = browse.getAbsX(nx); //browse.getX(nx)-browse.getTX(f);
-			} else {
-				nx = ev.x-browse.getTX(f); //ev.x ev.screenX
-				if (nx<0) nx=ev.x;
-				ny = ev.y-browse.getTY(f);
-				if (ny<0) ny=ev.y;
-			}
-			styleSet(f,'left',nx+'px');
-			styleSet(f,'top',ny+'px');
-			//_c(f);
-			setTimeout(limitWidthHeight,100);
-			browse.mostra(f);
-		}
-		//*************************
-		this.hide = function() {
-			visible = false;
-			//guarda ultimo tamanho
-			eu.two = browse.getTX(f);
-			eu.tho = browse.getTY(f);
-			//zeras tamanhos
-			styleSet(f,'width');//lert('retirou width');
-			styleSet(f,'height');
-			//esconde
-			//eb('esconde '+f+' '+erro());
-			browse.esconde(f);
-		}
-		this.close = this.hide;
-	}
+
 
 
 	//***********************************************
@@ -3827,10 +3648,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	}
 	//**************************//
 	function decToHex(c) {
-		if (c==256) return 'FF';
+		while (c<0) c += 256;
+		while (c>256) c -= 256;
+		let r = c.toString(16).toUpperCase();
+		return (r.length<2?'0'+r:r);
+		/*if (c==256) return 'FF';
 		while (c<0) c += 256;
 		while (c>256) c -= 256;
 		return ''+decToHex1(Math.floor(c / 16))+''+decToHex1(c % 16);
+		*/
 	}
 	//**************************//
 	function decToHex1(n) {
@@ -4453,14 +4279,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			}
 		}
 		return s;
-	}
-	//***********************************************
-	function fSort(a,b,desc) {
-		if (desc) {
-			return (b>a?1:(b<a?-1:0));
-		} else {
-			return (a>b?1:(a<b?-1:0));
-		}
 	}
 
 //*******************************//

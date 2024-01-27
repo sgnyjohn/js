@@ -38,7 +38,7 @@ window.addEventListener('load',() => {
 	function ret(o,t) {
 		var a = o.getElementsByTagName(t);
 		if (a.length==0) {
-			deb('create element '+t+' em '+o);
+			//eb('create element '+t+' em '+o);
 			var r = Dom.obj({tag:t,targ:o});
 		} else {
 			r = a[0];
@@ -69,26 +69,27 @@ window.addEventListener('load',() => {
 	function ap(AppProp) {
 		var eu = this;
 		var appPr = AppProp?AppProp:{};
-		//if (AppProp) setTimeout(()=>{
-			//ultimo js
-			var nom = appPr.name;
-			if (!Lib.isFunction(window[nom])) nom = appPr.js[appPr.js.length-1].substrRat('/');
-			if (!Lib.isFunction(window[nom])) {
-				Deb.log('erro APP: não existe function com nome '+appPr.name+' ou '+nom);
-				return;
-			}
-			//cria a app REAL
-			try {
-				this.obj = new window[nom](this);
-				//appPr.obj = this.obj;
-				apps[nom] = this.obj;
-				
-				// exige user ?
-				initApp();
 
-			} catch (e) {
-				alert('erro criando objeto: new '+nom+'()\n\n'+Lib.erro(e));
-			}
+		//if (AppProp) setTimeout(()=>{
+		//ultimo js
+		var nom = appPr.name;
+		if (!Lib.isFunction(window[nom])) nom = appPr.js[appPr.js.length-1].substrRat('/');
+		if (!Lib.isFunction(window[nom])) {
+			Deb.log('erro APP: não existe function com nome '+appPr.name+' ou '+nom);
+			return;
+		}
+		//cria a app REAL
+		try {
+			this.obj = new window[nom](this);
+			//appPr.obj = this.obj;
+			apps[nom] = this.obj;
+			
+			// exige user ?
+			initApp();
+
+		} catch (e) {
+			alert('erro criando objeto: new '+nom+'()\n\n'+Lib.erro(e));
+		}
 		//});
 		//****************************************************
 		this.loadJs = function(url,objOUfunc) {
@@ -122,8 +123,8 @@ window.addEventListener('load',() => {
 			loadTxt(url,func,appPr);
 		}
 		//****************************************************
-		this.load = function(url,post) {
-			load(url,post,appPr);
+		this.load = function(url,post,app) {
+			load(url,post,app?app:appPr);
 		}
 		//****************************************************
 		this.get = function(ch) {
@@ -184,7 +185,7 @@ window.addEventListener('load',() => {
 	function loadObj(name,func) {
 			//not loaded js, app nova, criar.
 			loadJs(jsDir+'/'+name,{load:()=>{
-				deb('load: '+name+'.js OK, criar obj ()');
+				//eb('load: '+name+'.js OK, criar obj ()');
 				//armazena app e apos executa
 				new ap({name:name});
 				//ebJ('loadObj '+name+' func='+func);
@@ -239,17 +240,21 @@ window.addEventListener('load',() => {
 	//*******************************
 	function loadExecDiv(ob) {
 		var h = ob.innerHTML;
-		var o = ob.className;
-		if (!o) {
-			if (typeof(h)!='string') {
+		var cl = ob.className;
+		if (!cl) {
+			if (ob.textContent=='\n') {
+				return true;
+			} else if (typeof(h)!='string') {
 				//lixo na resposta...
+				deb('srv app retornou '+h);
+				deb(ob);
 				return true;
 			} else {
 				alert('RESP server desconhecido: \n\n'+ob.outerHTML);
 			}
-		} else if (o=='loader') {
+		} else if (cl=='loader') {
 			return loadExecDivLoader(ob);
-		} else if (o=='compil') {
+		} else if (cl=='compil') {
 			var m = 'compil: '+ob.textContent;
 			_c(m);
 			if (dev()) alert(m);
@@ -258,8 +263,8 @@ window.addEventListener('load',() => {
 			//procura em todas apps.
 			for (k in apps) {
 				var a = apps[k];
-				if (typeof(a[o])=='function') {
-					a[o](h);
+				if (typeof(a[cl])=='function') {
+					a[cl](h);
 					return true
 				}
 				//lert('procurando metodo... '+k+'.'+o+'='+typeof(a[o]));
@@ -276,14 +281,18 @@ window.addEventListener('load',() => {
 			//deb('name='+name+' u='+u+' '+aProp,aProp);
 			deb('name='+name+' u='+u+' Url='+Url);
 		}
-		deb('pedido url='+Url+' postString='+postString);
+		//eb('pedido url='+Url+' postString='+postString);
 		var xhr = new XMLHttpRequest();
 		xhr.onreadystatechange = (a,b,tx) => {
 			//deb('load ret url='+u+'\nresp(a='+a+' b='+b+')=\n'+tx);
 			if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+				if (typeof(app)=='function') {
+					app(xhr.responseText);
+					return;
+				}
 				//application/json
 				var mime = xhr.getResponseHeader('Content-Type');
-				_c('='+mime+'=');
+				//c('='+mime+'=');
 				if (equals(mime,'application/json')) {
 					_c(xhr.responseText);
 					alert('dsfsduif='+xhr.responseText);
@@ -297,17 +306,18 @@ window.addEventListener('load',() => {
 				var x = (new Date()).getTime();
 				var d = document.createElement('div');
 				d.innerHTML = tx;
+				
 				for (var i=0;i<d.childNodes.length;i++) {
 					var ob = d.childNodes.item(i);
-					if (false) deb('load:Receive: '+i+'/'+(d.childNodes.length-1)
-						+' tg='+ob.tagName+' tg='+ob.outerHTML
-					);
-					if (!loadExecDiv(ob)) {
+					//eb(ob);
+					if (!loadExecDiv(ob,tx)) {
 						alert('CLASS RESP '+i+'/'+d.childNodes.length
 							+' server desconhecido('+ob.outerHTML+')'
 						);
 					}
 				}
+			} else {
+				//eb('state='+xhr.readyState+' status='+xhr.status);
 			}
 		}
 		//send request to server
@@ -325,8 +335,8 @@ window.addEventListener('load',() => {
 	//****************************************************
 	function urlE(app,u) {
 		var s = app.urlServer?app.urlServer:appProp.urlServer;
-		console.log(app);
-		deb(app.urlServer+' urlE: '+s);
+		//onsole.log(app);
+		//eb(app.urlServer+' urlE: '+s);
 		return s+u;
 	}
 	//****************************************************
@@ -359,6 +369,13 @@ window.addEventListener('load',() => {
 				Dom.obj({tag:'link',targ:head,rel:'StyleSheet',href:cs+'?ms='+(new Date()).getTime()});
 			});
 		}
+		//unload
+		window.addEventListener("beforeunload", function (e) {
+			console.log(e);
+			var confirmationMessage = "\\o/";
+			e.returnValue = confirmationMessage; // Gecko, Trident, Chrome 34+
+			return confirmationMessage; // Gecko, WebKit, Chrome <34
+		});					
 		try {
 			oApp = new ap(appProp);
 		} catch (e) {
@@ -383,7 +400,7 @@ window.addEventListener('load',() => {
 		jsVet[nome] = t;
 		var scr = document.createElement('script');
 		scr.src = nome+'?ms='+(new Date()).getTime();
-		deb('loadJs: ('+nome+')');
+		//eb('loadJs: ('+nome+')');
 		head.appendChild(scr);
 		//add eventos
 		for (i in ev) {
@@ -401,7 +418,8 @@ window.addEventListener('load',() => {
 			loadJs(js,
 				{ 
 					  load: nextJs
-					,error: () => {
+					,error: (e) => {
+						console.log(e);
 						alert('js not found '+js);
 					}
 				}

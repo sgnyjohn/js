@@ -35,6 +35,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //if (true) {
 	//***********************************************
 	// add style id 
+	var strPesq = Lib.searchStr;
+
+	var tempo = Tempo.tempo;
 	
 	var fSort = Lib.fSort;
 
@@ -435,20 +438,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		return o && o.tagName;
 	}
 	//***********************************************
-	function tempo(dif) {
-		//dif = dif/1000;
-		var ar = (x)=>{return Math.floor(x+0.5)};
-		var sg = ar(dif%60);dif = dif/60;
-		var mi = ar(dif%60);dif = dif/60;
-		var hr = ar(dif%24);
-		var di = ar(dif/24);
-		return (di>0?di+"d ":"")
-			+(hr>0?hr+"h ":"")
-			+(mi>0?mi+"m ":"")
-			+sg+"s "
-		;
-	}
-	//***********************************************
 	function asearch(obj,prp,vl) {
 		for (var i=0;i<obj.length;i++) {
 			//debJ(prp+'='+v[prp]+'='+vl+'=>'+(v[prp]==vl));
@@ -765,182 +754,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	
 
 
-	//################################
-	//################################
-	// falta resolver utf-8... 
-	//		1 input meleca html aceita colar utf8 e o digitado resulta em iso-8859-1
-	//		2 o regexpr ignore acentuação funciona apenas com iso, não utf
-	// ao inves de usar "" para literais, usar _ no lugar do space
-	/** @constructor */
-	function strPesq(o) {
-		// validar portugues pt 
-		//  	/^[a-záàâãéèêíïóôõöúçñ ]+$/i
-		//ou	/^[A-Za-záàâãéèêíïóôõöúçñÁÀÂÃÉÈÍÏÓÔÕÖÚÇÑ ]+$/
-		
-		//vetor acentos
-		////áàâãéêíóôõúüñç
-		var va = {
-			 'a' : 'áàâã'
-			,'e' : 'éê'
-			,'i' : 'í'
-			,'o' : 'óôõ'
-			,'u' : 'úü'
-			,'c' : 'ç'
-		};
-		var vex = ',.,+,*,?,^,$,(,),[,],{,},\.,'; //aceita |,
-		var vr,vrNot,tx;
-		init();
-		this.ajuda='espaço - um E outro'
-			+'\n| - um OU outro'
-			+'\n^ - prefixo palavra inteira'
-			+'\n~ - prefixo para indical palavra iniciando em '
-			+'\n_ - substitui espaços em literais'
-		;		
-		//################################
-		// palavra inteira ia /(^|\s)ia(\s|$)/
-		this.pesq = function(s) {
-			//var s = s1.toLowerCase();
-			for (var i=0;i<vr.length;i++) {
-				if ( vrNot[i] == vr[i].test(s) ) {
-					return false;
-				}
-			}
-			return true;
-		}
-		function init() {
-			var a = trimm(o);
-			// o ou é embutido dentro da expressao
-			a = trocaTudo(a,'  ',' ');
-			a = trocaTudo(a,'| ','|');
-			a = trocaTudo(a,' |','|');
-			//lert(a);
-			tx = a.toLowerCase();
-			var v = a.toLowerCase().split(' ');
-			this.v = v;
-			//if (referrer.search(new RegExp("Ral", "i")) == -1) { ...
-			vr = Array();
-			vrNot = Array();
-			for (var i=0;i<v.length;i++) {
-				v[i] = trimm(v[i]);
-				vrNot[i] = v[i].charAt(0)=='-'; //negativo, não?
-				if (vrNot[i]) v[i] = v[i].substring(1);
-				if (v[i].charAt(0)=='~') {
-					// prefixo palavra
-					vr[i] = new RegExp('([!-\/]|^|\\s)'+v[i].substring(1),'i');
-				} else if (v[i].charAt(0)=='^') {
-					//palavra
-					vr[i] = new RegExp('([!-\/]|^|\\s)'+v[i].substring(1)+'(\\s|$|[!-\/])','i');
-				} else {
-					vr[i] = new RegExp(rExpr(v[i]),'i');
-				}
-			}
-		}
-		//###################################
-		this.txt = function() {
-			return tx;
-		}
-		//###################################
-		this.valid = function() {
-			var r=false;
-			aeval(this.v,function(x) {if (x.length>2) r=true;});
-			return r?NaN:"consulta inválida '"+a+"'";
-		}
-		//###################################
-		function rExpr(t) {
-			//expressão regular acentuação pt-br
-			//áàâãéêíóôõúüñç
-			//deb('==> ('+t+')');
-			t = t.replaceAll('_',' ');
-			var ca='',r = '';
-			for (var i=0;i<t.length;i++) {
-				var c = t.charAt(i);
-				if (vex.indexOf(c)!=-1 && ca!='\\') {
-					//deb('foi');
-					r += '\\'+c;
-				} else if ( va[c] ) {
-					r += '['+c+va[c]+']';
-				} else {
-					r += c;
-				}
-				ca = c;
-			}
-			deb(t+'==>('+r+') tm='+t.length);
-			//dfsd=sdf;
-			return r;
-		}
-		//###################################
-		this.pesqMark = function(tx) {
-			//lert('nerg tx='+vr.length);
-			var r = tx;
-			for (var i=0;i<vr.length;i++) {
-				r = '';
-				//objNav(v);
-				//alert(typeof(v)+' tam='+v.length+' v='+v);
-				//onsole.log(i+' '+vr[i]);
-				while (tx.length>0) {
-					var v = tx.match(vr[i]);
-					if (!v || v.length==0) {
-						r = r+tx;
-						break;
-					} else {
-						r += tx.substring(0,v.index)
-							+'<b>'+v[0]+'</b>'
-						;
-						tx = tx.substring(v.index+v[0].length);
-					}
-				}
-				tx = r;
-			}
-			return r;
-		}
-		//###################################
-		// negrita tx
-		// todo - + de uma palavra, mudar a 1a q ocorre 1o
-		this.negr = function(tx) {
-			var p = 0;
-			while ( 1 ) {
-				var x=false;
-				for (var i=0;i<v.length;i++) {
-					var m = tx.substring(p).match(vr[i]);
-					//var pn = tx.indexOf(eu.oPesq.v[i],p);
-					var pn = m?p+m.index:-1;
-					if (m && pn != -1) {
-						tx = tx.substring(0,pn)
-							+'<b class="negr">'
-							+tx.substring(pn,pn+v[i].length)+'</b>'
-							+tx.substring(pn+v[i].length)
-						;
-						p = pn+25+v[i].length;
-						x = true;
-					}
-				}
-				if (!x) {
-					break;
-				}
-			}
-			return tx;
-		}
-		/*/################################
-		this.pesqi = function(s) {
-			for (var i=0;i<v.length;i++) {
-				if ( ! s.match(vri[i]) ) {
-					return false;
-				}
-			}
-			return true;
-		}*/
-		//################################
-		this.pesqm = function(s) {
-			var s1 = tiraAcentos(s).toLowerCase();
-			for (var i=0;i<v.length;i++) {
-				if ( s1.indexOf(v[i]) == -1 ) {
-					return false;
-				}
-			}
-			return true;
-		}
-	}
-	//fim strPesq
 
 	/**************************
 	function setCss(obj,nomep,vlr) {
@@ -1081,11 +894,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			return;
 		}
 		if (typeof(ob)=='object') {
-			setTimeout(()=>{objNav(ob);},100);
+			console.log(a);
+			console.log(ob);
+			return;
+			/*setTimeout(()=>{objNav(ob);},100);
 			if (confirm(a)) {
 				alert(erro());
 				return;
 			}
+			*/
 		}
 		var trac = (isNumber(ob)?ob:0);
 		//pega src e nro linha
@@ -1318,7 +1135,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 					+'</p>';
 					});
 				});
-				var a = new contextDiv({
+				var a = new Dom.dialog({
 					html:t
 					,click:ev=>{a.hide();}
 				});
@@ -2462,10 +2279,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			if (!ix) {
 				ix = this.index(key,true);
 				idx[key] = ix;
+				//console.log(ix);
 			}
 			var rg = ix[vlr];
 			//lert('rg='+rg+' '+Lib.isNum(rg));
-			if (Lib.isNum(rg)) return this.getObj(rg);
+			if (typeof(rg)=='number') return this.getObj(rg);
 			return {};
 		}
 		//*********************************************
@@ -2496,7 +2314,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		//*********************************************
 		// retorna tex do bd
 		this.csv = function() {
-			var tx = eu.csvCab();
+			var tx = eu.csvCab()+'\n';
 			eu.top();
 			while (eu.next()) {
 				tx += eu.csvLn()+'\n';
@@ -5379,8 +5197,11 @@ function estat(Nome) {
 	this.getMatriz = getMatriz;
 	var vt = 0;
 	this.length=0; //total geral
+	this.get = (ch)=>{
+		return v[ch];
+	}
 	//****************************************************
-	this.getObj = function(ch,vl) { return v;	}	
+	this.getObj = function() { return v;	}	
 	//****************************************************
 	this.max = function(ch,vl) {
 		var va = typeof(v[ch])=='undefined'?-999999999999:v[ch];
@@ -5410,22 +5231,27 @@ function estat(Nome) {
 			v1.sort(function(a,b){return fSort(a[0],b[0],desc)});
 		}
 		//calcula total
-		var t = 0; aeval(v1,function(v,i) { t+=v[1]; });
+		//var t = 0; aeval(v1,function(v,i) { t+=v[1]; });
 		//label
 		var lb = [];
 		//calcula
 		for(var i=0;i<v1.length;i++) {
-			var rs = Math.floor(v1[i][1]/t*1000+0.5)/10;
+			//var rs = Math.floor(v1[i][1]/t*1000+0.5)/10;
 			if (Horiz) {
 				lb[i] = '<b>'+v1[i][1]+'</b>&nbsp;'
-					+format(rs,1)+'%'
+					+format(v1[i][2],2)+'%'
 				;
 			} else {
+				//legenda ?
 				v1[i][0] += '<br><b>'+v1[i][1]+'</b>'
-					+'<br>'+format(rs,1)+'%'
+					+'<br>'+format(v1[i][2],2)+'%'
+					//+'<br>'+format(rs,1)+'%'
 				;
 			}
-		}		
+		}
+		// mostrar percentual no grafico
+		if (Op.porPerc) 
+			aeval(v1,(l)=>{l[1]=l[2]});
 		//grafico
 		Op.title = nome;
 		if (Horiz) {
@@ -5435,14 +5261,15 @@ function estat(Nome) {
 		return (new graphBar(v1,Op)).getHtml();
 	}	
 	//****************************************************
-	this.getVetor = function() {
-		return v;
+	this.getVetor = function() {return v;}
+	this.percent = (ch)=>{
+		return v[ch]/vt*100;
 	}	
 	//****************************************************
 	function getMatriz() {
 		var v1 = new Array(),i=0;
 		for(var prop in v) {
-			v1[i++] = new Array(prop,v[prop],v[prop]/vt*100);
+			v1[i++] = new Array(prop,v[prop],eu.percent(prop));
 		}
 		v1.sort(function(a,b){return fSort(a[0],b[0])});
 		return v1;
@@ -5474,7 +5301,11 @@ function estat(Nome) {
 		var r = 'palavras: '+v1.length+' ocorrencias: '+vt+'\n';
 		v1.sort(function(a,b){return fSort(b[1],a[1])});
 		for(var i=0;i<v1.length;i++) {
-			r += v1[i][0]+'\t'+format(v1[i][1],0)+'\t'+format(v1[i][1]/vt*100,2)+'\n';
+			r += v1[i][0]
+				+'\t'+format(v1[i][1],0)
+				+'\t'+format(v1[i][2],2)
+				+'\n'
+			;
 		}
 		return r;
 	}
@@ -5484,10 +5315,14 @@ function estat(Nome) {
 		var v1 = getMatriz();
 		v1.sort(function(a,b){return fSort(b[sort],a[sort])});
 		var r = '<table class="estat" border=1>'
-			+'<tr><th>'+nome+'<th>vl'
+			+'<tr><th>'+nome+'<th>vl<th>%'
 		;
 		for(var i=0;i<v1.length;i++) {
-			r += '<tr><td>'+v1[i][0]+'<td>'+format(v1[i][1],0);
+			r += '<tr>'
+				+'<td>'+v1[i][0]
+				+'<td>'+format(v1[i][1],0)
+				+'<td>'+format(v1[i][2],2)
+			;
 		}
 		return r+'</table>';
 	}

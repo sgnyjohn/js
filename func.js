@@ -5,113 +5,607 @@
 	* @sgnyjohn abr/2023 Eml
 */
 
-/* metodo privado incompativer com machintoch?
-	class oRecursivo {
-		#dom = [];
-		#type = 'type';
-		//final #id; 
-		#id;
-		#parent = false; //object
-		#child = {}; //array object by id.
-		//deve saber o proprio tipo pare ref interface
-		type() {
-			return this.#type;
-		}
-		// 
-		childSet(o) {
-			this.#child[o.type()][o.id()] = o;
-		}
-		// 
-		child(id,type) {
-			return this.#child[type][id];
-		}
-		// id in parent.
-		id() {
-			return this.#id;
-		}
-		//string get.
-		idPath(ev) {
-			return (this.#parent ? this.#parent.idPath()+'&' : '')
-				+ this.#type+'='+this.#id
-			;
-		}
-		domId() {
-			var r=document.createElement('p');
-			r.innerHTML = id;
-			return r;
-		}
-		domTr() {
-			var r=document.createElement('tr');
-			r.innerHTML = id;
-			return r;
-		}
-		cmdSrv() {
-			//recursivo do global para o privado
-		}
-		constructor(Parent,Id) {
-			id = Id;
-			parent = Parent;
-		}
-	}
-*/
-
-	/* para tentar entender 
-	 * https://developer.mozilla.org/pt-BR/docs/Web/JavaScript/Reference/Global_Objects/Promise 
-	 * desde 2014
-	
-	class promessa {
-		#ex = -1;
-		#ret;
-		#er = false;
-		p;
-		then(f) {
-			this.#exec();
-			if (this.#er===0) {
-				//se não erro exec argumento com arq retorno
-				f(this.#ret)
+	var Lib = {
+		ini:{}
+		,searchStr: function(Str) {
+			var eu = this;
+			//################################
+			// falta resolver utf-8... 
+			//		1 input meleca html aceita colar utf8 e o digitado resulta em iso-8859-1
+			//		2 o regexpr ignore acentuação funciona apenas com iso, não utf
+			// ao inves de usar "" para literais, usar _ no lugar do space
+			/** @constructor */
+			// validar portugues pt 
+			//  	/^[a-záàâãéèêíïóôõöúçñ ]+$/i
+			//ou	/^[A-Za-záàâãéèêíïóôõöúçñÁÀÂÃÉÈÍÏÓÔÕÖÚÇÑ ]+$/
+			//vetor acentos
+			////áàâãéêíóôõúüñç
+			var va = {
+				 'a' : 'áàâã'
+				,'e' : 'éê'
+				,'i' : 'í'
+				,'o' : 'óôõ'
+				,'u' : 'úü'
+				,'c' : 'ç'
+			};
+			var vex = ',.,+,*,?,^,$,(,),[,],{,},\.,'; //aceita |,
+			var vr,vrNot,tx='';
+			init(Str);
+			this.getStr = ()=>{return tx;};
+			this.ajuda = (tit)=>{
+				return (tit?tit+'\n\n':'')+'espaço - um E outro'
+					+'\n| - um OU outro'
+					+'\n^ - prefixo palavra inteira'
+					+'\n~ - prefixo para indical palavra iniciando em '
+					+'\n_ - substitui espaços em literais'
+				;		
 			}
-			//retorna ele mesmo
-			return this;
-		}
-		catch(f) {
-			this.#exec();
-			// exec o argumento caso ERRO
-			if (this.#ex===1) {
-				f(this.er);
+			//################################
+			// palavra inteira ia /(^|\s)ia(\s|$)/
+			this.pesq = function(s) {
+				if (tx=='') return true;
+				//var s = s1.toLowerCase();
+				for (var i=0;i<vr.length;i++) {
+					if ( vrNot[i] == vr[i].test(s) ) {
+						return false;
+					}
+				}
+				return true;
 			}
-			return this;
+			function init(o) {
+				var a = o?o.trimm():'';
+				// o ou é embutido dentro da expressao
+				a = trocaTudo(a.toLowerCase(),'  ',' ');
+				a = trocaTudo(a,'| ','|');
+				a = trocaTudo(a,' |','|');
+				//mudou?
+				if (tx==a) return false;
+				tx = a;
+				var v = tx.split(' ');
+				this.v = v;
+				//if (referrer.search(new RegExp("Ral", "i")) == -1) { ...
+				vr = Array();
+				vrNot = Array();
+				for (var i=0;i<v.length;i++) {
+					v[i] = trimm(v[i]);
+					vrNot[i] = v[i].charAt(0)=='-'; //negativo, não?
+					if (vrNot[i]) v[i] = v[i].substring(1);
+					if (v[i].charAt(0)=='~') {
+						// prefixo palavra
+						vr[i] = new RegExp('([!-\/]|^|\\s)'+v[i].substring(1),'i');
+					} else if (v[i].charAt(0)=='^') {
+						//palavra
+						vr[i] = new RegExp('([!-\/]|^|\\s)'+v[i].substring(1)+'(\\s|$|[!-\/])','i');
+					} else {
+						vr[i] = new RegExp(rExpr(v[i]),'i');
+					}
+				}
+				return true;
+			}
+			this.init = init;
+			//###################################
+			this.txt = function() {
+				return tx;
+			}
+			//###################################
+			this.valid = function() {
+				var r=false;
+				aeval(this.v,function(x) {if (x.length>2) r=true;});
+				return r?NaN:"consulta inválida '"+a+"'";
+			}
+			//###################################
+			function rExpr(t) {
+				//expressão regular acentuação pt-br
+				//áàâãéêíóôõúüñç
+				//deb('==> ('+t+')');
+				t = t.replaceAll('_',' ');
+				var ca='',r = '';
+				for (var i=0;i<t.length;i++) {
+					var c = t.charAt(i);
+					if (vex.indexOf(c)!=-1 && ca!='\\') {
+						//deb('foi');
+						r += '\\'+c;
+					} else if ( va[c] ) {
+						r += '['+c+va[c]+']';
+					} else {
+						r += c;
+					}
+					ca = c;
+				}
+				//eb(t+'==>('+r+') tm='+t.length);
+				//dfsd=sdf;
+				return r;
+			}
+			//###################################
+			this.pesqMark = function(tx) {
+				//lert('nerg tx='+vr.length);
+				var r = tx;
+				for (var i=0;i<vr.length;i++) {
+					r = '';
+					//objNav(v);
+					//alert(typeof(v)+' tam='+v.length+' v='+v);
+					//onsole.log(i+' '+vr[i]);
+					while (tx.length>0) {
+						var v = tx.match(vr[i]);
+						if (!v || v.length==0) {
+							r = r+tx;
+							break;
+						} else {
+							r += tx.substring(0,v.index)
+								+'<b>'+v[0]+'</b>'
+							;
+							tx = tx.substring(v.index+v[0].length);
+						}
+					}
+					tx = r;
+				}
+				return r;
+			}
+			//###################################
+			// negrita tx
+			// todo - + de uma palavra, mudar a 1a q ocorre 1o
+			this.negr = function(tx) {
+				var p = 0;
+				while ( 1 ) {
+					var x=false;
+					for (var i=0;i<v.length;i++) {
+						var m = tx.substring(p).match(vr[i]);
+						//var pn = tx.indexOf(eu.oPesq.v[i],p);
+						var pn = m?p+m.index:-1;
+						if (m && pn != -1) {
+							tx = tx.substring(0,pn)
+								+'<b class="negr">'
+								+tx.substring(pn,pn+v[i].length)+'</b>'
+								+tx.substring(pn+v[i].length)
+							;
+							p = pn+25+v[i].length;
+							x = true;
+						}
+					}
+					if (!x) {
+						break;
+					}
+				}
+				return tx;
+			}
+			/*/################################
+			this.pesqi = function(s) {
+				for (var i=0;i<v.length;i++) {
+					if ( ! s.match(vri[i]) ) {
+						return false;
+					}
+				}
+				return true;
+			}*/
+			//################################
+			this.pesqm = function(s) {
+				var s1 = tiraAcentos(s).toLowerCase();
+				for (var i=0;i<v.length;i++) {
+					if ( s1.indexOf(v[i]) == -1 ) {
+						return false;
+					}
+				}
+				return true;
+			}
+		}	//fim strPesq
+		,isMobile: ()=>{
+			return navigator.userAgent.toLowerCase().indexOf('mobile')!=-1;
 		}
-		#exec() {
-			if (this.#ex!=-1) return;
+		,fSort: (a,b,desc)=>{
+			if (desc) {
+				return (b>a?1:(b<a?-1:0));
+			} else {
+				return (a>b?1:(a<b?-1:0));
+			}
+		}
+		,pedido:class {
+			url;
+			urlB;
+			urlP;
+			urlJ;
+			param = {};
+			paramJ = {};
+			//******************************	
+			atalho() {
+				let r = '';
+				for (let k in this.param) {
+					//lert('k('+k.length+')'); 
+					r += '&'+k+'='+encodeURIComponent(this.param[k]); 
+				}
+				let r1 = '';
+				for (let k in this.paramJ) {
+					r1 += '#'+k+'='+encodeURIComponent(this.paramJ[k]); 
+				}
+				return this.urlB
+					+(r==''?r:'?'+r.substring(1))
+					+r1
+				;
+			}
+			//******************************	
+			setJ(ch,valor) {
+				paramJ[ch] = valor;
+				return this;
+			}
+			//******************************	
+			getJ(ch,defaul) {
+				if (paramJ[ch]) return paramJ[ch];
+				return defaul;
+			}
+			//******************************	
+			set(ch,valor) {
+				param[ch] = valor;
+				return this;
+			}
+			//******************************	
+			get(ch,defaul) {
+				if (param[ch]) return param[ch];
+				return defaul;
+			}
+			//******************************	
+			init1() {
+				// #s
+				var vj=this.urlJ.split0('#');
+				for (var i=0;i<vj.length;i++) {
+					try {
+						this.paramJ[vj[i].leftAt('=')] = decodeURIComponent(vj[i].substrAt('='));
+					} catch (e) {
+						this.paramJ[vj[i].leftAt('=')] = (vj[i].substrAt('='));
+					}
+				}
+				// &?
+				var v = this.urlP.split0('&');
+				for (var i=0;i<v.length;i++) {
+					let np = v[i].leftAt('=');
+					let vl = v[i].substrAt('=');
+					if (Lib.vazio(np)) {
+						//ignora
+					} else {
+						this.param[np] = decodeURIComponent(vl.replaceAll('+',' '));
+					}
+				}
+			}
+			init(doc) {
+				if (typeof(doc)=='undefined') {
+					doc = document;
+				}
+				this.doc = doc;
+				if (typeof(doc)=='string') {
+					this.url = doc;
+				} else {
+					this.url = ''+doc.location;
+				}
+				this.protocolo = this.url.leftAt(':');
+				this.host = (this.url+'/').substrAtAt('://','/'); 
+				//parametros
+				var p = this.url.indexOf('?');
+				if (p!=-1) {
+					this.urlB = this.url.substring(0,p);
+					this.urlP = this.url.substring(p+1);
+				} else {
+					this.urlB = this.url;
+					this.urlP = '';
+				}
+				//parametros Internos JS
+				var p = this.urlP.indexOf('#');
+				if (p!=-1) {
+					this.urlJ = this.urlP.substring(p+1);
+					this.urlP = this.urlP.substring(0,p);
+				} else if (this.urlP==''&&(p=this.urlB.indexOf('#'))!=-1) {
+					//não há '?' ?
+					this.urlJ = this.urlB.substring(p+1);
+					this.urlB = this.urlB.substring(0,p);
+				} else {
+					//this.urlP = this.urlP;
+					this.urlJ = '';
+				}
+				this.init1();
+			}
+			constructor(doc) {
+				this.init(doc);
+			}
+		}
+		/*
+			//******************************
+			getHash() {
+				return param;
+			}
+			//getV = this.getHash;
+			//******************************
+			getHashJ() {
+				return paramJ;
+			}
+			//******************************
+			formToParam(ob,strParam) {
+				var alvo = getParentByTagName(ob,'form');
+				//if (!alvo) return;
+				for (var i=0;i<alvo.elements.length;i++) {
+					if (alvo.elements[i].name) {
+						//lert('i='+i+' ='+alvo.elements[i].name+"= v="+alvo.elements[i].value);
+						put(alvo.elements[i].name,alvo.elements[i].value);
+					}
+				}
+				if (strParam) {
+					var v = strParam.split('&');
+					for (var i=0;i<v.length;i++) {
+						var v1 = v[i].split('=');
+						if (v1.length==1) {
+							param[v1[0]] = null;
+						} else {
+							param[v1[0]] = v1[1];
+						}
+					}
+				}
+			}
+			//******************************
+			paramToForm(frm,duplica) {
+				for(var prop in param) {
+					if (param[prop]!=null) {
+						if (duplica || !frm[prop]) {
+							//frm.appendChild(input(prop,param[prop]));
+							alert('migra adv... func input não existe');
+						} else {
+							frm[prop].value = param[prop];
+						}
+					}
+				}
+			}
+			//******************************
+			host() {
+				return substrAtAt(this.url,'://','/');
+			}
+			//******************************
+			atalhoJ() {
+				var r = '';
+				for(var prop in paramJ) {
+					if (paramJ[prop]==null) {
+					} else if (typeof(paramJ[prop])!='object') {
+						r += '#'+prop+'='+encodeURIComponent(paramJ[prop]);
+					} else {
+						for(var p in paramJ[prop]) {
+							r += '#'+prop+'='+encodeURIComponent(paramJ[prop][p]);
+						}
+					}
+				}
+				//lert(troca(r,'&','\n')+' pg='+param['pg']);
+				return r;
+			}
+			//******************************
+			atalho() {
+				var r = '';
+				for(var prop in param) {
+					if (param[prop]==null) {
+					} else if (typeof(param[prop])!='object') {
+						//r += '&'+prop+'='+escape(param[prop]);
+						r += '&'+prop+'='+encodeURIComponent(param[prop]);
+					} else {
+						for(var p in param[prop]) {
+							//r += '&'+prop+'='+escape(param[prop][p]);
+							r += '&'+prop+'='+encodeURIComponent(param[prop][p]);
+						}
+					}
+				}
+				return this.url
+					+(r.length==0?'':'?'+r.substring(1))
+					+eu.atalhoJ()
+				;
+			}
+			//******************************
+			remove(ch) {
+				param[ch] = null;
+			}
+			//******************************
+			getNum(a,b) {
+				var r = ''+param[a]; //.localToNumber();
+				return isNaN(r)?b:1*r;
+			}
+			//******************************
+			get(a,b) {
+				var r = param[a];
+				if (vazio(r) && !nulo(b)) {
+					return b;
+				}
+				return r;
+			}
+			//******************************
+			getJ(a,b) {
+				var r = paramJ[a];
+				if (vazio(r) && !nulo(b)) {
+					return b;
+				}
+				return r;
+			}
+			//******************************
+			refresh() {
+				this.put('segs',ms());
+				doc.location = this.atalho();
+			}
+			//******************************
+			putNum(a,b) {
+				//lert('set a='+a+' b='+b);
+				param[a] = (''+b).localToNumber();
+			}
+			//******************************
+			put(a,b) {
+				//lert('set a='+a+' b='+b);
+				param[a] = b;
+			}
+			//******************************
+			putJ(name,value) {
+				//lert('set a='+a+' b='+b);
+				paramJ[name] = value;
+				if (this.updUrlJ) {
+					//lert('atalhoJ'+this.atalhoJ());
+					window.location = leftAt(''+window.location,'#')+this.atalhoJ();
+				}
+			}
+			//this.setJ = this.putJ;
+		} //fim pedido
+		*/
+		,load: (url,func) => {
+			var xhr = new XMLHttpRequest();
+			xhr.onreadystatechange = (a) => {
+				//lert(a);
+				if (xhr.readyState === XMLHttpRequest.DONE) {
+					func(xhr.responseText,xhr.status==200,xhr);
+				}
+			}
+			//se ? executa classe servidor
+			xhr.open("GET", url.charAt(0)=='?' ? urlE(app,url) : url , true);
+			xhr.send(null);
+		}
+		,aguarde: (fuLogic,fu) => {
+			//fica em timeout até 1a func retornar algo
+			// usado para dar delay a resposta clicks
+			//lert('Lib.aguarde');
+			let t = 50;
+			let f = ()=>{
+				if (fuLogic()) {
+					fu();
+				} else {
+					setTimeout(f,t);
+				}
+			}
+			setTimeout(f,t);
+		}
+		,strZero: (nr,t) => {
+			return ('0000000000'+Math.floor(nr+0.5)).right(t);
+		}
+		,sortEl:(a,b,desc)=>{
+			if (desc) {
+				return (b>a?1:(b<a?-1:0));
+			} else {
+				return (a>b?1:(a<b?-1:0));
+			}			
+		}
+		,aeval:	(arr,func)=>{
+			var nv = 0;
+			if (typeof(arr)=='undefined') {
+				return;
+			} else if (typeof(arr.length)=='number') {
+				for (var i=0;i<arr.length;i++) {
+					func(arr[i],i);
+				}
+			} else if (false && typeof(arr.forEach)=='function') {
+				alert('fore');
+				arr.forEach((v,i)=>{
+					func(v,i);
+				});
+			} else {
+				for (i in arr) {
+					func(arr[i],i,nv++);
+				}
+			}
+		}
+		,alertErro: (e)=>{
+			alert(Lib.erro(e));
+		}
+		,vazio:(a)=>{
 			try {
-				//inicia a exec promessa
-				this.#ret = p();
-				this.#ex = 0;
+				//if ((a==null || isNaN(a) || typeof(a)=='undefined')) {
+				if (a==null || typeof(a)=='undefined') {
+					return true;
+				} else if (typeof(a)=='string') {
+					return trimm(a)=='';
+				} else if (typeof(a)=='number') {
+					return isNaN(a) || !isFinite(a);
+				} else if (typeof(a)=='object') {
+					return a == {};
+				} else {
+					return false;
+				}
 			} catch (e) {
-				//erro, registra o erro
-				this.#ex = 1;
-				this.#er = e;
+				//lert('erro testando vazio(): '+erro(e)+' obj='+a);
+				//objNav(e);
+				return true;
+			}		
+		}
+		// mescla objeto opcoes 
+		,optionsMergetM: (padrao,r)=>{
+			Lib.optionsMerge(padrao,r);
+			for (k in padrao) {
+				if (Lib.isStr(padrao[k])&&padrao[k].charAt(0)=='&'&&r[k]==padrao[k]) {
+					// o default é o mesmo que outro k 
+					r[k] = r[padrao[k].substring(1)];
+				}
+			}
+			return r;
+		}
+		// mescla objeto opcoes com obj opcoes padrao
+		,optionsMerge: (opDefault,op)=>{
+			if (typeof(op)!='object') {
+				return opDefault;
+			}
+			Lib.aeval(opDefault,(x,k)=>{
+				typeof(op[k])=='undefined'?op[k]=opDefault[k]:false;
+			});
+			return op;
+		}
+		,isFunction: (o)=>{return typeof(o)=='function'}
+		,isArr: (o)=>{return Lib.isObj(o)&&typeof(o.length)=='number'}
+		,isFunc: (o)=>{return typeof(o)=='function'}
+		,isFun: (o)=>{return typeof(o)=='function'}
+		,isBol: (o)=>{return typeof(o)=='boolean'}
+		,isDom: (o)=>{return o && o.tagName;}
+		,isStr: (o)=>{return typeof(o)=='string';}
+		,isUnd: (o)=>{return typeof(o)=='undefined';}
+		,isObj: (o)=>{return typeof(o)=='object';}
+		,isNum: (str)=> {
+			if (typeof(str)!='number') {
+				str = (''+str).trimm();
+				if (str=='') return false;
+				str = 1*str;
+			}
+			return !isNaN(str);
+		}
+		,if: (a,b)=>{return a?a:b;}
+		,dateSql: (a,semHora)=>{
+			var d = Lib.vazio(a)?new Date():a;
+			if (typeof(a)=='string') {
+				d = strToData(a);
+			} else if (typeof(a)=='number') {
+				d = new Date(a);
+			}
+			return Lib.strZero(d.getFullYear(),4)+'-'+Lib.strZero(d.getMonth()+1,2)
+				+'-'+Lib.strZero(d.getDate(),2)
+				+(semHora?'':' '+Lib.strZero(d.getHours(),2)+':'
+					+Lib.strZero(d.getMinutes(),2)+':'+Lib.strZero(d.getSeconds(),2)
+				)
+			;		
+		}
+		,erro: (e)=>{
+			if (typeof(e)=='string' || typeof(e)=='undefined') {
+				e = new Error(''+e);
+			}
+			try {
+				return ''//'Erro:('
+					+'\nnome: '+e.name
+					+'\nmessage: '+e.message
+					+'\n\nstack: ====== \n'+(''+e.stack).replaceAll(
+							(window.location+'').leftAtAt('://','/')
+							,'h '
+						)
+					+')'
+				;
+			} catch (e) {
+				alert('ERRO em erro '+e+'\n\n'+e.stack);
 			}
 		}
-		constructor(p) {
-			//ou o constructor lança 
-			//	o proc em seg plano
-			this.p = p;
-		}
-		// é mais interessante as estáticas q acompanham
-		static All(arr) {
-			//opa interable?
-			let nf = 0;
-			for (k in arr) {
-				setTimeout(()=>{
-					arr[k]();
-				});	
-			}
-		}
-	}
-	*/
+	};
 
 	class Tempo {
+		static tempo(msDif) {
+			//dif = dif/1000;
+			var ar = (x)=>{return Math.floor(x+0.5)};
+			var sg = ar(msDif%60);msDif = Math.floor(msDif/60);
+			var mi = ar(msDif%60);msDif = Math.floor(msDif/60);
+			var hr = ar(msDif%24);
+			var di = ar(msDif/24);
+			return (di>0?di+"d ":"")
+				+(hr>0?hr+"h ":"")
+				+(mi>0?mi+"m ":"")
+				+sg+"s "
+			;
+		}		
 		static fromStr(str) {
 			if (!str) {
 				//lert('erro strToData(), data invalida '+str);
@@ -555,45 +1049,66 @@
 				if (Dom.clickCancel(ev)) return;
 				ev.preventDefault();
 				//dialogo
-				var ob = [];	
-				var dg = new contextDiv({class:'contextUrl'
+				//var ob = [];	
+				var dg = new Dom.dialog({class:'contextUrl'
 					,click: (ev) => {
 						//alert('clicou.. ev');
 						if (Dom.clickCancel(ev)) return;
+						//TODOS
+						if (ev.target.getAttribute('name')=='all') {
+							//limpa linhas
+							dg.dom.innerHTML = '';
+							addLinhas(doc.querySelectorAll('[_url]'));
+							dg.hide();
+							setTimeout(()=>{dg.center();},100);
+							return;
+						}
 						dg.destroy();
 					}
 				});
 				dg.dom.innerHTML = '<table class="url">';
-				//procura todos no dom sanitizado attr _url
-				let ur = doc.querySelectorAll('[_url]');
-				//lert('_url='+ur.length);
-				Lib.aeval(ur,(o)=>{
-					let at = o.getAttribute('_url').split('~');
-					Lib.aeval(at,(v)=> {
-						let cod = o.getAttribute(v);
-						let url = Eml.htmlSanitize.codToUrl(cod);
-						ob.push([v
-							,cod
-							,url
-						]);
-						domObj({tag:'tr',targ:dg.dom,cod:ob.length
-							,'':'<td>'+o.tagName+'.'+v
-								+'<td title="codigo: '+cod+'">'+url
-								+'<td><input type="button" value="ver">'
-							,ev_click: (ev) => {
-								if (Dom.clickCancel(ev)) return;
-								if (ev.target.value=='ver')
-									if (confirm('abrir URL \n\n'+url)) 
-										o.setAttribute(v,url);
-							}
+				//
+				var addLinhas = (v)=>{
+					domObj({tag:'tr',targ:dg.dom,
+						'':'<td colspan=3>'
+							+'<input name="all" type="button" value="list todos">'
+							+'<input type="button" value="fechar">'
+					});
+					aeval(v,(o)=>{
+						let at = o.getAttribute('_url').split('~');
+						Lib.aeval(at,(v)=> {
+							let cod = o.getAttribute(v).substring(1);
+							let url = Eml.htmlSanitize.codToUrl(cod);
+							/*ob.push([v
+								,cod
+								,url
+							]);*/
+							domObj({tag:'tr',targ:dg.dom//,cod:ob.length
+								,'':'<td>'+o.tagName+'.'+v
+									+'<td title="codigo: '+cod+'">'+url
+									+'<td><input type="button" value="ver">'
+								,ev_click: (ev) => {
+									if (Dom.clickCancel(ev)) return;
+									if (ev.target.value=='ver')
+										if (confirm('abrir URL \n\n'+url)) 
+											o.setAttribute(v,url);
+								}
+							});
 						});
 					});
-				});
-				domObj({tag:'tr',targ:dg.dom,
-					'':'<td colspan=3>'
-						+'<input type="button" value="ver todos">'
-						+'<input type="button" value="fechar">'
-				});
+				};	
+				// mostra TODOS ou CLICK
+				let o = ev.target;
+				let v = [];
+				while (o) {
+					if (o.getAttribute 
+						&& o.getAttribute('_url') ) {
+						//add linha
+						v[v.length] = o;
+					}
+					o = o.parentNode;
+				}
+				addLinhas(v);
 				dg.center();
 				//lert(o.tagName+'.'+at+'\n\n'+r);
 				//console.log(ev.target);
@@ -641,7 +1156,7 @@
 			// 		<v:fill origin="0.5, 0" position="0.5, 0" src="https://ae01.mlicdn.com/kf/H119729f115ef4e32a1f5b6501c20b50cb/1200x576.png" type="tile" size="100%,100%" />
 			// falta tag style inline <div style="background:url(https://ae01.mlicdn.com/kf/H119729f115ef4e32a1f5b6501c20b50cb/1200x576.png) center top / 100% 100% repeat;background-position:center top;background-repeat:repeat;background-size:100% 100%;margin:0px auto;max-width:600px;">
 			// ideal seria procurar links nos textos finais tb
-			// 2023-5 achei eml que o codigo não pega o href de um "a" e não possui if
+			// 2023-5 achei eml que o codigo não pega o  de um "a" e não possui if
 			sao(h) {
 				return h.indexOf('://')==-1
 					&& h.search(new RegExp("<script", "i"))==-1
@@ -669,7 +1184,7 @@
 									o.setAttribute('_url',(va?va+'~':'')+a.name);
 									var c = Eml.htmlSanitize.urlToCod(t);
 									//regrava attr
-									o.setAttribute(a.name,''+c);
+									o.setAttribute(a.name,'#'+c);
 									//o.removeAttribute(a.name);
 									//o.setAttribute('_'+a.name,''+c);
 								} else if (p>-1&&a.name.toUpperCase()=='STYLE') {
@@ -795,6 +1310,7 @@
 				var cp = s.substring(i,f).toLowerCase();
 				var cm = s.substring(f+1,f+2).toLowerCase();
 				/*cpEst.inc(cp+' '+cm,1);*/
+				//=?UTF-8?B?8J+TtyBDYXNzaWEgU2lsdmEg?=;=?UTF-8?B?cHVibGljb3UgcmVjZW50?=;=?UTF-8?B?ZW1lbnRlIHVtYSBub3Zh?=;=?UTF-8?B?IGZvdG8=?=
 				f += s.charAt(f+2)=='?'?3:2;
 				p = s.indexOf('?=',f);
 				//lert(cp+' '+cm+'\n\n'+s.substring(f,p));
@@ -802,23 +1318,33 @@
 					var t = Eml.decodQ(cp,s.substring(f,p));
 					s = s.substring(0,i-2)
 						+t
-						+s.substring(p+2)
+						+s.substring(p+2+(s.charAt(p+2)==';'?1:0))
 					;
 					p = i-2+t.length;
 				} else if (cm=='b') { //base 64
 					if (cp=='utf-8') {
-						var t = decodeURIComponent(escape(window.atob(s.substring(f,p))));
+						var t = window.atob(s.substring(f,p));
+						t = escape(t);
+						/*try {
+						t = decodeURIComponent(t);
+						} catch (e) {
+							deb('er=='+t+' '+s.substring(f,p));
+						}*/
 					} else {
-						var t = (window.atob(s.substring(f,p)));
+						var t = window.atob(s.substring(f,p));
 					}
 					s = s.substring(0,i-2)
 						+t
-						+s.substring(p+2)
+						+s.substring(p+2+(s.charAt(p+2)==';'?1:0)) //as x's ou sempre há o ; ?
 					;
 					p = i-2+t.length;				
 				} else {
 					p = i;
 				}
+			}
+			try {
+				s = decodeURIComponent(s);
+			} catch (e) {
 			}
 			return s;
 		}
@@ -978,28 +1504,63 @@
 				}
 				//*************************
 				this.show = function(ev,fClick) {
-					this.click = fClick;
+					if (fClick) this.click = fClick;
 					if (visible) {
 						eu.hide();
 						return;
 					}
-					visible = true;
-					if (!ev) {
-						alertDev('contextDiv.show(event): missing event, use .center()');
-						eu.center();
+					var two = browse.getTX(f);
+					if (two<1 && !eu.recalc) {
+						//precisa calc tamanho
+						//eb('recalc='+two);
+						eu.recalc = true;
+						browse.mostra(f);
+						setTimeout(()=>{eu.show(ev)},100);
 						return;
 					}
+					visible = true;
+					eu.recalc = false;					
+					//
+					if (!ev) {
+						if (this.Ev) {
+							ev = this.Ev;
+						} else {
+							//lertDev('contextDiv.show(event): missing event, use .center()');
+							eu.center();
+							return;
+						}
+					} else {
+						this.Ev = ev;
+					}
 					//screenX: 2679 screenY: 292
+					let tx = f.clientWidth;
+					let ty = f.clientHeight;
 					var nx, ny;
 					if ( eu.queryAlign && (nx=ev.target.closest(eu.queryAlign)) ) {
 						//_c(nx);
 						ny = nx.offsetTop;//browse.getY(nx);//
 						nx = browse.getAbsX(nx); //browse.getX(nx)-browse.getTX(f);
 					} else {
-						nx = ev.x-browse.getTX(f); //ev.x ev.screenX
+						//antes inicio tela
+						if (tx==0) alert(f.innerHTML);
+						nx = ev.x-tx; //ev.x ev.screenX
+						//eb(f);
+						//eb(' nx='+nx+' tx='+tx+' tw='+window.innerWidth);
 						if (nx<0) nx=ev.x;
-						ny = ev.y-browse.getTY(f);
+						//apos fim tela
+						if (nx+tx>window.innerWidth) {
+							nx = window.innerWidth-tx;
+							if (nx<0) nx=0;
+						}
+						//antes topo tela
+						ny = ev.y-ty;
+						//eb(' ny='+ny+' ty='+ty+' th='+window.innerHeight);
 						if (ny<0) ny=ev.y;
+						//apos fim tela
+						if (ny+ty>window.innerHeight) {
+							ny = window.innerHeight-ty;
+							if (ny<0) ny=0;
+						}
 					}
 					styleSet(f,'left',nx+'px');
 					styleSet(f,'top',ny+'px');
@@ -1236,6 +1797,10 @@
 			ne.id = id;
 			ne.innerHTML = cssText;
 			var x = document.querySelector('head style');
+			if (!x) {
+				// procura link stylesheet
+				x = document.querySelector("link[rel='StyleSheet']");
+			}
 			if (x) {
 				//style exist, insert before
 				x.parentNode.insertBefore(ne,x);
@@ -1349,410 +1914,6 @@
 		}
 	};
 
-	var Lib = {
-		ini:{}
-		,isMobile: ()=>{
-			return navigator.userAgent.toLowerCase().indexOf('mobile')!=-1;
-		}
-		,fSort: (a,b,desc)=>{
-			if (desc) {
-				return (b>a?1:(b<a?-1:0));
-			} else {
-				return (a>b?1:(a<b?-1:0));
-			}
-		}
-		,pedido:class {
-			url;
-			urlB;
-			urlP;
-			urlJ;
-			param = {};
-			paramJ = {};
-			//******************************	
-			atalho() {
-				let r = '';
-				for (let k in this.param) {
-					//lert('k('+k.length+')'); 
-					r += '&'+k+'='+encodeURIComponent(this.param[k]); 
-				}
-				let r1 = '';
-				for (let k in this.paramJ) {
-					r1 += '#'+k+'='+encodeURIComponent(this.paramJ[k]); 
-				}
-				return this.urlB
-					+(r==''?r:'?'+r.substring(1))
-					+r1
-				;
-			}
-			//******************************	
-			setJ(ch,valor) {
-				paramJ[ch] = valor;
-				return this;
-			}
-			//******************************	
-			getJ(ch,defaul) {
-				if (paramJ[ch]) return paramJ[ch];
-				return defaul;
-			}
-			//******************************	
-			set(ch,valor) {
-				param[ch] = valor;
-				return this;
-			}
-			//******************************	
-			get(ch,defaul) {
-				if (param[ch]) return param[ch];
-				return defaul;
-			}
-			//******************************	
-			init1() {
-				// #s
-				var vj=this.urlJ.split0('#');
-				for (var i=0;i<vj.length;i++) {
-					try {
-						this.paramJ[vj[i].leftAt('=')] = decodeURIComponent(vj[i].substrAt('='));
-					} catch (e) {
-						this.paramJ[vj[i].leftAt('=')] = (vj[i].substrAt('='));
-					}
-				}
-				// &?
-				var v = this.urlP.split0('&');
-				for (var i=0;i<v.length;i++) {
-					let np = v[i].leftAt('=');
-					let vl = v[i].substrAt('=');
-					if (Lib.vazio(np)) {
-						//ignora
-					} else {
-						this.param[np] = decodeURIComponent(vl.replaceAll('+',' '));
-					}
-				}
-			}
-			init(doc) {
-				if (typeof(doc)=='undefined') {
-					doc = document;
-				}
-				this.doc = doc;
-				if (typeof(doc)=='string') {
-					this.url = doc;
-				} else {
-					this.url = ''+doc.location;
-				}
-				this.protocolo = this.url.leftAt(':');
-				this.host = (this.url+'/').substrAtAt('://','/'); 
-				//parametros
-				var p = this.url.indexOf('?');
-				if (p!=-1) {
-					this.urlB = this.url.substring(0,p);
-					this.urlP = this.url.substring(p+1);
-				} else {
-					this.urlB = this.url;
-					this.urlP = '';
-				}
-				//parametros Internos JS
-				var p = this.urlP.indexOf('#');
-				if (p!=-1) {
-					this.urlJ = this.urlP.substring(p+1);
-					this.urlP = this.urlP.substring(0,p);
-				} else if (this.urlP==''&&(p=this.urlB.indexOf('#'))!=-1) {
-					//não há '?' ?
-					this.urlJ = this.urlB.substring(p+1);
-					this.urlB = this.urlB.substring(0,p);
-				} else {
-					//this.urlP = this.urlP;
-					this.urlJ = '';
-				}
-				this.init1();
-			}
-			constructor(doc) {
-				this.init(doc);
-			}
-		}
-		/*
-			//******************************
-			getHash() {
-				return param;
-			}
-			//getV = this.getHash;
-			//******************************
-			getHashJ() {
-				return paramJ;
-			}
-			//******************************
-			formToParam(ob,strParam) {
-				var alvo = getParentByTagName(ob,'form');
-				//if (!alvo) return;
-				for (var i=0;i<alvo.elements.length;i++) {
-					if (alvo.elements[i].name) {
-						//lert('i='+i+' ='+alvo.elements[i].name+"= v="+alvo.elements[i].value);
-						put(alvo.elements[i].name,alvo.elements[i].value);
-					}
-				}
-				if (strParam) {
-					var v = strParam.split('&');
-					for (var i=0;i<v.length;i++) {
-						var v1 = v[i].split('=');
-						if (v1.length==1) {
-							param[v1[0]] = null;
-						} else {
-							param[v1[0]] = v1[1];
-						}
-					}
-				}
-			}
-			//******************************
-			paramToForm(frm,duplica) {
-				for(var prop in param) {
-					if (param[prop]!=null) {
-						if (duplica || !frm[prop]) {
-							//frm.appendChild(input(prop,param[prop]));
-							alert('migra adv... func input não existe');
-						} else {
-							frm[prop].value = param[prop];
-						}
-					}
-				}
-			}
-			//******************************
-			host() {
-				return substrAtAt(this.url,'://','/');
-			}
-			//******************************
-			atalhoJ() {
-				var r = '';
-				for(var prop in paramJ) {
-					if (paramJ[prop]==null) {
-					} else if (typeof(paramJ[prop])!='object') {
-						r += '#'+prop+'='+encodeURIComponent(paramJ[prop]);
-					} else {
-						for(var p in paramJ[prop]) {
-							r += '#'+prop+'='+encodeURIComponent(paramJ[prop][p]);
-						}
-					}
-				}
-				//lert(troca(r,'&','\n')+' pg='+param['pg']);
-				return r;
-			}
-			//******************************
-			atalho() {
-				var r = '';
-				for(var prop in param) {
-					if (param[prop]==null) {
-					} else if (typeof(param[prop])!='object') {
-						//r += '&'+prop+'='+escape(param[prop]);
-						r += '&'+prop+'='+encodeURIComponent(param[prop]);
-					} else {
-						for(var p in param[prop]) {
-							//r += '&'+prop+'='+escape(param[prop][p]);
-							r += '&'+prop+'='+encodeURIComponent(param[prop][p]);
-						}
-					}
-				}
-				return this.url
-					+(r.length==0?'':'?'+r.substring(1))
-					+eu.atalhoJ()
-				;
-			}
-			//******************************
-			remove(ch) {
-				param[ch] = null;
-			}
-			//******************************
-			getNum(a,b) {
-				var r = ''+param[a]; //.localToNumber();
-				return isNaN(r)?b:1*r;
-			}
-			//******************************
-			get(a,b) {
-				var r = param[a];
-				if (vazio(r) && !nulo(b)) {
-					return b;
-				}
-				return r;
-			}
-			//******************************
-			getJ(a,b) {
-				var r = paramJ[a];
-				if (vazio(r) && !nulo(b)) {
-					return b;
-				}
-				return r;
-			}
-			//******************************
-			refresh() {
-				this.put('segs',ms());
-				doc.location = this.atalho();
-			}
-			//******************************
-			putNum(a,b) {
-				//lert('set a='+a+' b='+b);
-				param[a] = (''+b).localToNumber();
-			}
-			//******************************
-			put(a,b) {
-				//lert('set a='+a+' b='+b);
-				param[a] = b;
-			}
-			//******************************
-			putJ(name,value) {
-				//lert('set a='+a+' b='+b);
-				paramJ[name] = value;
-				if (this.updUrlJ) {
-					//lert('atalhoJ'+this.atalhoJ());
-					window.location = leftAt(''+window.location,'#')+this.atalhoJ();
-				}
-			}
-			//this.setJ = this.putJ;
-		} //fim pedido
-		*/
-		,load: (url,func) => {
-			var xhr = new XMLHttpRequest();
-			xhr.onreadystatechange = (a) => {
-				//lert(a);
-				if (xhr.readyState === XMLHttpRequest.DONE) {
-					func(xhr.responseText,xhr.status==200,xhr);
-				}
-			}
-			//se ? executa classe servidor
-			xhr.open("GET", url.charAt(0)=='?' ? urlE(app,url) : url , true);
-			xhr.send(null);
-		}
-		,aguarde: (fuLogic,fu) => {
-			//fica em timeout até 1a func retornar algo
-			// usado para dar delay a resposta clicks
-			//lert('Lib.aguarde');
-			let t = 50;
-			let f = ()=>{
-				if (fuLogic()) {
-					fu();
-				} else {
-					setTimeout(f,t);
-				}
-			}
-			setTimeout(f,t);
-		}
-		,strZero: (nr,t) => {
-			return ('0000000000'+Math.floor(nr+0.5)).right(t);
-		}
-		,sortEl:(a,b,desc)=>{
-			if (desc) {
-				return (b>a?1:(b<a?-1:0));
-			} else {
-				return (a>b?1:(a<b?-1:0));
-			}			
-		}
-		,aeval:	(arr,func)=>{
-			var nv = 0;
-			if (typeof(arr)=='undefined') {
-				return;
-			} else if (typeof(arr.length)=='number') {
-				for (var i=0;i<arr.length;i++) {
-					func(arr[i],i);
-				}
-			} else if (false && typeof(arr.forEach)=='function') {
-				alert('fore');
-				arr.forEach((v,i)=>{
-					func(v,i);
-				});
-			} else {
-				for (i in arr) {
-					func(arr[i],i,nv++);
-				}
-			}
-		}
-		,alertErro: (e)=>{
-			alert(Lib.erro(e));
-		}
-		,vazio:(a)=>{
-			try {
-				//if ((a==null || isNaN(a) || typeof(a)=='undefined')) {
-				if (a==null || typeof(a)=='undefined') {
-					return true;
-				} else if (typeof(a)=='string') {
-					return trimm(a)=='';
-				} else if (typeof(a)=='number') {
-					return isNaN(a) || !isFinite(a);
-				} else if (typeof(a)=='object') {
-					return a == {};
-				} else {
-					return false;
-				}
-			} catch (e) {
-				//lert('erro testando vazio(): '+erro(e)+' obj='+a);
-				//objNav(e);
-				return true;
-			}		
-		}
-		// mescla objeto opcoes 
-		,optionsMergetM: (padrao,r)=>{
-			Lib.optionsMerge(padrao,r);
-			for (k in padrao) {
-				if (Lib.isStr(padrao[k])&&padrao[k].charAt(0)=='&'&&r[k]==padrao[k]) {
-					// o default é o mesmo que outro k 
-					r[k] = r[padrao[k].substring(1)];
-				}
-			}
-			return r;
-		}
-		// mescla objeto opcoes com obj opcoes padrao
-		,optionsMerge: (opDefault,op)=>{
-			if (typeof(op)!='object') {
-				return opDefault;
-			}
-			Lib.aeval(opDefault,(x,k)=>{
-				typeof(op[k])=='undefined'?op[k]=opDefault[k]:false;
-			});
-			return op;
-		}
-		,isFunction: (o)=>{return typeof(o)=='function'}
-		,isArr: (o)=>{return Lib.isObj(o)&&typeof(o.length)=='number'}
-		,isFunc: (o)=>{return typeof(o)=='function'}
-		,isFun: (o)=>{return typeof(o)=='function'}
-		,isDom: (o)=>{return o && o.tagName;}
-		,isStr: (o)=>{return typeof(o)=='string';}
-		,isUnd: (o)=>{return typeof(o)=='undefined';}
-		,isObj: (o)=>{return typeof(o)=='object';}
-		,isNum: (str)=> {
-			if (typeof(str)=='number') {
-				return true;
-			} else if (typeof(str)=='string') {
-				return str.length!=0 && !isNaN(1*str);
-			}
-			return false;
-		}
-		,if: (a,b)=>{return a?a:b;}
-		,dateSql: (a,semHora)=>{
-			var d = Lib.vazio(a)?new Date():a;
-			if (typeof(a)=='string') {
-				d = strToData(a);
-			} else if (typeof(a)=='number') {
-				d = new Date(a);
-			}
-			return Lib.strZero(d.getFullYear(),4)+'-'+Lib.strZero(d.getMonth()+1,2)
-				+'-'+Lib.strZero(d.getDate(),2)
-				+(semHora?'':' '+Lib.strZero(d.getHours(),2)+':'
-					+Lib.strZero(d.getMinutes(),2)+':'+Lib.strZero(d.getSeconds(),2)
-				)
-			;		
-		}
-		,erro: (e)=>{
-			if (typeof(e)=='string' || typeof(e)=='undefined') {
-				e = new Error(''+e);
-			}
-			try {
-				return ''//'Erro:('
-					+'\nnome: '+e.name
-					+'\nmessage: '+e.message
-					+'\n\nstack: ====== \n'+(''+e.stack).replaceAll(
-							(window.location+'').leftAtAt('://','/')
-							,'h '
-						)
-					+')'
-				;
-			} catch (e) {
-				alert('ERRO em erro '+e+'\n\n'+e.stack);
-			}
-		}
-	};
 
 	var Obj = {
 		ini:{}
@@ -1913,7 +2074,7 @@
 		//0 para Domingo
 		//window.navigator.language
 		Date.prototype.wd = {
-			'pt':['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado']
+			 'pt':['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado']
 			,'en':['sunday','monday','tuesday','wednesday','thursday','friday','saturday']
 		};
 		Date.prototype.getDayStr = function() {
@@ -1925,6 +2086,16 @@
 		Date.prototype.getDayStr3 = function(p) {
 			var r = this.getDayStr();
 			if (r) return r.substring(0,3);
+		}
+		Date.prototype._ms = {
+			 'en':['January','February','March','April','May','June','July','August','September','October','November','December']
+			,'pt':['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
+		};
+		Date.prototype.getMonthStr = function() {
+			var r = this._ms[window.navigator.language];
+			if (!r) r = this._ms[window.navigator.language.leftAt('-')];
+			if (!r) r = this._ms['en'];
+			if (r) return r[this.getMonth()];
 		}
 	}
 
@@ -2197,3 +2368,109 @@
 	}
 
 
+
+/* metodo privado incompativer com machintoch?
+	class oRecursivo {
+		#dom = [];
+		#type = 'type';
+		//final #id; 
+		#id;
+		#parent = false; //object
+		#child = {}; //array object by id.
+		//deve saber o proprio tipo pare ref interface
+		type() {
+			return this.#type;
+		}
+		// 
+		childSet(o) {
+			this.#child[o.type()][o.id()] = o;
+		}
+		// 
+		child(id,type) {
+			return this.#child[type][id];
+		}
+		// id in parent.
+		id() {
+			return this.#id;
+		}
+		//string get.
+		idPath(ev) {
+			return (this.#parent ? this.#parent.idPath()+'&' : '')
+				+ this.#type+'='+this.#id
+			;
+		}
+		domId() {
+			var r=document.createElement('p');
+			r.innerHTML = id;
+			return r;
+		}
+		domTr() {
+			var r=document.createElement('tr');
+			r.innerHTML = id;
+			return r;
+		}
+		cmdSrv() {
+			//recursivo do global para o privado
+		}
+		constructor(Parent,Id) {
+			id = Id;
+			parent = Parent;
+		}
+	}
+*/
+
+	/* para tentar entender 
+	 * https://developer.mozilla.org/pt-BR/docs/Web/JavaScript/Reference/Global_Objects/Promise 
+	 * desde 2014
+	
+	class promessa {
+		#ex = -1;
+		#ret;
+		#er = false;
+		p;
+		then(f) {
+			this.#exec();
+			if (this.#er===0) {
+				//se não erro exec argumento com arq retorno
+				f(this.#ret)
+			}
+			//retorna ele mesmo
+			return this;
+		}
+		catch(f) {
+			this.#exec();
+			// exec o argumento caso ERRO
+			if (this.#ex===1) {
+				f(this.er);
+			}
+			return this;
+		}
+		#exec() {
+			if (this.#ex!=-1) return;
+			try {
+				//inicia a exec promessa
+				this.#ret = p();
+				this.#ex = 0;
+			} catch (e) {
+				//erro, registra o erro
+				this.#ex = 1;
+				this.#er = e;
+			}
+		}
+		constructor(p) {
+			//ou o constructor lança 
+			//	o proc em seg plano
+			this.p = p;
+		}
+		// é mais interessante as estáticas q acompanham
+		static All(arr) {
+			//opa interable?
+			let nf = 0;
+			for (k in arr) {
+				setTimeout(()=>{
+					arr[k]();
+				});	
+			}
+		}
+	}
+	*/

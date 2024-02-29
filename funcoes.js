@@ -33,8 +33,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 //if (true) {
-	//***********************************************
-	// add style id 
+	var estat = DB.estat;
+
+	var html = Conv.fromHtml;
+	
+	var dev = Deb.dev;
+
+	var debJ = Deb.logJ;
+	
 	var strPesq = Lib.searchStr;
 
 	var tempo = Tempo.tempo;
@@ -876,17 +882,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	//**********************************************
 	//developer
 	var alertDev = deb;
-	var dev = true;
-	try {
-		dev = (''+window.location).indexOf('/dv.')!=-1
-				|| (''+window.location).indexOf('_debug=1')!=-1
-		;
-	} catch (e) {}
-	if (dev) {
-		dev = ()=>{return true;};
-	} else {
-		dev = ()=>{return false;};
-	}
 	function deb(a,ob) {
 		if (!dev()) return;
 		if (Lib.isObj(a)) {
@@ -2258,6 +2253,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		this.campos = campos;
 		//vetor campos index posição
 		var camposN = Array(); //[n]=nome
+		this.camposN = camposN;
 		//var valor;this.valor = valor;
 		var valores = Array(); //valores string
 		this.valores = valores;
@@ -3183,6 +3179,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		// recebe matriz ou csv com 1a linha nome campos
 		this.setVetObj = function(vet) {
 			//nao implem
+		}
+		//*********************************************
+		// recebe bancoDados e addiciona
+		this.addBD = function(bd) {
+			for (var r=0;r<bd.valores.length;r++) {
+				this.addReg();
+				for (var c=0;c<bd.camposN.length;c++) {
+					this.set(bd.camposN[c],bd.valores[r][c]);
+				}
+			}
 		}
 		//*********************************************
 		// recebe matriz ou csv com 1a linha nome campos
@@ -4306,10 +4312,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	}
 
 	//**************************//
-	function html(a) {
-		return troca(troca(a,'<','&lt;'),'>','&gt;');
-	}
-	//**************************//
 	function objLen(o){
 		var i=0;
 		try {
@@ -4522,51 +4524,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	//*******************************//
 	var erro = Lib.erro;
 
-	//*********************************
-	var _debJ = 0;
-	//*********************************
-	//texto e opcionalmente nome monitor
-	function debJ(str,mon) {
-		if (!dev()) return;
-		var jan = browse.getId('debJ');
-		if (vazio(jan)) {
-			//lert('criar div para debug J');
-			var css = document.createElement('style');
-			css.innerHTML = 'DIV.debJ {border: 4px double #C83800;overflow: auto;'
-				+'padding: 5px 10px;position:fixed;'
-				+'width: 500px;left: -490px;height: 300px;bottom: -290px;'
-				+'background-color: #00A068;}'
-				+'DIV.debJ:hover {left: 0; bottom: 0;}'
-			;
-			document.body.appendChild(css);
-			var jan = document.createElement('div');
-			jan.className = 'debJ';
-			jan.id = 'debJ';
-			//no caso de touch 
-			jan.addEventListener('click',function(ev){
-				var o=targetEvent(ev);setCss(o,'left','0');
-				setCss(o,'bottom','0');}
-			,true);
-			jan.innerHTML = '<div  class="debJMon"></div>';
-			document.body.appendChild(jan);
-		}
-		if (!mon) {
-			jan.innerHTML = ((''+str).indexOf('<')!=-2?'<p>'+(_debJ++)+' '+troca(html(str),'\n','<br>')+'</p>':str) 
-				+'<hr>'+ jan.innerHTML;
-			return;
-		}
-		//procura por monitor dentro da janela
-		var monG = getElementsByClassName(jan,'debJMon')[0];
-		var mon1 = getElementsByClassName(monG,'debJMon_Item'+mon)[0];
-		// lert(mon+' g='+monG+' 1='+mon1);
-		if (!mon1) {
-			var mon1 = document.createElement('div');
-			mon1.className = 'debJMon_Item debJMon_Item'+mon;
-			mon1.title = mon;
-			monG.appendChild(mon1);
-		}
-		mon1.innerHTML = str;
-	}
 
 	//funcoes DEBUG
 	/*
@@ -5183,165 +5140,6 @@ if (typeof(window) == 'object') window['browse'] = (typeof(document)=='object'?n
 
 })():false);
 
-
-//****************************************************
-/** @constructor */
-function estat(Nome) {
-	var eu=this;
-	var nome = Nome;
-	var v = {};
-	this.inc = inc;
-	this.inc1 = inc1;
-	this.toHtml = toHtml;
-	this.toTxt = toTxt;
-	this.getMatriz = getMatriz;
-	var vt = 0;
-	this.length=0; //total geral
-	this.get = (ch)=>{
-		return v[ch];
-	}
-	//****************************************************
-	this.getObj = function() { return v;	}	
-	//****************************************************
-	this.max = function(ch,vl) {
-		var va = typeof(v[ch])=='undefined'?-999999999999:v[ch];
-		va = Math.max(vl,va);
-		v[ch] = va;
-		return va;
-	}
-	//****************************************************
-	this.min = function(ch,vl) {
-		var va = typeof(v[ch])=='undefined'?999999999999:v[ch];
-		va = Math.min(vl,va);
-		v[ch] = va;
-		return va;
-	}
-	//****************************************************
-	this.toGraphBar = function(Op) {
-		var Horiz = (''+Op.type).indexOf('co')==-1; //if not column is bar
-		var ord = (''+Op.sort).indexOf('va')!=-1; //if not value is label
-		var desc = (''+Op.sort).indexOf('asc')==-1; //if not asc is desc
-		var v1 = getMatriz();
-		//ordena descendente
-		if (ord) {
-			//ordena valor
-			v1.sort(function(a,b){return fSort(a[1],b[1],desc)});
-		} else {
-			//ordena chave
-			v1.sort(function(a,b){return fSort(a[0],b[0],desc)});
-		}
-		//calcula total
-		//var t = 0; aeval(v1,function(v,i) { t+=v[1]; });
-		//label
-		var lb = [];
-		//calcula
-		for(var i=0;i<v1.length;i++) {
-			//var rs = Math.floor(v1[i][1]/t*1000+0.5)/10;
-			if (Horiz) {
-				lb[i] = '<b>'+v1[i][1]+'</b>&nbsp;'
-					+format(v1[i][2],2)+'%'
-				;
-			} else {
-				//legenda ?
-				v1[i][0] += '<br><b>'+v1[i][1]+'</b>'
-					+'<br>'+format(v1[i][2],2)+'%'
-					//+'<br>'+format(rs,1)+'%'
-				;
-			}
-		}
-		// mostrar percentual no grafico
-		if (Op.porPerc) 
-			aeval(v1,(l)=>{l[1]=l[2]});
-		//grafico
-		Op.title = nome;
-		if (Horiz) {
-			Op['label'] = lb;
-			return (new graphBarH(v1,Op)).getHtml();
-		}
-		return (new graphBar(v1,Op)).getHtml();
-	}	
-	//****************************************************
-	this.getVetor = function() {return v;}
-	this.percent = (ch)=>{
-		return v[ch]/vt*100;
-	}	
-	//****************************************************
-	function getMatriz() {
-		var v1 = new Array(),i=0;
-		for(var prop in v) {
-			v1[i++] = new Array(prop,v[prop],eu.percent(prop));
-		}
-		v1.sort(function(a,b){return fSort(a[0],b[0])});
-		return v1;
-	}
-	//****************************************************
-	this.toOptions = function() {
-		var r = '';
-		var v1 = getMatriz();
-		v1.sort(function(a,b){return fSort(a[0],b[0])});
-		for(var i=0;i<v1.length;i++) {
-			r += '<option>'+v1[i][0]+' ('+format(v1[i][1],0)+')';
-		}
-		return r;
-	}
-	//****************************************************
-	this.moda = function() {
-		var mx=-99999,ch;
-		for(var prop in v) {
-			if (mx<v[prop]) {
-				mx = v[prop];
-				ch = prop;
-			}
-		}
-		return ch;
-	}
-	//****************************************************
-	function toTxt() {
-		var v1 = getMatriz();
-		var r = 'palavras: '+v1.length+' ocorrencias: '+vt+'\n';
-		v1.sort(function(a,b){return fSort(b[1],a[1])});
-		for(var i=0;i<v1.length;i++) {
-			r += v1[i][0]
-				+'\t'+format(v1[i][1],0)
-				+'\t'+format(v1[i][2],2)
-				+'\n'
-			;
-		}
-		return r;
-	}
-	//****************************************************
-	function toHtml(sort) {
-		sort = isNumber(sort)?sort:1;
-		var v1 = getMatriz();
-		v1.sort(function(a,b){return fSort(b[sort],a[sort])});
-		var r = '<table class="estat" border=1>'
-			+'<tr><th>'+nome+'<th>vl<th>%'
-		;
-		for(var i=0;i<v1.length;i++) {
-			r += '<tr>'
-				+'<td>'+v1[i][0]
-				+'<td>'+format(v1[i][1],0)
-				+'<td>'+format(v1[i][2],2)
-			;
-		}
-		return r+'</table>';
-	}
-	//****************************************************
-	function inc1(ch) {
-		inc(ch,1);
-	}
-	//****************************************************
-	function inc(ch,vl) {
-		vt += vl;
-		eu.length++;
-		if (!v[ch]) {
-			v[ch]=vl;
-		} else {
-			v[ch]+=vl;
-		}
-		return v[ch];
-	}
-}
 
 //****************************************************
 // grafico barras horizontais

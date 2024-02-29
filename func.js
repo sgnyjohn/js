@@ -5,6 +5,199 @@
 	* @sgnyjohn abr/2023 Eml
 */
 
+	var DB = {
+		ini:{}
+		,estat: function(Nome) {
+			var eu=this;
+			var nome = Nome;
+			var v = {};
+			this.inc = inc;
+			this.inc1 = inc1;
+			this.toHtml = toHtml;
+			this.toTxt = toTxt;
+			this.getMatriz = getMatriz;
+			this.decimal = 0; 
+			var vt = 0;
+			this.length=0; //total geral
+			this.toDomCross = function(delimit) {
+				let c = new DB.estat('cols');
+				let r = new DB.estat('rows');
+				for (ch in v) {
+					let x = ch.split(delimit);
+					c.inc1(x[0]); 
+					r.inc1(x[1]); 
+				}
+				c = c.getMatriz();
+				r = r.getMatriz();
+				let tb = Dom.obj('<table border=1>');
+				//cabec
+				let rw = Dom.obj('<tr>',tb);
+				Dom.obj({tag:'th',targ:rw,'':'ch'});
+				for (var y=0;y<c.length;y++) {
+					Dom.obj({tag:'th',targ:rw,'':c[y][0]});
+				}
+				for (var x=0;x<r.length;x++) {
+					let rw = Dom.obj('<tr>',tb);
+					Dom.obj({tag:'th',targ:rw,'':r[x][0]});
+					for (var y=0;y<c.length;y++) {
+						let vl = v[ c[y][0] + delimit + r[x][0] ];
+						Dom.obj({tag:'td',targ:rw,'':(vl?vl.format(this.decimal):'-')});
+					}
+				}
+				return tb;
+			}
+			this.toDom = function(sort) {
+				return Dom.obj({tag:'div','':this.toHtml(sort)}).firstChild;
+			}
+			this.get = (ch)=>{
+				return v[ch];
+			}
+			//****************************************************
+			this.getObj = function() { return v;	}	
+			//****************************************************
+			this.max = function(ch,vl) {
+				var va = typeof(v[ch])=='undefined'?-999999999999:v[ch];
+				va = Math.max(vl,va);
+				v[ch] = va;
+				return va;
+			}
+			//****************************************************
+			this.min = function(ch,vl) {
+				var va = typeof(v[ch])=='undefined'?999999999999:v[ch];
+				va = Math.min(vl,va);
+				v[ch] = va;
+				return va;
+			}
+			//****************************************************
+			this.toGraphBar = function(Op) {
+				var Horiz = (''+Op.type).indexOf('co')==-1; //if not column is bar
+				var ord = (''+Op.sort).indexOf('va')!=-1; //if not value is label
+				var desc = (''+Op.sort).indexOf('asc')==-1; //if not asc is desc
+				var v1 = getMatriz();
+				//ordena descendente
+				if (ord) {
+					//ordena valor
+					v1.sort(function(a,b){return fSort(a[1],b[1],desc)});
+				} else {
+					//ordena chave
+					v1.sort(function(a,b){return fSort(a[0],b[0],desc)});
+				}
+				//calcula total
+				//var t = 0; aeval(v1,function(v,i) { t+=v[1]; });
+				//label
+				var lb = [];
+				//calcula
+				for(var i=0;i<v1.length;i++) {
+					//var rs = Math.floor(v1[i][1]/t*1000+0.5)/10;
+					if (Horiz) {
+						lb[i] = '<b>'+v1[i][1]+'</b>&nbsp;'
+							+v1[i][2].format(2)+'%'
+						;
+					} else {
+						//legenda ?
+						v1[i][0] += '<br><b>'+v1[i][1]+'</b>'
+							+'<br>'+v1[i][2].format(2)+'%'
+							//+'<br>'+format(rs,1)+'%'
+						;
+					}
+				}
+				// mostrar percentual no grafico
+				if (Op.porPerc) 
+					aeval(v1,(l)=>{l[1]=l[2]});
+				//grafico
+				Op.title = nome;
+				if (Horiz) {
+					Op['label'] = lb;
+					return (new graphBarH(v1,Op)).getHtml();
+				}
+				return (new graphBar(v1,Op)).getHtml();
+			}	
+			//****************************************************
+			this.getVetor = function() {return v;}
+			this.percent = (ch)=>{
+				return v[ch]/vt*100;
+			}	
+			//****************************************************
+			function getMatriz() {
+				var v1 = new Array(),i=0;
+				for(var prop in v) {
+					v1[i++] = new Array(prop,v[prop],eu.percent(prop));
+				}
+				v1.sort(function(a,b){return fSort(a[0],b[0])});
+				return v1;
+			}
+			//****************************************************
+			this.toOptions = function() {
+				var r = '';
+				var v1 = getMatriz();
+				v1.sort(function(a,b){return fSort(a[0],b[0])});
+				for(var i=0;i<v1.length;i++) {
+					r += '<option>'+v1[i][0]+' ('+v1[i][1].format(this.decimal)+')';
+				}
+				return r;
+			}
+			//****************************************************
+			this.moda = function() {
+				var mx=-99999,ch;
+				for(var prop in v) {
+					if (mx<v[prop]) {
+						mx = v[prop];
+						ch = prop;
+					}
+				}
+				return ch;
+			}
+			//****************************************************
+			function toTxt() {
+				var v1 = getMatriz();
+				var r = 'palavras: '+v1.length+' ocorrencias: '+vt+'\n';
+				v1.sort(function(a,b){return fSort(b[1],a[1])});
+				for(var i=0;i<v1.length;i++) {
+					r += v1[i][0]
+						+'\t'+v1[i][1].format(this.decimal)
+						+'\t'+v1[i][2].format(2)
+						+'\n'
+					;
+				}
+				return r;
+			}
+			//****************************************************
+			function toHtml(sort) {
+				sort = isNumber(sort)?sort:1;
+				var v1 = getMatriz();
+				v1.sort(function(a,b){return fSort(a[sort],b[sort],sort==1)});
+				var r = '<table class="estat" border=1>'
+					+'<tr><th>'+nome+'<th>vl<th>%'
+				;
+				for(var i=0;i<v1.length;i++) {
+					r += '<tr>'
+						+'<td>'+v1[i][0]
+						+'<td>'+v1[i][1].format(this.decimal)
+						+'<td>'+v1[i][2].format(2)
+					;
+				}
+				return r+'</table>';
+			}
+			//****************************************************
+			function inc1(ch) {
+				inc(ch,1);
+			}
+			//****************************************************
+			function inc(ch,vl) {
+				vt += vl;
+				eu.length++;
+				if (!v[ch]) {
+					v[ch]=vl;
+				} else {
+					v[ch]+=vl;
+				}
+				return v[ch];
+			}
+		}
+
+	};
+
+
 	var Lib = {
 		ini:{}
 		,searchStr: function(Str) {
@@ -29,19 +222,41 @@
 				,'c' : 'ç'
 			};
 			var vex = ',.,+,*,?,^,$,(,),[,],{,},\.,'; //aceita |,
-			var vr,vrNot,tx='';
+			var vr,tx=''; //vrNot,
 			init(Str);
 			this.getStr = ()=>{return tx;};
 			this.ajuda = (tit)=>{
 				return (tit?tit+'\n\n':'')+'espaço - um E outro'
 					+'\n| - um OU outro'
+					+'\n- - negação'
 					+'\n^ - prefixo palavra inteira'
 					+'\n~ - prefixo para indical palavra iniciando em '
 					+'\n_ - substitui espaços em literais'
 				;		
 			}
 			//################################
-			// palavra inteira ia /(^|\s)ia(\s|$)/
+			// se algum verdadeiro... OR
+			function pesqUm(vEx,s) {
+				for (let o=0;o<vEx.length;o++) {
+					// [0] not? - [1] expr
+					if ( vEx[o][0] != vEx[o][1].test(s) ) {
+						return true;
+					}
+				}
+				return false;				
+			}
+			//################################
+			// se todos verdadeiros... AND
+			this.pesq = function(s) {
+				if (tx=='') return true;
+				for (let e=0;e<vr.length;e++) {
+					if (!pesqUm(vr[e],s)) {
+						return false;
+					}
+				}
+				return true;				
+			}
+			/*################################
 			this.pesq = function(s) {
 				if (tx=='') return true;
 				//var s = s1.toLowerCase();
@@ -52,12 +267,32 @@
 				}
 				return true;
 			}
+			*/
+			// palavra inteira ia /(^|\s)ia(\s|$)/
+			function initUm(str) {
+				var r = [false,false];
+				str = trimm(str);
+				r[0] = str.charAt(0)=='-'; //negativo, não?
+				if (r[0]) str = str.substring(1);
+				if (str.charAt(0)=='~') {
+					// prefixo palavra
+					r[1] = new RegExp('([!-\/]|^|\\s)'+str.substring(1),'i');
+				} else if (str.charAt(0)=='^') {
+					//palavra
+					r[1] = new RegExp('([!-\/:;]|^|\\s)'+str.substring(1)+'(\\s|$|[!-\/:;])','i');
+				} else {
+					r[1] = new RegExp(rExpr(str),'i');
+				}
+				return r;
+			}
 			function init(o) {
 				var a = o?o.trimm():'';
 				// o ou é embutido dentro da expressao
-				a = trocaTudo(a.toLowerCase(),'  ',' ');
-				a = trocaTudo(a,'| ','|');
-				a = trocaTudo(a,' |','|');
+				a = a.toLowerCase()
+					.replaceAll('  ',' ')
+					.replaceAll('| ','|')
+					.replaceAll(' |','|')
+				;
 				//mudou?
 				if (tx==a) return false;
 				tx = a;
@@ -65,9 +300,13 @@
 				this.v = v;
 				//if (referrer.search(new RegExp("Ral", "i")) == -1) { ...
 				vr = Array();
-				vrNot = Array();
-				for (var i=0;i<v.length;i++) {
-					v[i] = trimm(v[i]);
+				//vrNot = Array();
+				for (let e=0;e<v.length;e++) {
+					vr[e] = [];
+					aeval(v[e].split('|'),(el)=>{
+						vr[e].push(initUm(el));
+					});
+					/*v[i] = trimm(v[i]);
 					vrNot[i] = v[i].charAt(0)=='-'; //negativo, não?
 					if (vrNot[i]) v[i] = v[i].substring(1);
 					if (v[i].charAt(0)=='~') {
@@ -75,11 +314,13 @@
 						vr[i] = new RegExp('([!-\/]|^|\\s)'+v[i].substring(1),'i');
 					} else if (v[i].charAt(0)=='^') {
 						//palavra
-						vr[i] = new RegExp('([!-\/]|^|\\s)'+v[i].substring(1)+'(\\s|$|[!-\/])','i');
+						vr[i] = new RegExp('([!-\/:;]|^|\\s)'+v[i].substring(1)+'(\\s|$|[!-\/:;])','i');
 					} else {
 						vr[i] = new RegExp(rExpr(v[i]),'i');
 					}
+					*/
 				}
+				//lert('cond='+o+' '+vr);
 				return true;
 			}
 			this.init = init;
@@ -668,9 +909,63 @@
 		}
 	}
 
+
 	//debug
 	const Deb = {
 		ini:{}
+		,dev: ()=>{
+			return (''+window.location).indexOf('/dv.')!=-1
+					|| (''+window.location).indexOf('_debug=1')!=-1
+			;
+		}
+		,_logJ: 0
+		,logJ: (str,mon) => {
+			//texto e opcionalmente nome monitor
+			if (!Deb.dev()) return;
+			var jan = document.getElementById('debJ');
+			if (Lib.vazio(jan)) {
+				//lert('criar div para debug J');
+				var css = document.createElement('style');
+				css.innerHTML = 'DIV.debJ {border: 4px double #C83800;overflow: auto;'
+					+'padding: 5px 10px;position:fixed;'
+					+'width: 500px;left: -490px;height: 300px;bottom: -290px;'
+					+'background-color: #00A068;}'
+					+'DIV.debJ:hover {left: 0; bottom: 0;}'
+				;
+				document.body.appendChild(css);
+				var jan = document.createElement('div');
+				jan.className = 'debJ';
+				jan.id = 'debJ';
+				//no caso de touch 
+				jan.addEventListener('click',function(ev){
+					var o=targetEvent(ev);setCss(o,'left','0');
+					setCss(o,'bottom','0');}
+				,true);
+				jan.innerHTML = '<div  class="debJMon"></div>';
+				document.body.appendChild(jan);
+			}
+			if (!mon) {
+				jan.innerHTML = (
+					(''+str).indexOf('<')!=-2
+						?'<p>'+(Deb._lobJ++)+' '+Conv.fromHtml(str).replaceAll('\n','<br>')+'</p>'
+						:str
+					) 
+					+'<hr>'+ jan.innerHTML;
+				return;
+			}
+			//procura por monitor dentro da janela
+			var monG = Dom.getElementsByClassName(jan,'debJMon')[0];
+			var mon1 = Dom.getElementsByClassName(monG,'debJMon_Item'+mon)[0];
+			// lert(mon+' g='+monG+' 1='+mon1);
+			if (!mon1) {
+				var mon1 = document.createElement('div');
+				mon1.className = 'debJMon_Item debJMon_Item'+mon;
+				mon1.title = mon;
+				monG.appendChild(mon1);
+			}
+			mon1.innerHTML = str;
+		}
+
 		,log: function(){
 			if (arguments.length==1) {
 				console.log(arguments[0]);
@@ -714,7 +1009,7 @@
 				if (!this.filtro || t==this.filtro) {
 					r += '<tr><td><font size=2 color=darkgreen><b>'+t+'</b></font> '
 					+'<a href=javascript:este.pula("'+prop+'");>'+prop+'</a>: '
-					+'<font size=2>'+(t=='string' || t=='function'?html(''+z):z)
+					+'<font size=2>'+(t=='string' || t=='function'?Conv.fromHtml(''+z):z)
 					;
 				}
 				if (t=='function' && ''+prop=='item') {
@@ -841,7 +1136,7 @@
 				// 'width=400,height=700,resizable=yes,scrollbars=yes,status=0'
 				//);
 				//w.document.write(r);
-				var ds=browse.getId('dad',this.jan.document);
+				var ds=document.getElementById('dad');if (!ds) ds = this.jan.document;
 				ds.innerHTML = r;
 		 
 				return r;
@@ -1221,7 +1516,7 @@
 					r = b[0].innerHTML;
 				} else {
 					r = '<h1>mais de um body  '+b.length+'</h1>'
-						+'<pre>'+html(this.d.documentElement.outerHTML)+'</pre>'
+						+'<pre>'+Conv.fromHtml(this.d.documentElement.outerHTML)+'</pre>'
 					;
 				}
 				return r;
@@ -1842,10 +2137,10 @@
 					//alert('ss='+s.cssText);
 					hV.push([
 						s.cssText.leftAt('{').trim()
-						,textObj(s.cssText.substrAtAt('{','}'))
+						,Obj.fromText(s.cssText.substrAtAt('{','}'))
 					]);
 				}
-				domRemove(ne);
+				Dom.remove(ne);
 				//lert('hv='+hV);
 			}
 			return this;
@@ -1856,7 +2151,7 @@
 		, obj: (p,oo)=> {
 			var ret;
 			if (typeof(p)=='string' && p.charAt(0)=='<') {
-				ret = Dom.obj({tag:'div','':p}).firstChild;
+				ret = Dom.obj({tag:p.equals('<tr')?'table':'div','':p}).firstChild;
 				if (oo) oo.appendChild(ret);
 				return ret;
 			}
@@ -1912,6 +2207,10 @@
 			}
 			return ret;
 		}
+	};
+
+	var browse = {
+		
 	};
 
 

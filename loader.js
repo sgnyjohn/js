@@ -78,19 +78,24 @@ window.addEventListener('load',() => {
 			Deb.log('erro APP: não existe function com nome '+appPr.name+' ou '+nom);
 			return;
 		}
+		//****************************************************
 		//cria a app REAL
-		try {
-			this.obj = new window[nom](this);
-			//appPr.obj = this.obj;
-			apps[nom] = this.obj;
-			
-			// exige user ?
-			initApp();
+		this.initApp0 = function() {
+			try {
+				//lert(window[nom]);
+				let oo = window[nom];
+				//Deb.log(Obj.toText(eu));
+				this.obj = new oo(eu);
+				//appPr.obj = this.obj;
+				apps[nom] = this.obj;
+				
+				// exige user ?
+				initApp();
 
-		} catch (e) {
-			alert('erro criando objeto: new '+nom+'()\n\n'+Lib.erro(e));
+			} catch (e) {
+				alert('erro criando objeto: new '+nom+'()\n\n'+Lib.erro(e));
+			}
 		}
-		//});
 		//****************************************************
 		this.loadJs = function(url,objOUfunc) {
 			loadJs(url,objOUfunc);
@@ -124,6 +129,7 @@ window.addEventListener('load',() => {
 		}
 		//****************************************************
 		this.load = function(url,post,app) {
+			deb(Tempo.ms()+' load '+url+' post='+post);
 			load(url,post,app?app:appPr);
 		}
 		//****************************************************
@@ -187,7 +193,8 @@ window.addEventListener('load',() => {
 			loadJs(jsDir+'/'+name,{load:()=>{
 				//eb('load: '+name+'.js OK, criar obj ()');
 				//armazena app e apos executa
-				new ap({name:name});
+				let a = new ap({name:name});
+				a.initApp0();
 				//ebJ('loadObj '+name+' func='+func);
 				if (func) {
 					//alert('func pos logon');
@@ -231,7 +238,8 @@ window.addEventListener('load',() => {
 			loadJs(jsDir+'/'+name,{load:()=>{
 				deb('load: '+name+'.js OK, criar obj ('+func+')');
 				//armazena app e apos executa
-				new ap({name:name});
+				let a = new ap({name:name});
+				a.initApp0();
 				//exec(nome,'init',func);
 			}});
 		}
@@ -275,7 +283,7 @@ window.addEventListener('load',() => {
 	//*******************************
 	// load e process reply from server
 	function load(Url,postString,app) {
-		//debJ('loader.load post='+postString);
+		//Deb.logJ('loader.load post='+postString);
 		var u = urlE(app,Url);
 		if (u.indexOf('undefined')!=-1) {
 			//deb('name='+name+' u='+u+' '+aProp,aProp);
@@ -293,7 +301,7 @@ window.addEventListener('load',() => {
 				//application/json
 				var mime = xhr.getResponseHeader('Content-Type');
 				//c('='+mime+'=');
-				if (equals(mime,'application/json')) {
+				if (mime.equals('application/json')) {
 					_c(xhr.responseText);
 					alert('dsfsduif='+xhr.responseText);
 					var r = JSON.parse(xhr.responseText);
@@ -302,7 +310,7 @@ window.addEventListener('load',() => {
 				}
 				//receive response from server
 				a = xhr.readyState;
-				tx = trimm(xhr.responseText);
+				tx = xhr.responseText.trimm();
 				var x = (new Date()).getTime();
 				var d = document.createElement('div');
 				d.innerHTML = tx;
@@ -322,12 +330,12 @@ window.addEventListener('load',() => {
 		}
 		//send request to server
 		if (postString) {
-			debJ('POST url='+u+' post='+postString.length+'='+postString);//+' '+Lib.erro('carga errada'));
+			Deb.logJ('POST url='+u+' post='+postString.length+'='+postString);//+' '+Lib.erro('carga errada'));
 			xhr.open('POST', u, true);
 			xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
 			xhr.send(postString);
 		} else {
-			debJ('GET url='+u);
+			Deb.logJ('GET url='+u);
 			xhr.open("GET", u, true);
 			xhr.send(null);
 		}
@@ -378,6 +386,7 @@ window.addEventListener('load',() => {
 		});					
 		try {
 			oApp = new ap(appProp);
+			if (Lib.isFun(oApp.initApp0)) oApp.initApp0();
 		} catch (e) {
 			alert('erro init app '+Obj.toText(appProp)+'\n\n'+Lib.erro(e));
 		}

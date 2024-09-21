@@ -5,11 +5,194 @@
 	* @sgnyjohn abr/2023 Eml
 */
 
+//if (true) {
+
+	var IMG = {
+		ini:{}
+		,espera:''
+		,googleFin:()=>{
+			let src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACNElEQVR4AWOgBIyC////M5quDLMzWxESCsMmq0L9fDencdHFAaarQitMVgT/R8emK0OO0cUBQIvW4XDAH6paNOqAUQf83ctS8mcv6ypkDBKjiwP+72Gx/b2H5T827LnK+yDNHfBnL1soLgf4r/Y4SXsH7GMLG+EO2M8WTq4D5IrfakmXvgrFhuniAJWGt3zSxS+PSxW/+I+OMSx65Wra9trZ9NcrZ9P/CGz2/GuDXCO5DoA5AmjhfYIOgFmOjt+F6x5EtvTPHtaZQPwInwNMVoYchpkrVfqyhKgQgFqI6YBQ3aNwB+xjawSXDcf4hP7sYdkCcQCm5Q6rQnlA6mRKX5bBLKTcAXvZmtEbI+6rfQtAwQ0P+hUhhxCWv6pAt1S65OV5UJog3QH72FqREtUeYCpOQNQHYXYmK0KeAh1ywG1nLDdITLrkVSW65UB952QaPgrBEibRDnjjZ1yJkqIRvllg3PAf3PSyWhcrhrD8RTVGkJe8PAuyHDlhEuUAYMJshGkAWngM0+AXV0F5HWYGUE0tZny/PCNX8UGQYH7H8LmLeTM2n2NxxFdQlAB9WU+G5QiAarlZC7rlJOOSF6cVGt4LgMwhyQGgAgmr5Yi4nyFd/OIRPsuB6eAUzHLSHOBi3o7PcpmSlw0geVCCAlqyBavlxS9OKpW/42cgFbx2NuskZDl6OQCM91Ig/o3k8xNgy8kFhC3HBFLlL61AUQLSB85e5AJc1ads+Ut3fHpgUUKu5aMAALwE5ooB9hj6AAAAAElFTkSuQmCC';
+			return '<img src="'+src+'"/>'
+		}
+	}
+
 	var DB = {
 		ini:{}
-		,estat: function(Nome) {
+		,sortObj: (obj,func)=>{
+			let v = [];
+			aeval(obj,(o)=>{v.push(o)});
+			return v.sort(func);
+		}
+		,tabelaSort: function(id,Ord) {
+			//***********************************************
+			//ADD cmd para ordenar a tabela conforme colunas.
+			// p1 é objeto dom table ou id de table
+			// p2 vetor strings para cada coluna com as possíveis ordens 'ad','d','da',''
+			/** @constructor */
+			var eu = this;
+			var vOrd = (Ord?Ord:[]);
+			var obj = id;
+			//var sAt = -1;
+			//var col,colA = -1; //ordem anterior
+			if (typeof(obj)=='string') {
+				obj = document.getElementById(id);
+			}
+			//rows
+			//lert('rows len='+rows.length);
+			// header row add event click
+			//rows[0].addEventListener('click',click);
+			// init: cols order
+			var sStr = function(x){return x;};
+			var sNum = function(x){return x.localToNumber();};
+			var vImg = '⬍⬆⬇'
+			var runSort = false;
+			var oOrd;
+			init();
+			//*****************************************
+			function init() {
+				var rows = obj.getElementsByTagName('tr');
+				if (rows.length<3) return;
+				//store original position on row 'ord' attribute...
+				for (var i=1;i<rows.length;i++) {
+					rows[i].setAttribute('ord',i);
+				}
+				//add click options
+				feval(rows[0].childNodes.length,function(x){
+					vOrd[x]={pos:x
+						,col: rows[0].childNodes.item(x)
+						,op:vOrd[x]?vOrd[x]:'da'
+						,ord:-1
+						,dom: domObj({tag:'sup'
+							,targ:rows[0].childNodes.item(x)
+							,title:'click to change column order'
+							,'':vImg.substring(0,1)
+							,style:'padding:1px 3px;cursor:pointer;'
+							,ev_click: click
+							,pos:x
+						})
+					};
+				});
+			}
+			//*****************************************
+			function val(col,row) {
+				if ( vOrd[col].ord != -1 ) {
+					//sort by column 'col'
+					return vOrd[col].func(row.childNodes.item(col).textContent);
+				} else {
+					//original ord
+					return 1*row.getAttribute('ord');
+				}
+			}		
+			//*****************************************
+			// ordena
+			function click(ev) {
+				var ob = targetEvent(ev);
+				if (!ob) {
+					return;
+				}
+				obj = getParentByTagName(ob,'table');
+				//running sort?
+				if ( runSort !== false ) {
+					alertDev('ja rodando');
+					return;
+				}
+				//sinaliza ordenando.
+				runSort = new running(ob);
+				
+				var col = 1*ob.getAttribute('pos');
+				eu.sort(col);
+			}
+			this.sort = function(col) {
+				//lert('sort');
+				//lert(''+vOrd[col].col.innerHTML);
+				oOrd = vOrd[col];
+				var ob = oOrd.col.querySelector('sup');
+				oOrd.oClick = ob;
+				
+				try {
+					run(oOrd);
+				} catch (e) {
+					alertDev('erro '+erro(e));
+				}
+			}
+			//*****************************************
+			function runEnd() {
+				//para animação running
+				//lertDev('fim\n'+runSort);//.txt());
+				runSort.end();
+				runSort = false;
+				//desmarca ordem por outras colunas
+				aeval(vOrd,function(x){x.dom.innerHTML=vImg.substring(0,1);});
+				oOrd.oClick.innerHTML = vImg.substring(oOrd.ord+1,oOrd.ord+2)			
+			}
+			//*****************************************
+			function runT() {
+				function getArr(row) {
+					var r = [];
+					for (var i=0;i<row.childNodes.length;i++) {
+						var c = row.childNodes.item(i);
+						r[i] = [c.innerHTML,c.getAttribute('title')];
+					}
+					//lert(r.length+' '+r);
+					return r;
+				}
+				var vs = [];
+				var tb = obj.getElementsByTagName('tr');
+				for (var l=1;l<tb.length;l++) {
+					if (tb[l].childNodes.length<=oOrd.pos) {
+						break;
+					}
+					var v2 = val(oOrd.pos,tb[l]);
+					vs[l-1] = [v2,getArr(tb[l])];
+				}
+				//sort
+				vs.sort( (a,b) => {
+					return fSort(a[0],b[0],oOrd.ord==0);
+				});
+				for (var l=0;l<vs.length;l++) {
+					for (var i=0;i<tb[l+1].childNodes.length;i++) {
+						tb[l+1].childNodes.item(i).innerHTML = vs[l][1][i][0];
+						tb[l+1].childNodes.item(i).setAttribute('title',vs[l][1][i][1]);
+					}
+				}
+				runEnd();
+			}
+			//*****************************************
+			function run() {
+				//verify field type of column
+				if (!oOrd.func) {
+					oOrd.func = sNum;
+					var rows = obj.getElementsByTagName('tr');
+					for (var i=1;i<rows.length;i++) {
+						var x = rows[i].childNodes.item(oOrd.pos);
+						if (!x) {
+							break;//alertDev('ln='+i+' ord='+oOrd.pos+' '+x+'\n'+rows[i].innerHTML);
+						} else if ( x.textContent!='NaN' && isNaN(x.textContent.localToNumber()) ) {
+							oOrd.func = sStr;
+							break;
+						}
+					}
+					//lert('col num? '+(valueSort[col] == sNum));
+				}
+				//ordem atual da coluna
+				oOrd.ord++;
+				if (oOrd.ord>=oOrd.op.length) {
+					oOrd.ord = -1;
+				}
+				//setTimeout(runTask,100);
+				setTimeout(runT,100);
+			}
+		} //fim tabelaSort
+		,estat: function(Op) {
+			if (Lib.isStr(Op)) Op = {nome:Op};
+			this.op = Object.assign(
+				{nome:'?'}
+				,Op
+			);
+			//this.op.total = false;
+			//this.op = Op;
 			var eu=this;
-			var nome = Nome;
+			var nome = this.op.nome;
 			var v = {};
 			this.inc = inc;
 			this.inc1 = inc1;
@@ -19,6 +202,16 @@
 			this.decimal = 0; 
 			var vt = 0;
 			this.length=0; //total geral
+			addStyle();
+			function addStyle() {
+				Dom.addStyleId(
+					'TABLE._estat { border:2px double; }'
+					+'TABLE._estat TH,TABLE._estat TD { border-bottom:1px solid; padding:5px 2px; } '
+					+'TABLE._estat TD { text-align:right; } '
+					+'TABLE._estat TR.cab TH { text-align:right; } '
+					,'_estat'
+				);
+			}
 			this.toDomCross = function(delimit) {
 				let c = new DB.estat('cols');
 				let r = new DB.estat('rows');
@@ -29,10 +222,10 @@
 				}
 				c = c.getMatriz();
 				r = r.getMatriz();
-				let tb = Dom.obj('<table border=1>');
+				let tb = Dom.obj('<table class="_estat">');
 				//cabec
 				let rw = Dom.obj('<tr>',tb);
-				Dom.obj({tag:'th',targ:rw,'':'ch'});
+				Dom.obj({tag:'th',targ:rw,'':nome});
 				for (var y=0;y<c.length;y++) {
 					Dom.obj({tag:'th',targ:rw,'':c[y][0]});
 				}
@@ -120,6 +313,11 @@
 			//****************************************************
 			function getMatriz() {
 				var v1 = new Array(),i=0;
+				/*if (eu.op.total) {
+					if (eu.op.total===true) eu.op.total = '* total';
+					v[eu.op.total] = vt;
+				}
+				*/
 				for(var prop in v) {
 					v1[i++] = new Array(prop,v[prop],eu.percent(prop));
 				}
@@ -162,19 +360,27 @@
 				return r;
 			}
 			//****************************************************
+			if (!this.op.tr) this.op.tr = (v) => {
+				return '<tr>'
+					+'<td>'+v[0]+'</td>'
+					+'<td>'+v[1].format(this.decimal)+'</td>'
+					+'<td title="'+v[2]+'">'+v[2].format(2)+'</td>'
+					+'</tr>'
+				;
+			}
+			this.th = (t) => {
+				return '<tr><th>'+nome+' ('+t.format(0)+')'+'<th>vl<th>%';
+			}
+			//****************************************************
 			function toHtml(sort) {
 				sort = isNumber(sort)?sort:1;
 				var v1 = getMatriz();
-				v1.sort(function(a,b){return fSort(a[sort],b[sort],sort==1)});
-				var r = '<table class="estat" border=1>'
-					+'<tr><th>'+nome+'<th>vl<th>%'
+				v1.sort(function(a,b){return fSort(a[sort],b[sort],sort>0)});
+				var r = '<table class="_estat">'
+					+eu.th(v1.length)
 				;
 				for(var i=0;i<v1.length;i++) {
-					r += '<tr>'
-						+'<td>'+v1[i][0]
-						+'<td>'+v1[i][1].format(this.decimal)
-						+'<td>'+v1[i][2].format(2)
-					;
+					r += this.op.tr(v1[i]);
 				}
 				return r+'</table>';
 			}
@@ -197,9 +403,9 @@
 
 	};
 
-
 	var Lib = {
 		ini:{}
+		//antigo strPesq
 		,searchStr: function(Str) {
 			var eu = this;
 			//################################
@@ -294,7 +500,9 @@
 					.replaceAll(' |','|')
 				;
 				//mudou?
-				if (tx==a) return false;
+				if (tx==a) {
+					return false;
+				}
 				tx = a;
 				var v = tx.split(' ');
 				this.v = v;
@@ -834,6 +1042,25 @@
 	};
 
 	class Tempo {
+		static Dia = 24*60*60000;
+		static msDias(dias) {
+			return Tempo.Dia*dias;
+		}
+		static semana(dt) {
+			//começa no dom, procura primeiro dom do ano
+			let d = new Date(dt.getFullYear(),0,1);
+			if (d.getDay()!=0) {
+				d.setTime(d.getTime()+(7-d.getDay())*Tempo.Dia);
+			}
+			if (dt<d) {
+				//retorna o numero semana do ultimo dia ano anterior
+				return Tempo.semana(new Date(dt.getFullYear()-1,11,31));
+			}
+			return (dt.getFullYear())
+				+'@'+Lib.strZero( 1 + Math.floor((dt.getTime()-d.getTime())/Tempo.Dia/7),2)
+			;
+			
+		}
 		static tempo(msDif) {
 			//dif = dif/1000;
 			var ar = (x)=>{return Math.floor(x+0.5)};
@@ -1647,6 +1874,14 @@
 
 	const Dom = {
 		ini:{}
+		, espera: (destino)=> {
+			let r='<img src=imagens/espera.gif>';
+			if (destino) {
+				destino.appendChild(Dom.obj(r));
+			} else {
+				return r;
+			}
+		}
 		, getDPI: ()=>{
 			// 2023-09 retorna sempre 96x96 inclusive em celular.
 			//    no firefox e base chrome 
@@ -2666,7 +2901,7 @@
 		}
 	}
 
-
+//}
 
 /* metodo privado incompativer com machintoch?
 	class oRecursivo {

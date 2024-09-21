@@ -33,6 +33,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 //if (true) {
+
+	var tabelaSort = DB.tabelaSort;
+
 	var estat = DB.estat;
 
 	var html = Conv.fromHtml;
@@ -2039,200 +2042,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		}
 		return;
 	}
-	//***********************************************
-	//ADD cmd para ordenar a tabela conforme colunas.
-	// p1 é objeto dom table ou id de table
-	// p2 vetor strings para cada coluna com as possíveis ordens 'ad','d','da',''
-	/** @constructor */
-	function tabelaSort(id,Ord) {
-		var eu = this;
-		var vOrd = (Ord?Ord:[]);
-		var obj = id;
-		//var sAt = -1;
-		//var col,colA = -1; //ordem anterior
-		if (typeof(obj)=='string') {
-			obj = document.getElementById(id);
-		}
-		//rows
-		//lert('rows len='+rows.length);
-		// header row add event click
-		//rows[0].addEventListener('click',click);
-		// init: cols order
-		var sStr = function(x){return x;};
-		var sNum = function(x){return x.localToNumber();};
-		var vImg = '⬍⬆⬇'
-		var runSort = false;
-		var oOrd;
-		init();
-		//*****************************************
-		function init() {
-			var rows = obj.getElementsByTagName('tr');
-			if (rows.length<3) return;
-			//store original position on row 'ord' attribute...
-			for (var i=1;i<rows.length;i++) {
-				rows[i].setAttribute('ord',i);
-			}
-			//add click options
-			feval(rows[0].childNodes.length,function(x){
-				vOrd[x]={pos:x
-					,col: rows[0].childNodes.item(x)
-					,op:vOrd[x]?vOrd[x]:'da'
-					,ord:-1
-					,dom: domObj({tag:'sup'
-						,targ:rows[0].childNodes.item(x)
-						,title:'click to change column order'
-						,'':vImg.substring(0,1)
-						,style:'padding:1px 3px;cursor:pointer;'
-						,ev_click: click
-						,pos:x
-					})
-				};
-			});
-		}
-		//*****************************************
-		function val(col,row) {
-			if ( vOrd[col].ord != -1 ) {
-				//sort by column 'col'
-				return vOrd[col].func(row.childNodes.item(col).textContent);
-			} else {
-				//original ord
-				return 1*row.getAttribute('ord');
-			}
-		}		
-		//*****************************************
-		// ordena
-		function click(ev) {
-			var ob = targetEvent(ev);
-			if (!ob) {
-				return;
-			}
-			obj = getParentByTagName(ob,'table');
-			//running sort?
-			if ( runSort !== false ) {
-				alertDev('ja rodando');
-				return;
-			}
-			//sinaliza ordenando.
-			runSort = new running(ob);
-			
-			var col = 1*ob.getAttribute('pos');
-			eu.sort(col);
-		}
-		this.sort = function(col) {
-			//lert('sort');
-			//lert(''+vOrd[col].col.innerHTML);
-			oOrd = vOrd[col];
-			var ob = oOrd.col.querySelector('sup');
-			oOrd.oClick = ob;
-			
-			try {
-				run(oOrd);
-			} catch (e) {
-				alertDev('erro '+erro(e));
-			}
-		}
-		//*****************************************
-		function runEnd() {
-			//para animação running
-			//lertDev('fim\n'+runSort);//.txt());
-			runSort.end();
-			runSort = false;
-			//desmarca ordem por outras colunas
-			aeval(vOrd,function(x){x.dom.innerHTML=vImg.substring(0,1);});
-			oOrd.oClick.innerHTML = vImg.substring(oOrd.ord+1,oOrd.ord+2)			
-		}
-		//*****************************************
-		function runT() {
-			function getArr(row) {
-				var r = [];
-				for (var i=0;i<row.childNodes.length;i++) {
-					var c = row.childNodes.item(i);
-					r[i] = [c.innerHTML,c.getAttribute('title')];
-				}
-				//lert(r.length+' '+r);
-				return r;
-			}
-			var vs = [];
-			var tb = obj.getElementsByTagName('tr');
-			for (var l=1;l<tb.length;l++) {
-				if (tb[l].childNodes.length<=oOrd.pos) {
-					break;
-				}
-				var v2 = val(oOrd.pos,tb[l]);
-				vs[l-1] = [v2,getArr(tb[l])];
-			}
-			//sort
-			vs.sort( (a,b) => {
-				return fSort(a[0],b[0],oOrd.ord==0);
-			});
-			for (var l=0;l<vs.length;l++) {
-				for (var i=0;i<tb[l+1].childNodes.length;i++) {
-					tb[l+1].childNodes.item(i).innerHTML = vs[l][1][i][0];
-					tb[l+1].childNodes.item(i).setAttribute('title',vs[l][1][i][1]);
-				}
-			}
-			runEnd();
-		}
-		//*****************************************
-		function run() {
-			//verify field type of column
-			if (!oOrd.func) {
-				oOrd.func = sNum;
-				var rows = obj.getElementsByTagName('tr');
-				for (var i=1;i<rows.length;i++) {
-					var x = rows[i].childNodes.item(oOrd.pos);
-					if (!x) {
-						break;//alertDev('ln='+i+' ord='+oOrd.pos+' '+x+'\n'+rows[i].innerHTML);
-					} else if ( x.textContent!='NaN' && isNaN(x.textContent.localToNumber()) ) {
-						oOrd.func = sStr;
-						break;
-					}
-				}
-				//lert('col num? '+(valueSort[col] == sNum));
-			}
-			//ordem atual da coluna
-			oOrd.ord++;
-			if (oOrd.ord>=oOrd.op.length) {
-				oOrd.ord = -1;
-			}
-			//setTimeout(runTask,100);
-			setTimeout(runT,100);
-		}
-		/*****************************************
-		// sort task - Bubble sort.
-		// toDo - Quicksort
-		function runTask() {
-			runSort.inc('task');
-			//lert('runTask');
-			var cont = false;
-			//pega lista de linha toda vez, muda
-			var t =obj.getElementsByTagName('tr');
-			//bjNav(t[1]);
-			//lert('t='+t.length);
-			for (var l=2;l<t.length;l++) {
-				var v2 = val(oOrd.pos,t[l]);
-				var v1 = val(oOrd.pos,t[l-1]);
-				//trocar
-				if (oOrd.ord==-1 || oOrd.op.substring(oOrd.ord,oOrd.ord+1)=='a') {
-					var f = v2<v1;
-				} else {
-					var f = v2>v1;
-				}
-				//swap
-				if (f) {
-					t[l-1].parentNode.insertBefore(t[l],t[l-1]);
-					runSort.inc('swap');
-					cont = true;
-				}
-			}
-			if (!cont) {
-				runEnd();
-			} else {
-				setTimeout(runTask,22);
-			} 
-		}
-		*/
-	} //fim tabelaSort
 	
 	//***********************************************
 	//monta  banco de dados estilo tabela com estrutura 'fixa', mas
@@ -2650,6 +2459,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 						r[vc] = [ur];
 					}
 				} else if (uniq) {
+					if (uniq!==true) {
+						continue;
+					}
 					alert(erro('index: error, duplicate value of key'
 						+'\ncampo('+nomeCampo+')'
 						+'\nval('+vc+')'
@@ -3210,8 +3022,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 					}
 				});
 				if (er.length!=0) {
-					alert('ERRO addTxt, struct db different '+er
-						+'\n\n'+erro()
+					throw new Error('ERRO addTxt, struct db different'
+						+'\n\n>>er='+er
+						+'\n\n>>vet='+vet
 					);
 					return false;
 				}

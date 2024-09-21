@@ -15,7 +15,7 @@
   
 */
 
-window.addEventListener('load',() => {
+setTimeout(() => {
 	var jsDir = '/js';
 	var head; 
 	//vetor apps: classe servidor pode criar novas apps na win
@@ -68,8 +68,9 @@ window.addEventListener('load',() => {
 	//		acessório.
 	function ap(AppProp) {
 		var eu = this;
+		Deb.log('appProp',AppProp);
 		var appPr = AppProp?AppProp:{};
-
+		appPr.L = this;
 		//if (AppProp) setTimeout(()=>{
 		//ultimo js
 		var nom = appPr.name;
@@ -206,6 +207,7 @@ window.addEventListener('load',() => {
 	// load e chama func informada
 	function loadTxt(url,func,app) {
 		var xhr = new XMLHttpRequest();
+		xhr.url = url;
 		xhr.onreadystatechange = (a,b,tx) => {
 			if (xhr.readyState === XMLHttpRequest.DONE) {
 				if (trimm(xhr.responseText)=='-*_login_*-') {

@@ -73,6 +73,11 @@ function verEval(ob) {
 	var v = document.getElementsByTagName('textarea');
 	var al = v[1];
 	var ev = v[0].value;
+	if (ev.charAt(0)=='<') {
+		//html
+		document.getElementsByTagName('td')[3].innerHTML = ev;
+		return;
+	}
 	if (ob && (ob.name=='clear'||ob.type=='textarea')) {
 		document.getElementsByTagName('td')[3].innerHTML = '';
 		al.value='';

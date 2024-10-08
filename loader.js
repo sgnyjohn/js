@@ -362,9 +362,16 @@ setTimeout(() => {
 	//****************************************************
 	// carregou todos os JS, monta html e INIT app
 	function end_loader() {
+		let x = document.querySelector('html');
+		if (appProp.lang || !x.getAttribute('lang')) {
+			x.setAttribute('lang',appProp.lang?appProp.lang:'pt-BR');
+		}
 		//eb('head='+h.innerHTML);
 		//h.innerHTML = ''; // 👍
-		ret(head,'title').innerHTML = (appProp.title?appProp.title:appProp.name);
+		//lert('pedido ok');
+		ret(head,'title').innerHTML = (appProp.title?appProp.title:appProp.name)
+			+' - '+(new Lib.pedido()).host.leftAt('.').toUpperCase()
+		;
 		Dom.obj({tag:'meta','http-equiv':"Content-Type",content:"text/html; charset=UTF-8",targ:head});
 		// problema q objetos não são reajustados ? zoom apenas fonte ?
 		// https://developer.mozilla.org/en-US/docs/Web/HTML/Viewport_meta_tag
@@ -373,6 +380,7 @@ setTimeout(() => {
 			Dom.obj({tag:'link',rel:"shortcut icon",href:appProp.favicon,targ:head});
 			Dom.obj({tag:'link',rel:"icon",href:appProp.favicon,targ:head});
 		}
+
 		if (appProp.css) {
 			appProp.css = (typeof(appProp.css)=='object'&&appProp.css.length?appProp.css:[appProp.css]);
 			Lib.aeval(appProp.css,(cs)=>{

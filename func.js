@@ -10,6 +10,10 @@
 	var IMG = {
 		ini:{}
 		,espera:''
+		,b3:()=>{
+			let src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABhGlDQ1BJQ0MgcHJvZmlsZQAAKJF9kT1Iw0AYht+milIqInYQcchQneyiIrrVKhShQqgVWnUwufQPmjQkKS6OgmvBwZ/FqoOLs64OroIg+APi7OCk6CIlfpcUWsR4x3EP733vy913gNCoMM3qigOabpvpZELM5lbFnleEaA4giFmZWcacJKXgO77uEeD7XYxn+df9OfrUvMWAgEgcZ4ZpE28QT2/aBud94ggrySrxOfG4SRckfuS64vEb56LLAs+MmJn0PHGEWCx2sNLBrGRqxFPEUVXTKV/Ieqxy3uKsVWqsdU/+wnBeX1nmOq0RJLGIJUgQoaCGMiqwEaNdJ8VCms4TPv5h1y+RSyFXGYwcC6hCg+z6wf/gd2+twuSElxROAN0vjvMxCvTsAs2643wfO07zBAg+A1d6219tADOfpNfbWvQI6N8GLq7bmrIHXO4AQ0+GbMquFKQlFArA+xl9Uw4YvAVCa17fWuc4fQAy1KvUDXBwCIwVKXvd5929nX37t6bVvx+P3nKyeDrdEgAAAAZiS0dEADUANQA15JFv0QAAAAlwSFlzAAAuIwAALiMBeKU/dgAAAAd0SU1FB+gKChEMCkJKpN8AAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAACUklEQVRYw+2WPWgUQRiGn7m7+HNCNBJFmQuCjaIQCNqlEiFiEbQQCwkWliJYOEQEwTJIBkQQQVQ0IlYGNFaHCRZiI4KgIqIW/mTBdB5yuWju9rOZvWw2a3J7cU9BX9jim92deeb7m4F/XaplK2mzO6PUcV+kBFzEsx8Aci1afB0w4YtMAR3AXqB7DkCbq0BX5Lc7ePZWgkX2AycjozWgH/gBHAbWAOeA9cEHgQf2xQA8TbjPgpsnCqDw7DRQRJsbwM7w3OEQzAJHAHH2m4QAD4BDIfsSsMF5ZxdwBpgAVgAH4gB8YBTPSlNx9uwXYDQUkvN1AHgNdAKX3QaH4wDmqW3LYH626q9cYtmvDQF7toI2e4BtwExQAYsCKLgCDCwx9QtVMIMyaYsNQEhcWDPLLLBuEcbQpq/ZCTIJutU4UHTPQ1dauKS6gDbZZgAaakQqo6R9de5g6e1QuT5WMMdEuO7MHcBW4F0qHoiTCM8jQxtT8wBAeaZaQJtpZ3YCQ6HXFaV4JWkB+L4of/HGdF8mbSm1JGxAvWjTkV4SKhDhnuvtgXpc4gF0KcUpgbMpAShpz+cGwlWANpuB90DeJWUfTQAsJwRT7gALlF4fEBG+Varb0aYCkM2qVbWaHAXWhj77nCIASkSe1Q/52oKCm3fCtboKvgMn8OyT3+oBX2Q8kvVxegncxbMfm6X/JUD10/AIMJL2fTXDH1bYA23AY7QJ7Jt49lqCW3E/cDo8kgRAOW/0ht49SriZTZH/g3tmQwA9MY2knBDgNjC2oDw9W+O//mb9BAxMsz+GbYAtAAAAAElFTkSuQmCC';
+			return '<img src="'+src+'"/>'
+		}
 		,googleFin:()=>{
 			let src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACNElEQVR4AWOgBIyC////M5quDLMzWxESCsMmq0L9fDencdHFAaarQitMVgT/R8emK0OO0cUBQIvW4XDAH6paNOqAUQf83ctS8mcv6ypkDBKjiwP+72Gx/b2H5T827LnK+yDNHfBnL1soLgf4r/Y4SXsH7GMLG+EO2M8WTq4D5IrfakmXvgrFhuniAJWGt3zSxS+PSxW/+I+OMSx65Wra9trZ9NcrZ9P/CGz2/GuDXCO5DoA5AmjhfYIOgFmOjt+F6x5EtvTPHtaZQPwInwNMVoYchpkrVfqyhKgQgFqI6YBQ3aNwB+xjawSXDcf4hP7sYdkCcQCm5Q6rQnlA6mRKX5bBLKTcAXvZmtEbI+6rfQtAwQ0P+hUhhxCWv6pAt1S65OV5UJog3QH72FqREtUeYCpOQNQHYXYmK0KeAh1ywG1nLDdITLrkVSW65UB952QaPgrBEibRDnjjZ1yJkqIRvllg3PAf3PSyWhcrhrD8RTVGkJe8PAuyHDlhEuUAYMJshGkAWngM0+AXV0F5HWYGUE0tZny/PCNX8UGQYH7H8LmLeTM2n2NxxFdQlAB9WU+G5QiAarlZC7rlJOOSF6cVGt4LgMwhyQGgAgmr5Yi4nyFd/OIRPsuB6eAUzHLSHOBi3o7PcpmSlw0geVCCAlqyBavlxS9OKpW/42cgFbx2NuskZDl6OQCM91Ig/o3k8xNgy8kFhC3HBFLlL61AUQLSB85e5AJc1ads+Ut3fHpgUUKu5aMAALwE5ooB9hj6AAAAAElFTkSuQmCC';
 			return '<img src="'+src+'"/>'
@@ -18,6 +22,80 @@
 
 	var DB = {
 		ini:{}
+		//create indexedDB not async
+		//localStorage não, IndexedDB sim.
+		// https://developer.mozilla.org/pt-BR/docs/Web/API/IndexedDB_API
+		// https://hacks.mozilla.org/2010/06/comparing-indexeddb-and-webdatabase/
+		//		o exemplo acima tem vários erros
+		// https://youtu.be/1zGYDeKmIAA?si=GC_5gEpRkrHN0ytA&t=1215
+		// 
+		,DB:class {
+			db;
+			add(tb,o) {
+				//let ch = o[?];
+				let tr = this.db.transaction([tb],'readwrite');
+				let t = tr.objectStore(tb);
+				return t.add(o);
+			}
+			async addORput(tb,o) {
+				let tr = this.db.transaction([tb],'readwrite');
+				let t = tr.objectStore(tb);
+				let ch = o[t.keyPath];
+				let rqr = this.get(tb,ch);
+				rqr.onsuccess = () => {
+					if (rqr.result) {
+						this.put(tb,o);
+					} else {
+						this.add(tb,o);
+					}
+				}
+				//nada retorna pois faz dois pedidos
+			}
+			get(tb,ch) {
+				let tr = this.db.transaction([tb],'readonly');
+				let t = tr.objectStore(tb);
+				let r = t.get(ch);
+				return r;
+			}
+			put(tb,o) {
+				let tr = this.db.transaction([tb],'readwrite');
+				let t = tr.objectStore(tb);
+				return t.put(o);
+			}
+			async open(version) {
+				let rq = window.indexedDB.open(this.name,version);
+				rq.onsuccess = () => {
+					this.db = rq.result;
+				}
+				rq.onupgradeneeded = () => {
+					/* define what data items the objectStore will contain
+						objectStore.createIndex("hours", "hours", { unique: false });
+						objectStore.createIndex("minutes", "minutes", { unique: false });
+						objectStore.createIndex("day", "day", { unique: false });
+						objectStore.createIndex("month", "month", { unique: false });
+						objectStore.createIndex("year", "year", { unique: false });
+						objectStore.createIndex("notified", "notified", { unique: false });
+					*/
+					let db = rq.result;
+					this.db = db;
+					//Deb.log('DB.DB criar tabelas '+eu.tabs);
+					for (var i=0;i<this.tabs.length;i++) {
+						let v = this.tabs[i];
+						if (!db.objectStoreNames.contains(v[0])) { //se não existe cria tabela.
+							db.createObjectStore(v[0],{keyPath:v[1]})
+						}
+					}
+				}
+			}
+			static deleteDB(name) {
+				//Deb.log('DB.DB.deleteDB '+name);
+				return window.indexedDB.deleteDatabase(name);
+			}
+			constructor(name,tabs) {
+				this.tabs = tabs;
+				this.name = name;
+			}
+		}
 		,sortObj: (obj,func)=>{
 			let v = [];
 			aeval(obj,(o)=>{v.push(o)});
@@ -147,7 +225,7 @@
 				}
 				//sort
 				vs.sort( (a,b) => {
-					return fSort(a[0],b[0],oOrd.ord==0);
+					return Lib.fSort(a[0],b[0],oOrd.ord==0);
 				});
 				for (var l=0;l<vs.length;l++) {
 					for (var i=0;i<tb[l+1].childNodes.length;i++) {
@@ -270,10 +348,10 @@
 				//ordena descendente
 				if (ord) {
 					//ordena valor
-					v1.sort(function(a,b){return fSort(a[1],b[1],desc)});
+					v1.sort(function(a,b){return Lib.fSort(a[1],b[1],desc)});
 				} else {
 					//ordena chave
-					v1.sort(function(a,b){return fSort(a[0],b[0],desc)});
+					v1.sort(function(a,b){return Lib.fSort(a[0],b[0],desc)});
 				}
 				//calcula total
 				//var t = 0; aeval(v1,function(v,i) { t+=v[1]; });
@@ -321,14 +399,14 @@
 				for(var prop in v) {
 					v1[i++] = new Array(prop,v[prop],eu.percent(prop));
 				}
-				v1.sort(function(a,b){return fSort(a[0],b[0])});
+				v1.sort(function(a,b){return Lib.fSort(a[0],b[0])});
 				return v1;
 			}
 			//****************************************************
 			this.toOptions = function() {
 				var r = '';
 				var v1 = getMatriz();
-				v1.sort(function(a,b){return fSort(a[0],b[0])});
+				v1.sort(function(a,b){return Lib.fSort(a[0],b[0])});
 				for(var i=0;i<v1.length;i++) {
 					r += '<option>'+v1[i][0]+' ('+v1[i][1].format(this.decimal)+')';
 				}
@@ -349,7 +427,7 @@
 			function toTxt() {
 				var v1 = getMatriz();
 				var r = 'palavras: '+v1.length+' ocorrencias: '+vt+'\n';
-				v1.sort(function(a,b){return fSort(b[1],a[1])});
+				v1.sort(function(a,b){return Lib.fSort(b[1],a[1])});
 				for(var i=0;i<v1.length;i++) {
 					r += v1[i][0]
 						+'\t'+v1[i][1].format(this.decimal)
@@ -375,7 +453,7 @@
 			function toHtml(sort) {
 				sort = isNumber(sort)?sort:1;
 				var v1 = getMatriz();
-				v1.sort(function(a,b){return fSort(a[sort],b[sort],sort>0)});
+				v1.sort(function(a,b){return Lib.fSort(a[sort],b[sort],sort>0)});
 				var r = '<table class="_estat">'
 					+eu.th(v1.length)
 				;

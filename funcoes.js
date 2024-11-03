@@ -2118,10 +2118,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		}
 		//*********************************************
 		// retorna tex do bd
-		this.csv = function() {
+		this.csv = function(fFiltro) {
 			var tx = eu.csvCab()+'\n';
 			eu.top();
 			while (eu.next()) {
+				if (fFiltro&&!fFiltro(eu)) continue;
 				tx += eu.csvLn()+'\n';
 			}
 			return tx;

@@ -27,11 +27,13 @@ setTimeout(() => {
 	var apps = {};
 	var jsVet = {}; //js carregados
 	var onLogonA = [];
-	document.body.className += 
-		navigator.userAgent.toLowerCase().indexOf('mobile')!=-1
-		?'mobile'
-		:'desktop'
-	;
+	setTimeout(()=>{document.body.className = 
+		(navigator.userAgent.toLowerCase().indexOf('mobile')!=-1
+			?'mobile'
+			:'desktop'
+		)
+	},10);
+
 	function dev() {
 		return (''+window.location).indexOf('://dv.')!=-1;
 	}

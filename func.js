@@ -290,6 +290,19 @@
 					,'_estat'
 				);
 			}
+			if (!this.op.trCross) this.op.trCross = (mt,dsTab) => {
+				for (var x=0;x<mt.length;x++) {
+					rw = Dom.obj('<tr>',dsTab);
+					Dom.obj({tag:'th',targ:rw,'':mt[x][0]});
+					for (var y=1;y<mt[x].length;y++) {
+						Dom.obj({tag:'td',targ:rw,'':(mt[x][y]!='-'
+							?mt[x][y].format(this.decimal)
+							:mt[x][y]
+							)
+						});
+					}
+				}
+			}
 			this.toDomCross = function(delimit) {
 				let c = new DB.estat('cols');
 				let r = new DB.estat('rows');
@@ -302,19 +315,29 @@
 				r = r.getMatriz();
 				let tb = Dom.obj('<table class="_estat">');
 				//cabec
-				let rw = Dom.obj('<tr>',tb);
+				var rw = Dom.obj('<tr>',tb);
 				Dom.obj({tag:'th',targ:rw,'':nome});
+				Dom.obj({tag:'th',targ:rw,'':'tot'});
 				for (var y=0;y<c.length;y++) {
 					Dom.obj({tag:'th',targ:rw,'':c[y][0]});
 				}
+				//cria uma matriz
+				var mt=[];
 				for (var x=0;x<r.length;x++) {
-					let rw = Dom.obj('<tr>',tb);
-					Dom.obj({tag:'th',targ:rw,'':r[x][0]});
+					rw=[r[x][0],0];
+					mt.push(rw);
 					for (var y=0;y<c.length;y++) {
 						let vl = v[ c[y][0] + delimit + r[x][0] ];
-						Dom.obj({tag:'td',targ:rw,'':(vl?vl.format(this.decimal):'-')});
+						if (!Lib.isUnd(vl)) {
+							rw.push(vl);
+							rw[1] += vl;
+						} else {
+							rw.push('-');
+						}
 					}
 				}
+				mt.sort((a,b)=>{return Lib.fSort(b[1],a[1]);});
+				this.op.trCross(mt,tb);
 				return tb;
 			}
 			this.toDom = function(sort) {
@@ -408,7 +431,9 @@
 				var v1 = getMatriz();
 				v1.sort(function(a,b){return Lib.fSort(a[0],b[0])});
 				for(var i=0;i<v1.length;i++) {
-					r += '<option>'+v1[i][0]+' ('+v1[i][1].format(this.decimal)+')';
+					r += '<option value="'+v1[i][0]+'">'
+						+v1[i][0]+' ('+v1[i][1].format(this.decimal)+')'
+					;
 				}
 				return r;
 			}
@@ -555,7 +580,7 @@
 			// palavra inteira ia /(^|\s)ia(\s|$)/
 			function initUm(str) {
 				var r = [false,false];
-				str = trimm(str);
+				str = str.trimm();
 				r[0] = str.charAt(0)=='-'; //negativo, não?
 				if (r[0]) str = str.substring(1);
 				if (str.charAt(0)=='~') {
@@ -589,22 +614,9 @@
 				//vrNot = Array();
 				for (let e=0;e<v.length;e++) {
 					vr[e] = [];
-					aeval(v[e].split('|'),(el)=>{
+					Lib.aeval(v[e].split('|'),(el)=>{
 						vr[e].push(initUm(el));
 					});
-					/*v[i] = trimm(v[i]);
-					vrNot[i] = v[i].charAt(0)=='-'; //negativo, não?
-					if (vrNot[i]) v[i] = v[i].substring(1);
-					if (v[i].charAt(0)=='~') {
-						// prefixo palavra
-						vr[i] = new RegExp('([!-\/]|^|\\s)'+v[i].substring(1),'i');
-					} else if (v[i].charAt(0)=='^') {
-						//palavra
-						vr[i] = new RegExp('([!-\/:;]|^|\\s)'+v[i].substring(1)+'(\\s|$|[!-\/:;])','i');
-					} else {
-						vr[i] = new RegExp(rExpr(v[i]),'i');
-					}
-					*/
 				}
 				//lert('cond='+o+' '+vr);
 				return true;
@@ -1544,7 +1556,7 @@
 				s = escape(s);
 				return decodeURIComponent(s);
 			} catch (e) {
-				alert('erri frombase 64:'+e+'\n\n'+str);
+				alert('erro fromBase64:'+e+'\n\n'+str);
 			}
 			
 		}
@@ -2670,8 +2682,10 @@
 		Number.prototype._format_ = {};
 		Number.prototype.format = function(dec) {
 			if (! Number.prototype._format_[dec] ) {
+				var l = window.navigator.language;
+				//Deb.log('lang='+l);
 				Number.prototype._format_[dec] = new Intl.NumberFormat(
-					window.navigator.language
+					(l?l:'pt-BR')
 					, { useGrouping: true,maximumFractionDigits:dec,minimumFractionDigits:dec}
 				);
 				//bjNav(Number.prototype._format_);
@@ -2900,8 +2914,9 @@
 		}
 	}
 	if(!String.prototype.substrAtAt){  
-		String.prototype.substrAtAt = function(a,b){
+		String.prototype.substrAtAt = function(a,b,c){
 			if (Lib.isUnd(b)) b=a;
+			if (c) return a+this.substrAt(a).leftAt(b)+b;
 			return this.substrAt(a).leftAt(b);
 		}
 	}

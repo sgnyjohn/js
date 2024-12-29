@@ -2888,7 +2888,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		//		separado do nome de campos e bloco dados por linha vazia
 		//		cabeçalho arquivo pode conter campo 'delimiter' this.dlCol
 		this.addTxt = function(tx,op) {
-			if (vazio(tx)) return;
+			if (vazio(tx)) return false;
 			if (typeof(op)=='function') 
 				op = {filter:op};
 			//var x = palavraA(trimm(tx),this.dlRow);
@@ -2920,7 +2920,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 				aeval(x,function(e,i) { x[i] = e.split(eu.dlCol); });
 			}
 			//lert(x[0]);
-			this.addMatriz(x,op);
+			return this.addMatriz(x,op);
 		}
 		//*********************************************
 		// GET valor de um campo pelo nome, ret padrão, se number mov ponteiro mv ou reg nro
@@ -3010,8 +3010,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			if (!op) op = {};
 
 			if (typeof(vet)=='string') {
-				this.addTxt(vet,op);
-				return;
+				return this.addTxt(vet,op);
 			}
 			//compara estruturas
 			
@@ -3048,6 +3047,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 					if (op.onAddReg) op.onAddReg(vet[i]);
 				}
 			}
+			return true;
 		}
 		//*********************************************
 		// seta valor de um campo pelo nome 
@@ -3301,16 +3301,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		return "0123456789ABCDEF".substring(n,n+1);
 	}
 	//*******************************//
-	var _format_ = [];
+	//var _format_ = [];
 	function format(v,d) {
-		// cache of NumberFormat object
-		if (! _format_[d] ) {
-			_format_[d] = new Intl.NumberFormat(
-				window.navigator.language
-				, { useGrouping: true,maximumFractionDigits:d,minimumFractionDigits:d}
-			);
-		}
-		return _format_[d].format(v);
+		if (typeof(v)!='number') v = 1*v;
+		return v.format(d);
 	}
 	//*******************************************
 	// obj paineis que se escondem e aparecem onOver

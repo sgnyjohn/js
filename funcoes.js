@@ -34,6 +34,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 //if (true) {
 
+	var loader = Lib.loader
+
 	var tabelaSort = DB.tabelaSort;
 
 	var estat = DB.estat;
@@ -335,10 +337,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			param[a] = b;
 		}
 		//******************************
-		this.putJ = function(name,value) {
+		this.putJ = function(name,value,atualiza) {
 			//lert('set a='+a+' b='+b);
 			paramJ[name] = value;
-			if (this.updUrlJ) {
+			if (this.updUrlJ || atualiza === true) {
 				//lert('atalhoJ'+this.atalhoJ());
 				window.location = leftAt(''+window.location,'#')+this.atalhoJ();
 			}
@@ -762,51 +764,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	}
 	
 
-
-
-	/**************************
-	function setCss(obj,nomep,vlr) {
-		
-		var r = Array(obj,nomep,'');
-		//parametro 1 = array?
-		if (vazio(nomep)) {
-			//lert('o='+obj);
-			nomep = obj[1];
-			vlr = obj[2];
-			obj = obj[0];
-		}
-		try {
-			var v = palavraA(obj.style.cssText,';');
-			var ok = -1;
-			for (var i=0;i<v.length;i++) {
-				if (equals(trimm(v[i]),nomep+':')) {
-					ok = i;
-				}
-			}
-			if (ok==-1) {
-				if (vazio(vlr)) {
-					//nada
-				} else {
-					v[v.length] = nomep+':'+vlr;
-				}
-			} else {
-				r[2] = substrAt(v[ok],':');
-				if (false && vazio(vlr)) {
-					v.slice(ok,ok+1);
-				} else {
-					v[ok] = nomep+':'+vlr;
-				}
-			}
-			//lert(dPalavra(v,';')+';34342903');
-			obj.style.cssText = dPalavra(v,';')+';';
-		} catch (e) {
-			alert('funcoes.js setCss '+e+' obj='+obj+' e='+erro(e));
-		}
-		return r;
-	}
-	*/
-
-
 	//**********************************************
 	function clickCancel(ev) {
 		return !vazio(window.getSelection().toString()) //seleção
@@ -1192,34 +1149,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		return vt[vt.length-1];
 	}
 
-	/* substituir por window.devicePixelRatio
-	//***********************************************
-	function dpi() {
-		var eu = this;
-		var o = window._div_dpi;
-		if (!o) {
-			o = {}
-			window._div_dpi = o;
-			o.dv = domObj({tag:'div'
-				,style:'height:1in;left:-100%;position:absolute;'
-						+'top:-100%;width:1in;'
-				,targ:document.body
-				,'':'&nbsp;'
-			});
-		}
-		setTimeout(init);
-		function init() {
-			o.w = o.dv.offsetWidth;
-			o.h = o.dv.offsetHeight;
-			if (o.w==0||o.h==0) {
-				document.body.appendChild(o.dv);
-				setTimeout(init,100);
-			}
-		}
-		this.w = () => {return o.w;};
-		this.h = () => {return o.h;};
-	}
-	*/
 	//***********************************************
 	function domPos(dom) {
 		return getElementIndex(dom);
@@ -1603,7 +1532,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		return 0;
 	}
 
-	//**************************
+	/**************************
 	// load seq of XMLHttpRequest
 	// obj de obj -> 0 -> n {0:{url:'',callback:function,timeout},timeout:60,callback:?}
 	// usado em covid
@@ -1726,6 +1655,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			op[pos].timeEnd = ms();
 		}
 	} //loader
+	*/
 
 	//**************************
 	// sizeKey = first columns from matrice

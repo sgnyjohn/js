@@ -191,7 +191,7 @@
 				try {
 					run(oOrd);
 				} catch (e) {
-					alertDev('erro '+erro(e));
+					alertDev('erro '+Lib.erro(e));
 				}
 			}
 			//*****************************************
@@ -304,7 +304,8 @@
 					}
 				}
 			}
-			this.toDomCross = function(delimit) {
+			this.toDomCross = function(delimit,Sort) {
+				var sort = Lib.isNum(Sort)?Sort:1;
 				let c = new DB.estat('cols');
 				let r = new DB.estat('rows');
 				for (ch in v) {
@@ -337,7 +338,7 @@
 						}
 					}
 				}
-				mt.sort((a,b)=>{return Lib.fSort(b[1],a[1]);});
+				mt.sort((a,b)=>{return Lib.fSort(b[sort],a[sort],sort==0);});
 				this.op.trCross(mt,tb);
 				return tb;
 			}
@@ -426,6 +427,9 @@
 				v1.sort(function(a,b){return Lib.fSort(a[0],b[0])});
 				return v1;
 			}
+			this.getMatriz = () => {
+				return getMatriz();
+			}
 			//****************************************************
 			this.toOptions = function() {
 				var r = '';
@@ -476,8 +480,9 @@
 				return '<tr><th>'+nome+' ('+t.format(0)+')'+'<th>vl<th>%';
 			}
 			//****************************************************
-			function toHtml(sort) {
-				sort = isNumber(sort)?sort:1;
+			function toHtml(Sort) {
+				let sort = Lib.isNum(Sort)?Sort:1;
+				//eb.log('sort '+Sort+' = '+sort);
 				var v1 = getMatriz();
 				v1.sort(function(a,b){return Lib.fSort(a[sort],b[sort],sort>0)});
 				var r = '<table class="_estat">'
@@ -509,6 +514,112 @@
 
 	var Lib = {
 		ini:{}
+		,loader:function(op) { /* load multiplas urls e após exec */
+			var eu = this;
+			//default
+			mergeOptions({timeout:30000,msegs:200,withCredentials:true,nTask:5,nTent:2,nvEnd:0},op);
+			for (var i=0;op[i];i++) {
+				op[i] = mergeOptions({timeout:op.timeout,nTent:op.nTent,nTentEx:0},op[i]);
+			}
+			if (i==0) {
+				eu.error = 'no task XMLHttpRequest informed {0:{},...}'
+				end(true);
+				return;
+			}
+			this.end = false;
+			setTimeout(next);			
+			//**************************
+			function newOReq(v) {
+				var oReq;
+				try {
+					var tp = 0;
+					if (typeof(XMLHttpRequest)=='object') {
+						//safari 2015
+						oReq = new XMLHttpRequest();
+						oReq.tp = 1;
+					} else if (typeof(XMLHttpRequest)=='function') {
+						oReq = new XMLHttpRequest();
+						oReq.tp = 2;
+					} else {
+						var b=true?"Microsoft.XMLHTTP":"Msxml2.XMLHTTP";
+						oReq = new ActiveXObject(b);
+						oReq.tp = 3;
+					}
+					//lert(tp);
+					//interdominios cookies...
+					try {
+						oReq.withCredentials = op.withCredentials;
+					} catch (e) {
+						alert('ss withCredentials');
+					}
+				} catch (e) {
+					alert('erro criando obj AJAX obj='+oReq+' er='+erro(e));
+				}
+				return oReq;		
+			}
+			//**************************
+			function end() {
+				//sim sem erro, verifica se
+				//		há callback executando
+				if (op.callback) {
+					op.callback(eu);
+				}
+			}
+			//**************************
+			function next() {
+				var nAt = 0;
+				var t = Tempo.ms();
+				for (var p=0;op[p];p++) {
+					var trf = op[p];
+					if (!trf.timeBegin) { //não iniciou ainda ou timeout
+						if (nAt>=op.nTask) break;
+						nAt++;
+						trf.nTentEx++;
+						var oReq = newOReq();
+						oReq.timeout = trf.timeout;
+						oReq.pos = p;
+						oReq.onload = (ev) => {
+							var rq = ev.target;
+							//onsole.log(ev,rq);
+							//lert('pos='+rq.pos);
+							if (rq.readyState != 4) {
+								return;
+							} else if (rq.status!=200) {
+								eu.error = 'httpStatus: '+rq.status
+									+'\readyState: '+rq.readyState
+									+'\nurl: '+op[rq.pos].url
+								;
+								op[rq.pos].timeEnd = Tempo.ms();
+							} else {
+								op[rq.pos].callback(rq.responseText,op[rq.pos].url);
+								op[rq.pos].timeEnd = Tempo.ms();
+							}
+						}
+						oReq.ontimeout = (ev)=>{
+							var rq = ev.target;
+							var ob = op[rq.pos];
+							if (ob.nTentEx<ob.nTent) {
+								//tentar novamente...
+								ob.timeBegin = 0;
+							} else {
+								alert('Lib.loader: timeout nv('+ob.nTentEx+') x='+ob.url);
+							}
+						}
+						oReq.open("get", trf.url, true);
+						oReq.send();
+						trf.oReq = oReq;
+						trf.timeBegin = Tempo.ms();
+					} else if ( !trf.timeEnd ) { //testa timeout
+						nAt++;
+					}
+				}
+				if (nAt==0) {
+					end();
+				} else {
+					setTimeout(next,op.msegs);
+				}
+			}
+		} //fim load
 		//antigo strPesq
 		,searchStr: function(Str) {
 			var eu = this;
@@ -566,18 +677,7 @@
 				}
 				return true;				
 			}
-			/*################################
-			this.pesq = function(s) {
-				if (tx=='') return true;
-				//var s = s1.toLowerCase();
-				for (var i=0;i<vr.length;i++) {
-					if ( vrNot[i] == vr[i].test(s) ) {
-						return false;
-					}
-				}
-				return true;
-			}
-			*/
+
 			// palavra inteira ia /(^|\s)ia(\s|$)/
 			function initUm(str) {
 				var r = [false,false];
@@ -708,16 +808,6 @@
 				}
 				return tx;
 			}
-			/*/################################
-			this.pesqi = function(s) {
-				for (var i=0;i<v.length;i++) {
-					if ( ! s.match(vri[i]) ) {
-						return false;
-					}
-				}
-				return true;
-			}*/
-			//################################
 			this.pesqm = function(s) {
 				var s1 = tiraAcentos(s).toLowerCase();
 				for (var i=0;i<v.length;i++) {
@@ -844,143 +934,6 @@
 				this.init(doc);
 			}
 		}
-		/*
-			//******************************
-			getHash() {
-				return param;
-			}
-			//getV = this.getHash;
-			//******************************
-			getHashJ() {
-				return paramJ;
-			}
-			//******************************
-			formToParam(ob,strParam) {
-				var alvo = getParentByTagName(ob,'form');
-				//if (!alvo) return;
-				for (var i=0;i<alvo.elements.length;i++) {
-					if (alvo.elements[i].name) {
-						//lert('i='+i+' ='+alvo.elements[i].name+"= v="+alvo.elements[i].value);
-						put(alvo.elements[i].name,alvo.elements[i].value);
-					}
-				}
-				if (strParam) {
-					var v = strParam.split('&');
-					for (var i=0;i<v.length;i++) {
-						var v1 = v[i].split('=');
-						if (v1.length==1) {
-							param[v1[0]] = null;
-						} else {
-							param[v1[0]] = v1[1];
-						}
-					}
-				}
-			}
-			//******************************
-			paramToForm(frm,duplica) {
-				for(var prop in param) {
-					if (param[prop]!=null) {
-						if (duplica || !frm[prop]) {
-							//frm.appendChild(input(prop,param[prop]));
-							alert('migra adv... func input não existe');
-						} else {
-							frm[prop].value = param[prop];
-						}
-					}
-				}
-			}
-			//******************************
-			host() {
-				return substrAtAt(this.url,'://','/');
-			}
-			//******************************
-			atalhoJ() {
-				var r = '';
-				for(var prop in paramJ) {
-					if (paramJ[prop]==null) {
-					} else if (typeof(paramJ[prop])!='object') {
-						r += '#'+prop+'='+encodeURIComponent(paramJ[prop]);
-					} else {
-						for(var p in paramJ[prop]) {
-							r += '#'+prop+'='+encodeURIComponent(paramJ[prop][p]);
-						}
-					}
-				}
-				//lert(troca(r,'&','\n')+' pg='+param['pg']);
-				return r;
-			}
-			//******************************
-			atalho() {
-				var r = '';
-				for(var prop in param) {
-					if (param[prop]==null) {
-					} else if (typeof(param[prop])!='object') {
-						//r += '&'+prop+'='+escape(param[prop]);
-						r += '&'+prop+'='+encodeURIComponent(param[prop]);
-					} else {
-						for(var p in param[prop]) {
-							//r += '&'+prop+'='+escape(param[prop][p]);
-							r += '&'+prop+'='+encodeURIComponent(param[prop][p]);
-						}
-					}
-				}
-				return this.url
-					+(r.length==0?'':'?'+r.substring(1))
-					+eu.atalhoJ()
-				;
-			}
-			//******************************
-			remove(ch) {
-				param[ch] = null;
-			}
-			//******************************
-			getNum(a,b) {
-				var r = ''+param[a]; //.localToNumber();
-				return isNaN(r)?b:1*r;
-			}
-			//******************************
-			get(a,b) {
-				var r = param[a];
-				if (vazio(r) && !nulo(b)) {
-					return b;
-				}
-				return r;
-			}
-			//******************************
-			getJ(a,b) {
-				var r = paramJ[a];
-				if (vazio(r) && !nulo(b)) {
-					return b;
-				}
-				return r;
-			}
-			//******************************
-			refresh() {
-				this.put('segs',ms());
-				doc.location = this.atalho();
-			}
-			//******************************
-			putNum(a,b) {
-				//lert('set a='+a+' b='+b);
-				param[a] = (''+b).localToNumber();
-			}
-			//******************************
-			put(a,b) {
-				//lert('set a='+a+' b='+b);
-				param[a] = b;
-			}
-			//******************************
-			putJ(name,value) {
-				//lert('set a='+a+' b='+b);
-				paramJ[name] = value;
-				if (this.updUrlJ) {
-					//lert('atalhoJ'+this.atalhoJ());
-					window.location = leftAt(''+window.location,'#')+this.atalhoJ();
-				}
-			}
-			//this.setJ = this.putJ;
-		} //fim pedido
-		*/
 		,load: (url,func) => {
 			var xhr = new XMLHttpRequest();
 			xhr.onreadystatechange = (a) => {
@@ -1054,7 +1007,7 @@
 					return false;
 				}
 			} catch (e) {
-				//lert('erro testando vazio(): '+erro(e)+' obj='+a);
+				//lert('erro testando vazio(): '+Lib.erro(e)+' obj='+a);
 				//objNav(e);
 				return true;
 			}		
@@ -1203,12 +1156,33 @@
 			}
 		}
 		static ms(datA) {
-			return (datA?datA:new Date()).getTime();
+			if (Lib.isStr(datA)) {
+				return Tempo.fromStr(datA).getTime();
+			} else if (datA) {
+				return datA.getTime();
+			} else {
+				return (new Date()).getTime();
+			}
 		}
 		static recente(d) {
 			return Tempo.dataSort(d);
 		}
 		static éHoje() {
+		}
+		static dataSortR(tempo,semHora) {
+			//fuso d.setTime( d.getTime() + d.getTimezoneOffset()*60*1000 );
+			//getDay = dia semana.
+			var d = Lib.vazio(tempo)?new Date():tempo;
+			if (typeof(tempo)=='string') {
+				d = Tempo.fromStr(tempo);
+			} else if (typeof(tempo)=='number') {
+				d = new Date(tempo);
+			}
+			return Lib.strZero(d.getFullYear(),4)+Lib.strZero(d.getMonth()+1,2)
+				+Lib.strZero(d.getDate(),2)
+				+(semHora?'':Lib.strZero(d.getHours(),2)
+					+Lib.strZero(d.getMinutes(),2)+Lib.strZero(d.getSeconds(),2)
+			);
 		}
 		static dataSort(tempo,semHora) {
 			//fuso d.setTime( d.getTime() + d.getTimezoneOffset()*60*1000 );
@@ -1788,7 +1762,7 @@
 				function fu(eu,o) {
 					if (o.hasAttributes && o.hasAttributes()) {
 						for (const a of o.attributes) {
-							if (',innerHTML,outerHTML,'.indexOf(a.name)==-1) {
+							if (',innerHTML,outerHTML,textContent,'.indexOf(a.name)==-1) {
 								var t = ''+a.value;
 								var p = t.indexOf('://');
 								if (p>-1&&p<10) {
@@ -1801,7 +1775,9 @@
 									//o.removeAttribute(a.name);
 									//o.setAttribute('_'+a.name,''+c);
 								} else if (p>-1&&a.name.toUpperCase()=='STYLE') {
+									Deb.log('STYLE:'+a.value);
 									a.value = eu.sanForce(a.value);
+									Deb.log('STYLE san:'+eu.sanForce(a.value));
 								}
 							}
 						}
@@ -1810,7 +1786,9 @@
 					}
 					//há ref no css?
 					if (o.tagName=='STYLE') {
+						//Deb.log('STYLE:'+a.value);
 						o.innerHTML = eu.sanForce(o.innerHTML+'');
+						//Deb.log('STYLE san:'+eu.sanForce(a.value));
 					}
 					//recursivo
 					let f = o.childNodes;
@@ -1995,13 +1973,13 @@
 					alert('parametro errado: passar objeto com:'
 						+'\nhtml or dom: conteúdo'
 						+'\nclick: envento on click'
-						+'\npW or pH: %/100 max w e h 0.8'
+						+'\npMaxW or pMaxH: %/100 max w e h 0.8'
 						+'\ncontainer: add container'
 						+'\nclass: class container'
 					);
 					return;
 				}
-				var op = Lib.optionsMerge({pW:0.8,pH:0.8,container:true,class:'pdr'},Op);
+				var op = Lib.optionsMerge({pMaxW:0.8,pMaxH:0.8,container:true,class:'pdr'},Op);
 				this.op = op;
 				
 				//style exists ?
@@ -2040,6 +2018,18 @@
 					f.addEventListener('click',op.click);
 				}
 				//*************************
+				this.full = function() {
+					var tw = window.innerWidth;//browse.getTX(document.body);
+					var two = browse.getTX(f);
+					styleSet(f,'width',tw+'px');
+					//limita algura
+					var th = window.innerHeight;//browse.getTY(window);
+					var tho = browse.getTY(f);
+					styleSet(f,'height',th+'px');
+					styleSet(f,'left','0');
+					styleSet(f,'top','0');
+				}
+				//*************************
 				this.destroy = ()=>{
 					this.hide();
 					Dom.remove(this.dom);
@@ -2066,16 +2056,16 @@
 					var two = browse.getTX(f);
 					//limita Largura ?
 					two = (two<1?eu.two:two)*1.05; //para o scroll
-					if (two>tw*op.pW) {
-						two = tw*op.pW;
+					if (two>tw*op.pMaxW) {
+						two = tw*op.pMaxW;
 					}
 					styleSet(f,'width',two+'px');
 					//limita algura
 					var th = window.innerHeight;//browse.getTY(window);
 					var tho = browse.getTY(f);
 					tho = (tho==0?eu.tho:tho);
-					if (tho>th*op.pH) {
-						tho = th*op.pH;
+					if (tho>th*op.pMaxH) {
+						tho = th*op.pMaxH;
 						styleSet(f,'height',tho+'px');
 					}			
 				}
@@ -2085,16 +2075,16 @@
 					var two = browse.getTX(f);
 					//limita Largura ?
 					two = (two<1?eu.two:two)*1.05; //para o scroll
-					if (two>tw*op.pW) {
-						two = tw*op.pW;
+					if (two>tw*op.pMaxW) {
+						two = tw*op.pMaxW;
 					}
 					styleSet(f,'width',two+'px');
 					//limita algura
 					var th = window.innerHeight;//browse.getTY(window);
 					var tho = browse.getTY(f);
 					tho = (tho==0?eu.tho:tho);
-					if (tho>th*op.pH) {
-						tho = th*op.pH;
+					if (tho>th*op.pMaxH) {
+						tho = th*op.pMaxH;
 						styleSet(f,'height',tho+'px');
 					}
 					styleSet(f,'left',(tw-two)/2+'px');
@@ -2476,8 +2466,13 @@
 		// param obj ou text+obj
 		, obj: (p,oo)=> {
 			var ret;
-			if (typeof(p)=='string' && p.charAt(0)=='<') {
-				ret = Dom.obj({tag:p.equals('<tr')?'table':'div','':p}).firstChild;
+			if (typeof(p)=='string') {
+				if (p.charAt(0)!='<') {
+					p = '<p>'+p+'</p>';
+				}
+				//eb.log(p,oo);
+				ret = Dom.obj({tag:p.equals('<tr')||p.equals('<td')?'table':'div','':p}).firstChild;
+				//eb.log(p,ret,oo);
 				if (oo) oo.appendChild(ret);
 				return ret;
 			}
@@ -2510,7 +2505,7 @@
 						try {
 							Lib.aeval(p[i],function(v){ret.appendChild(v);});
 						} catch (e) {
-							alert(Obj.toText(p[i])+'\n\n'+erro(e));
+							alert(Obj.toText(p[i])+'\n\n'+Lib.erro(e));
 						}
 					} else {
 						ret.innerHTML = ''+p[i];

@@ -70,7 +70,7 @@ setTimeout(() => {
 	//		acessório.
 	function ap(AppProp) {
 		var eu = this;
-		Deb.log('appProp',AppProp);
+		//eb.log('appProp',AppProp);
 		var appPr = AppProp?AppProp:{};
 		appPr.L = this;
 		//if (AppProp) setTimeout(()=>{
@@ -132,7 +132,7 @@ setTimeout(() => {
 		}
 		//****************************************************
 		this.load = function(url,post,app) {
-			deb(Tempo.ms()+' load '+url+' post='+post);
+			//eb('loader.load: url '+url+' post='+post+' ms='+Tempo.ms());
 			load(url,post,app?app:appPr);
 		}
 		//****************************************************
@@ -212,7 +212,7 @@ setTimeout(() => {
 		xhr.url = url;
 		xhr.onreadystatechange = (a,b,tx) => {
 			if (xhr.readyState === XMLHttpRequest.DONE) {
-				if (trimm(xhr.responseText)=='-*_login_*-') {
+				if (xhr.responseText.trimm()=='-*_login_*-') {
 					//guarda reload para após executar login
 					onLogon(loadTxt,this,[url,func,app]);
 					//lert(app.name+' tesesdef='+xhr.responseText+'\n\n'+url);
@@ -371,9 +371,6 @@ setTimeout(() => {
 		//eb('head='+h.innerHTML);
 		//h.innerHTML = ''; // 👍
 		//lert('pedido ok');
-		ret(head,'title').innerHTML = (appProp.title?appProp.title:appProp.name)
-			+' - '+(new Lib.pedido()).host.leftAt('.').toUpperCase()
-		;
 		Dom.obj({tag:'meta','http-equiv':"Content-Type",content:"text/html; charset=UTF-8",targ:head});
 		// problema q objetos não são reajustados ? zoom apenas fonte ?
 		// https://developer.mozilla.org/en-US/docs/Web/HTML/Viewport_meta_tag
@@ -402,6 +399,9 @@ setTimeout(() => {
 		} catch (e) {
 			alert('erro init app '+Obj.toText(appProp)+'\n\n'+Lib.erro(e));
 		}
+		ret(head,'title').innerHTML = (appProp.title?appProp.title:appProp.name)
+			+' - '+(new Lib.pedido()).host.leftAt('.').toUpperCase()
+		;
 	}
 	//****************************************************
 	// carrega 1 js...
@@ -467,6 +467,9 @@ setTimeout(() => {
 	//validar propiedades basicas
 	//  FALTA
 	head = ret(document,'head');
+	var tp = document.createElement('title');
+	tp.innerHTML = '... ⌛ aguarde, carregando ⌛ ...';
+	head.appendChild(tp);
 
 	
 	//carrega unico JS stripado ?

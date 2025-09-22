@@ -2004,11 +2004,72 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		this.dlCol = '\t';
 		var fileHead;
 		var idx = {};
+		var urAnt;
 		if (typeof(window)!='undefined') {
 			//var fs;
 		}
 		//*********************************************
+		// adiciona txt do tipo bdLog
+		this.addTxtBdLog = function(tx) {
+			//lert('tx='+tx);
+			/*
+				* colunas txt
+				* 0 - data mov (milisegundos)
+				* 1 - idUser responsável - * = adm
+				* 2 - id registro - se adm = idUser
+				* 3 - ... - [nomeCampo: valor,...]
+			*/
+			var idx={};
+			aeval(tx.trimm().split('\n'),(v)=>{
+				var v1 = v.split('\t');
+				if (v1[1]=='*') {
+					//adm ignorar
+				} else {
+					ur = idx[v1[2]];
+					if (!Lib.isNum(ur)) {
+						this.addReg();
+						this.set('key',v1[2]);
+						idx[v1[2]] = ur;
+					}
+					for (var i=3;i<v1.length;i++) {
+						var p = v1[i].indexOf(':');
+						//lert("sdfsdf "+v1[i].substring(0,p)+'=='+v1[i].substring(p+1));
+						this.set(v1[i].substring(0,p),v1[i].substring(p+1));
+					}
+				}
+			});
+		}
+		//*********************************************
+		// salva e recupera posicao
+		this.savePos = function() {
+			urAnt = ur;
+		}
+		this.restorePos = function() {
+			if (Lib.isUnd(urAnt)) {
+				alert('erro, não há posição a recuperar...');
+				return;
+			}
+			ur = urAnt;
+			urAnt = undefined;
+		}
+		//*********************************************
+		// goByKey
+		this.goByKey = function(key,vlr) {
+			var ix = idx[key];
+			if (!ix) {
+				ix = this.index(key,true);
+				idx[key] = ix;
+			}
+			var rg = ix[vlr];
+			if (Lib.isNum(rg)) {
+				ur = rg;
+				return true;
+			}
+			return false;
+		}
+		//*********************************************
 		// get com index - cria index 
+		// key pode ser function
 		this.getObjByKey = function(key,vlr) {
 			var ix = idx[key];
 			if (!ix) {
@@ -2019,7 +2080,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			var rg = ix[vlr];
 			//lert('rg='+rg+' '+Lib.isNum(rg));
 			if (typeof(rg)=='number') return this.getObj(rg);
-			return {};
+			return false;
 		}
 		//*********************************************
 		// cria objeto hash do registro
@@ -2382,7 +2443,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			var bur = ur; //guarda reg atual
 			this.top(); 
 			while (this.next()) {
-				var vc = this.get(nomeCampo);
+				var vc = Lib.isFun(nomeCampo)
+					?nomeCampo()
+					:this.get(nomeCampo)
+				;
 				if (!r[vc]) {
 					if (uniq) {
 						r[vc] = ur;
@@ -2755,19 +2819,29 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			return ret;
 		}
 		//*********************************************
-		this.init = function() {
+		this.goTop = function() {
 			ur = -1;
 		}
-		this.top = this.init;
+		this.top = this.goTop;
+		this.init = this.goTop;
 		//*********************************************
 		this.eof = function() {
 			return ur >= valores.length;
 		}
 		//*********************************************
-		this.next = function() {
-			ur++;
-			return ur < valores.length;
+		this.next = function(passo) {
+			if (!passo) passo = 1;
+			ur += passo;
+			return (passo>0
+				?ur < valores.length
+				:ur >= 0
+			);
 		}
+		//*********************************************
+		this.goEnd = function() {
+			ur = valores.length;
+		}
+		this.fim = this.bottom;
 		//*********************************************
 		// retorna txt 1a linha nome campos e o reguistros
 		this.getTxt = function() {
@@ -3016,11 +3090,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			} else if ( add && !nulo(valores[ur][pc]) ) {
 				//valor é string a += add 
 				valores[ur][pc] += ' '+trimm(''+Valor);
-			} else if (Lib.isNum(Valor)) {
-				valores[ur][pc] = Valor;
+			} else if (Lib.isStr(Valor)) {
+				valores[ur][pc] = trimm(''+Valor);
 			} else {
 				//valor qq type
-				valores[ur][pc] = trimm(''+Valor);
+				valores[ur][pc] = Valor;
 			}
 		}
 		//*********************************************

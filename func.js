@@ -8,23 +8,28 @@
 
 //if (true) {
 
-	var IMG = {
-		ini:{}
-		,espera:''
-		,b3:()=>{
-			let src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABhGlDQ1BJQ0MgcHJvZmlsZQAAKJF9kT1Iw0AYht+milIqInYQcchQneyiIrrVKhShQqgVWnUwufQPmjQkKS6OgmvBwZ/FqoOLs64OroIg+APi7OCk6CIlfpcUWsR4x3EP733vy913gNCoMM3qigOabpvpZELM5lbFnleEaA4giFmZWcacJKXgO77uEeD7XYxn+df9OfrUvMWAgEgcZ4ZpE28QT2/aBud94ggrySrxOfG4SRckfuS64vEb56LLAs+MmJn0PHGEWCx2sNLBrGRqxFPEUVXTKV/Ieqxy3uKsVWqsdU/+wnBeX1nmOq0RJLGIJUgQoaCGMiqwEaNdJ8VCms4TPv5h1y+RSyFXGYwcC6hCg+z6wf/gd2+twuSElxROAN0vjvMxCvTsAs2643wfO07zBAg+A1d6219tADOfpNfbWvQI6N8GLq7bmrIHXO4AQ0+GbMquFKQlFArA+xl9Uw4YvAVCa17fWuc4fQAy1KvUDXBwCIwVKXvd5929nX37t6bVvx+P3nKyeDrdEgAAAAZiS0dEADUANQA15JFv0QAAAAlwSFlzAAAuIwAALiMBeKU/dgAAAAd0SU1FB+gKChEMCkJKpN8AAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAACUklEQVRYw+2WPWgUQRiGn7m7+HNCNBJFmQuCjaIQCNqlEiFiEbQQCwkWliJYOEQEwTJIBkQQQVQ0IlYGNFaHCRZiI4KgIqIW/mTBdB5yuWju9rOZvWw2a3J7cU9BX9jim92deeb7m4F/XaplK2mzO6PUcV+kBFzEsx8Aci1afB0w4YtMAR3AXqB7DkCbq0BX5Lc7ePZWgkX2AycjozWgH/gBHAbWAOeA9cEHgQf2xQA8TbjPgpsnCqDw7DRQRJsbwM7w3OEQzAJHAHH2m4QAD4BDIfsSsMF5ZxdwBpgAVgAH4gB8YBTPSlNx9uwXYDQUkvN1AHgNdAKX3QaH4wDmqW3LYH626q9cYtmvDQF7toI2e4BtwExQAYsCKLgCDCwx9QtVMIMyaYsNQEhcWDPLLLBuEcbQpq/ZCTIJutU4UHTPQ1dauKS6gDbZZgAaakQqo6R9de5g6e1QuT5WMMdEuO7MHcBW4F0qHoiTCM8jQxtT8wBAeaZaQJtpZ3YCQ6HXFaV4JWkB+L4of/HGdF8mbSm1JGxAvWjTkV4SKhDhnuvtgXpc4gF0KcUpgbMpAShpz+cGwlWANpuB90DeJWUfTQAsJwRT7gALlF4fEBG+Varb0aYCkM2qVbWaHAXWhj77nCIASkSe1Q/52oKCm3fCtboKvgMn8OyT3+oBX2Q8kvVxegncxbMfm6X/JUD10/AIMJL2fTXDH1bYA23AY7QJ7Jt49lqCW3E/cDo8kgRAOW/0ht49SriZTZH/g3tmQwA9MY2knBDgNjC2oDw9W+O//mb9BAxMsz+GbYAtAAAAAElFTkSuQmCC';
-			return '<img src="'+src+'"/>'
-		}
-		,googleFin:()=>{
-			let src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACNElEQVR4AWOgBIyC////M5quDLMzWxESCsMmq0L9fDencdHFAaarQitMVgT/R8emK0OO0cUBQIvW4XDAH6paNOqAUQf83ctS8mcv6ypkDBKjiwP+72Gx/b2H5T827LnK+yDNHfBnL1soLgf4r/Y4SXsH7GMLG+EO2M8WTq4D5IrfakmXvgrFhuniAJWGt3zSxS+PSxW/+I+OMSx65Wra9trZ9NcrZ9P/CGz2/GuDXCO5DoA5AmjhfYIOgFmOjt+F6x5EtvTPHtaZQPwInwNMVoYchpkrVfqyhKgQgFqI6YBQ3aNwB+xjawSXDcf4hP7sYdkCcQCm5Q6rQnlA6mRKX5bBLKTcAXvZmtEbI+6rfQtAwQ0P+hUhhxCWv6pAt1S65OV5UJog3QH72FqREtUeYCpOQNQHYXYmK0KeAh1ywG1nLDdITLrkVSW65UB952QaPgrBEibRDnjjZ1yJkqIRvllg3PAf3PSyWhcrhrD8RTVGkJe8PAuyHDlhEuUAYMJshGkAWngM0+AXV0F5HWYGUE0tZny/PCNX8UGQYH7H8LmLeTM2n2NxxFdQlAB9WU+G5QiAarlZC7rlJOOSF6cVGt4LgMwhyQGgAgmr5Yi4nyFd/OIRPsuB6eAUzHLSHOBi3o7PcpmSlw0geVCCAlqyBavlxS9OKpW/42cgFbx2NuskZDl6OQCM91Ig/o3k8xNgy8kFhC3HBFLlL61AUQLSB85e5AJc1ads+Ut3fHpgUUKu5aMAALwE5ooB9hj6AAAAAElFTkSuQmCC';
-			return '<img src="'+src+'"/>'
-		}
-	}
 
 	var DB = {
 		ini:{}
+		,dbLog: class {
+			help() {
+				var c = ` No storange é armazenado modo texto,
+				onde cada linha é um movimento. há 2 tipos, administrativos (gerados storage)
+				ou de alteração de dados.
+				-	data(mili segundos)
+				- tipo
+				- usuário
+				- id registro
+				- alteração lista de
+					[ id campo: valor ] separados por tab
+				O lado storange/servidor registrará data tipo usuario
+				`
+			}
+			constructor(name,tabs) {
+			}
+		}
+		// localStorage não, IndexedDB sim.
 		//create indexedDB not async
-		//localStorage não, IndexedDB sim.
 		// https://developer.mozilla.org/pt-BR/docs/Web/API/IndexedDB_API
 		// https://hacks.mozilla.org/2010/06/comparing-indexeddb-and-webdatabase/
 		//		o exemplo acima tem vários erros
@@ -304,6 +309,39 @@
 					}
 				}
 			}
+			//****************************************************
+			// cria Noptions de uma key numérica (mesmo nro casos)
+			// retorna func filtro.
+			this.toOptionsN = function(nop) {
+				var r = '';
+				var mt = getMatriz();
+				//ordena pela vlr chave numerica
+				mt.sort(function(a,b){return Lib.fSort(1*a[0],1*b[0])});
+				var ac = 0;
+				var mi = 1*mt[0][0];
+				var mx = mi;
+				for (var i=0;i<=mt.length;i++) {
+					var fim = i==mt.length;
+					var vc = fim?0:1*mt[i][0];
+					if (Lib.isNaN(vc)||(!fim&&Lib.isUnd(mt[i][0]))) {
+						r += '<option value="['+mt[i][0]+']">'
+							+mt[i][0]+' ('+mt[i][1]+')'
+						;
+						continue;
+					} else if (ac>vt/nop||fim) {
+						r += '<option value="'+mi+','+mx+'">'
+							+mi.format(this.decimal)+' a '+mx.format(this.decimal)
+							+' ('+ac+')'
+						;
+						if (fim) break;
+						mi = vc;
+						ac = 0;
+					}
+					mx =  vc;
+					ac += mt[i][1];
+				}
+				return r;
+			}
 			this.toDomCross = function(delimit,Sort) {
 				var sort = Lib.isNum(Sort)?Sort:1;
 				let c = new DB.estat('cols');
@@ -347,6 +385,21 @@
 			}
 			this.get = (ch)=>{
 				return v[ch];
+			}
+			//****************************************************
+			this.toDb = (Sort)=>{
+				let sort = Lib.isNum(Sort)?Sort:1;
+				//eb.log('sort '+Sort+' = '+sort);
+				var v1 = getMatriz();
+				v1.sort(function(a,b){return Lib.fSort(a[sort],b[sort],sort>0)});
+				var db = new bancoDados(nome);
+				for(var i=0;i<v1.length;i++) {
+					db.addReg();
+					db.set('ch',v1[i][0]);
+					db.set('nv',v1[i][1]);
+					db.set('pr',v1[i][2]);
+				}
+				return db;
 			}
 			//****************************************************
 			this.getObj = function() { return v;	}	
@@ -488,6 +541,7 @@
 				var r = '<table class="_estat">'
 					+eu.th(v1.length)
 				;
+				//Deb.log(v1);
 				for(var i=0;i<v1.length;i++) {
 					r += this.op.tr(v1[i]);
 				}
@@ -526,7 +580,10 @@
 				end(true);
 				return;
 			}
+			eu.error = '';
 			this.end = false;
+			var inMs = Tempo.ms();
+			var inNv = 0;
 			setTimeout(next);			
 			//**************************
 			function newOReq(v) {
@@ -562,12 +619,16 @@
 				//sim sem erro, verifica se
 				//		há callback executando
 				if (op.callback) {
+					if (eu.error) {
+						console.log('Lib.loader: '+eu.error);
+					}
 					op.callback(eu);
 				}
 			}
 			//**************************
 			function next() {
 				var nAt = 0;
+				
 				var t = Tempo.ms();
 				for (var p=0;op[p];p++) {
 					var trf = op[p];
@@ -583,6 +644,7 @@
 							//onsole.log(ev,rq);
 							//lert('pos='+rq.pos);
 							if (rq.readyState != 4) {
+								alert(rq.readyState+'!=4 loader rq',rq)
 								return;
 							} else if (rq.status!=200) {
 								eu.error = 'httpStatus: '+rq.status
@@ -600,6 +662,7 @@
 							var ob = op[rq.pos];
 							if (ob.nTentEx<ob.nTent) {
 								//tentar novamente...
+								console.log('timeout na tent('+ob.nTentEx+'/'+ob.nTent+')');
 								ob.timeBegin = 0;
 							} else {
 								alert('Lib.loader: timeout nv('+ob.nTentEx+') x='+ob.url);
@@ -615,8 +678,19 @@
 				}
 				if (nAt==0) {
 					end();
-				} else {
+				} else if (Tempo.ms()-inMs<op.timeout) {
 					setTimeout(next,op.msegs);
+				} else {
+					//timeout GERAL
+					for (var p=0;op[p];p++) {
+						var trf = op[p];
+						if (trf.timeBegin==0) {
+							error += '\ntarefa url('+url+') tentada '+trf.nTentEx+' vezes !';
+						} else if (trf.timeEnd==0) {
+							error += '\ntarefa url('+url+') tentando há '+(Tempo.ms()-trf.timeBegin)+' milisegundos !';
+						}
+					}
+					end();
 				}
 			}
 		} //fim load
@@ -1042,6 +1116,7 @@
 		,isStr: (o)=>{return typeof(o)=='string';}
 		,isUnd: (o)=>{return typeof(o)=='undefined';}
 		,isObj: (o)=>{return typeof(o)=='object';}
+		,isNaN: (o)=>{return isNaN(o);}
 		,isNum: (str)=> {
 			if (typeof(str)!='number') {
 				str = (''+str).trimm();
@@ -1943,6 +2018,32 @@
 
 	const Dom = {
 		ini:{}
+		, fadeOut: (img,ms,fu)=>{
+			const nv=16;
+			var f = (n)=>{
+				//onsole.log(n,'out opacity',1/nv*n+0.005);
+				Dom.styleSet(img,'opacity',(1/nv*n+0.005));
+				if (n>0) {
+					setTimeout(()=>{f(n-1);},ms/nv);
+				} else if (fu) {
+					fu(img,ms,fu);
+				}
+			}
+			f(nv);
+		}
+		, fadeIn: (img,ms,fu)=>{
+			const nv=16;
+			var f = (n)=>{
+				//onsole.log(n,'in opacity',1/nv*n+0.005);
+				Dom.styleSet(img,'opacity',(1/nv*n+0.005));
+				if (n<nv) {
+					setTimeout(()=>{f(n+1);},ms/nv);
+				} else if (fu) {
+					fu(img,ms,fu);
+				}
+			}
+			f(0);
+		}
 		, espera: (destino)=> {
 			let r='<img src=imagens/espera.gif>';
 			if (destino) {
@@ -1968,6 +2069,7 @@
 		}
 		, dialog: function(Op) {
 				var eu = this;
+				var rsz = []; //cancela onResize ao hide.
 				var visible = false;
 				if (typeof(Op)!='object'||Op.tagName) {
 					alert('parametro errado: passar objeto com:'
@@ -1979,7 +2081,7 @@
 					);
 					return;
 				}
-				var op = Lib.optionsMerge({pMaxW:0.8,pMaxH:0.8,container:true,class:'pdr'},Op);
+				var op = Lib.optionsMerge({pMaxW:0.8,pMaxH:0.8,camada:0,container:true,class:'pdr'},Op);
 				this.op = op;
 				
 				//style exists ?
@@ -1987,7 +2089,7 @@
 				if (!document.getElementById(cl)) {
 					Dom.addStyleId('DIV.'+cl+' {'
 						+'position:fixed;' //xdisplay:none;xz-index:100;
-						+'z-index:10;'
+						+'z-index:100;'
 						+'background-color:var(--corFd);'//#f0f0f0;' //xborder:2px solid blue;'
 						+'overflow:auto;'
 						+'border-radius:7px;'
@@ -2003,6 +2105,9 @@
 					//cria
 					f = document.querySelector('.'+cl+'.'+op.class);
 					f = document.createElement('div');
+					if (op.camada!=0) {
+						Dom.styleSet(f,'z-index',100+op.camada);
+					}
 					f.className = cl+(op.class?' '+op.class:'');
 					//add in document
 					document.body.appendChild(f);
@@ -2018,16 +2123,27 @@
 					f.addEventListener('click',op.click);
 				}
 				//*************************
+				function onResize(fu) {
+					rsz.push(fu);
+					window.addEventListener('resize',fu);
+				}
+				this.onResize = onResize;
+				//*************************
 				this.full = function() {
-					var tw = window.innerWidth;//browse.getTX(document.body);
-					var two = browse.getTX(f);
-					styleSet(f,'width',tw+'px');
-					//limita algura
-					var th = window.innerHeight;//browse.getTY(window);
-					var tho = browse.getTY(f);
-					styleSet(f,'height',th+'px');
-					styleSet(f,'left','0');
-					styleSet(f,'top','0');
+					var resiz = ()=>{
+						var tw = window.innerWidth;//browse.getTX(document.body);
+						var two = browse.getTX(f);
+						Dom.styleSet(f,'width',tw+'px');
+						//limita algura
+						var th = window.innerHeight;//browse.getTY(window);
+						var tho = browse.getTY(f);
+						Dom.styleSet(f,'height',th+'px');
+						Dom.styleSet(f,'left','0');
+						Dom.styleSet(f,'top','0');
+					}
+					resiz();
+					onResize(resiz);
+					this.center();
 				}
 				//*************************
 				this.destroy = ()=>{
@@ -2071,24 +2187,28 @@
 				}
 				//*************************
 				this.reCenter = function() {
-					var tw = window.innerWidth;//browse.getTX(document.body);
-					var two = browse.getTX(f);
-					//limita Largura ?
-					two = (two<1?eu.two:two)*1.05; //para o scroll
-					if (two>tw*op.pMaxW) {
-						two = tw*op.pMaxW;
+					function rsz() {
+						var tw = window.innerWidth;//browse.getTX(document.body);
+						var two = browse.getTX(f);
+						//limita Largura ?
+						two = (two<1?eu.two:two)*1.05; //para o scroll
+						if (two>tw*op.pMaxW) {
+							two = tw*op.pMaxW;
+						}
+						Dom.styleSet(f,'width',two+'px');
+						//limita algura
+						var th = window.innerHeight;//browse.getTY(window);
+						var tho = browse.getTY(f);
+						tho = (tho==0?eu.tho:tho);
+						if (tho>th*op.pMaxH) {
+							tho = th*op.pMaxH;
+							Dom.styleSet(f,'height',tho+'px');
+						}
+						Dom.styleSet(f,'left',(tw-two)/2+'px');
+						Dom.styleSet(f,'top',(th-tho)/2+'px');
 					}
-					styleSet(f,'width',two+'px');
-					//limita algura
-					var th = window.innerHeight;//browse.getTY(window);
-					var tho = browse.getTY(f);
-					tho = (tho==0?eu.tho:tho);
-					if (tho>th*op.pMaxH) {
-						tho = th*op.pMaxH;
-						styleSet(f,'height',tho+'px');
-					}
-					styleSet(f,'left',(tw-two)/2+'px');
-					styleSet(f,'top',(th-tho)/2+'px');
+					onResize(rsz);
+					rsz();
 				}
 				//*************************
 				this.center = function(ev,fClick) {
@@ -2181,6 +2301,10 @@
 				}
 				//*************************
 				this.hide = function() {
+					aeval(rsz,(v)=>{
+						window.removeEventListener('resize',v);
+					});
+					rsz = [];
 					visible = false;
 					//guarda ultimo tamanho
 					eu.two = browse.getTX(f);
@@ -2374,12 +2498,13 @@
 		, isEvent: (o)=>{
 			return (o && o.target && o.type);
 		}
-		, styleSet: (dom,key,value)=>{
+		, styleSet: (dom,key,value,debug)=>{
+			if (debug) console.log(dom.style.cssText);
 			var o = Obj.fromText(dom.style.cssText);
 			if (o[key] == value) return false;
 			o[key] = value;//(!value?'':value);
-			dom.style.cssText = Obj.toText(o);
-			//051lert('ss1 d='+dom.style.cssText+'\n\nsf='+Obj.toText(o));
+			dom.style.cssText = Obj.toText(o,false,false,true);
+			if (debug) console.log(dom.style.cssText+'\n'+Obj.toText(o));
 			return true;
 		}
 		, stylePropOnOff: (dom,str)=>{
@@ -2565,7 +2690,10 @@
 			return r;
 		}
 		//**************************//
-		,toText: (obj,delimElem,delimValue)=>{
+		,toText: (obj,delimElem,delimValue,noUrl)=>{
+			var E=escape;
+			if (noUrl) E=(str)=>{return str;};
+			//lert(E);
 			delimElem = delimElem?delimElem:';'
 			delimValue = delimValue?delimValue:':'
 			let sd = '%'+delimElem+delimValue;
@@ -2573,13 +2701,13 @@
 			for (let k in obj) {
 				var o = obj[k];
 				try {
-					r += escape(k)
+					r += E(k)
 						+(Lib.isUnd(o)
 							?''
 							:delimValue
 								+(Lib.isFun(o)
 									?'function(?)'
-									:escape(''+o,sd)
+									:E(''+o,sd)
 								)
 						)
 						+delimElem
@@ -2989,6 +3117,21 @@
 			return r;
 		}
 	}
+
+	var IMG = {
+		ini:{}
+		,espera:''
+		,b3:()=>{
+			let src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABhGlDQ1BJQ0MgcHJvZmlsZQAAKJF9kT1Iw0AYht+milIqInYQcchQneyiIrrVKhShQqgVWnUwufQPmjQkKS6OgmvBwZ/FqoOLs64OroIg+APi7OCk6CIlfpcUWsR4x3EP733vy913gNCoMM3qigOabpvpZELM5lbFnleEaA4giFmZWcacJKXgO77uEeD7XYxn+df9OfrUvMWAgEgcZ4ZpE28QT2/aBud94ggrySrxOfG4SRckfuS64vEb56LLAs+MmJn0PHGEWCx2sNLBrGRqxFPEUVXTKV/Ieqxy3uKsVWqsdU/+wnBeX1nmOq0RJLGIJUgQoaCGMiqwEaNdJ8VCms4TPv5h1y+RSyFXGYwcC6hCg+z6wf/gd2+twuSElxROAN0vjvMxCvTsAs2643wfO07zBAg+A1d6219tADOfpNfbWvQI6N8GLq7bmrIHXO4AQ0+GbMquFKQlFArA+xl9Uw4YvAVCa17fWuc4fQAy1KvUDXBwCIwVKXvd5929nX37t6bVvx+P3nKyeDrdEgAAAAZiS0dEADUANQA15JFv0QAAAAlwSFlzAAAuIwAALiMBeKU/dgAAAAd0SU1FB+gKChEMCkJKpN8AAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAACUklEQVRYw+2WPWgUQRiGn7m7+HNCNBJFmQuCjaIQCNqlEiFiEbQQCwkWliJYOEQEwTJIBkQQQVQ0IlYGNFaHCRZiI4KgIqIW/mTBdB5yuWju9rOZvWw2a3J7cU9BX9jim92deeb7m4F/XaplK2mzO6PUcV+kBFzEsx8Aci1afB0w4YtMAR3AXqB7DkCbq0BX5Lc7ePZWgkX2AycjozWgH/gBHAbWAOeA9cEHgQf2xQA8TbjPgpsnCqDw7DRQRJsbwM7w3OEQzAJHAHH2m4QAD4BDIfsSsMF5ZxdwBpgAVgAH4gB8YBTPSlNx9uwXYDQUkvN1AHgNdAKX3QaH4wDmqW3LYH626q9cYtmvDQF7toI2e4BtwExQAYsCKLgCDCwx9QtVMIMyaYsNQEhcWDPLLLBuEcbQpq/ZCTIJutU4UHTPQ1dauKS6gDbZZgAaakQqo6R9de5g6e1QuT5WMMdEuO7MHcBW4F0qHoiTCM8jQxtT8wBAeaZaQJtpZ3YCQ6HXFaV4JWkB+L4of/HGdF8mbSm1JGxAvWjTkV4SKhDhnuvtgXpc4gF0KcUpgbMpAShpz+cGwlWANpuB90DeJWUfTQAsJwRT7gALlF4fEBG+Varb0aYCkM2qVbWaHAXWhj77nCIASkSe1Q/52oKCm3fCtboKvgMn8OyT3+oBX2Q8kvVxegncxbMfm6X/JUD10/AIMJL2fTXDH1bYA23AY7QJ7Jt49lqCW3E/cDo8kgRAOW/0ht49SriZTZH/g3tmQwA9MY2knBDgNjC2oDw9W+O//mb9BAxMsz+GbYAtAAAAAElFTkSuQmCC';
+			return '<img src="'+src+'"/>'
+		}
+		,googleFin:()=>{
+			let src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACNElEQVR4AWOgBIyC////M5quDLMzWxESCsMmq0L9fDencdHFAaarQitMVgT/R8emK0OO0cUBQIvW4XDAH6paNOqAUQf83ctS8mcv6ypkDBKjiwP+72Gx/b2H5T827LnK+yDNHfBnL1soLgf4r/Y4SXsH7GMLG+EO2M8WTq4D5IrfakmXvgrFhuniAJWGt3zSxS+PSxW/+I+OMSx65Wra9trZ9NcrZ9P/CGz2/GuDXCO5DoA5AmjhfYIOgFmOjt+F6x5EtvTPHtaZQPwInwNMVoYchpkrVfqyhKgQgFqI6YBQ3aNwB+xjawSXDcf4hP7sYdkCcQCm5Q6rQnlA6mRKX5bBLKTcAXvZmtEbI+6rfQtAwQ0P+hUhhxCWv6pAt1S65OV5UJog3QH72FqREtUeYCpOQNQHYXYmK0KeAh1ywG1nLDdITLrkVSW65UB952QaPgrBEibRDnjjZ1yJkqIRvllg3PAf3PSyWhcrhrD8RTVGkJe8PAuyHDlhEuUAYMJshGkAWngM0+AXV0F5HWYGUE0tZny/PCNX8UGQYH7H8LmLeTM2n2NxxFdQlAB9WU+G5QiAarlZC7rlJOOSF6cVGt4LgMwhyQGgAgmr5Yi4nyFd/OIRPsuB6eAUzHLSHOBi3o7PcpmSlw0geVCCAlqyBavlxS9OKpW/42cgFbx2NuskZDl6OQCM91Ig/o3k8xNgy8kFhC3HBFLlL61AUQLSB85e5AJc1ads+Ut3fHpgUUKu5aMAALwE5ooB9hj6AAAAAElFTkSuQmCC';
+			return '<img src="'+src+'"/>'
+		}
+	}
+
+
 
 //}
 

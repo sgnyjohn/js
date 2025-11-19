@@ -8,6 +8,710 @@
 
 //if (true) {
 
+	const Dom = {
+		ini:{}
+		, toolsBar: (op)=>{
+			Dom.addStyleId(`
+				.demo-btn {
+						display: inline-flex;
+						align-items: center;
+						justify-content: center;
+						background: rgba(255,255,255,0.1);
+						border: 2px solid rgba(255,255,255,0.2);
+						color: red;
+						padding: 7px 10px;
+						border-radius: 20px;
+						font-size: 20px;
+						cursor: pointer;
+						backdrop-filter: blur(10px);
+				}				
+			`,'toolsBar');
+			var tb = {
+				"play": { "nome": "Tocar", "caractere": "▷", "unicode": "U+25B8", "funcao": "Controles Básicos" },
+				"pause": { "nome": "Pausar", "caractere": "‖", "unicode": "U+2016", "funcao": "Controles Básicos" },
+				"stop": { "nome": "Parar", "caractere": "■", "unicode": "U+25A0", "funcao": "Controles Básicos" },
+				"rewind": { "nome": "Retroceder", "caractere": "≪", "unicode": "U+226A", "funcao": "Controles Básicos" },
+				"forward": { "nome": "Avançar", "caractere": "≫", "unicode": "U+226B", "funcao": "Controles Básicos" },
+				"next": { "nome": "Próximo", "caractere": "⫸", "unicode": "U+2AF8", "funcao": "Navegação" },
+				"previous": { "nome": "Anterior", "caractere": "⫷", "unicode": "U+2AF7", "funcao": "Navegação" },
+				"volume up": { "nome": "Aumentar Volume", "caractere": "🔊", "unicode": "U+1F50A", "funcao": "Volume" },
+				"volume down": { "nome": "Diminuir Volume", "caractere": "🔉", "unicode": "U+1F509", "funcao": "Volume" },
+				"mute": { "nome": "Silenciar", "caractere": "🔇", "unicode": "U+1F507", "funcao": "Volume" },
+				"loop": { "nome": "Repetir", "caractere": "↻", "unicode": "U+21BB", "funcao": "Outros" },
+				"shuffle": { "nome": "Aleatório", "caractere": "⤮", "unicode": "U+292E", "funcao": "Outros" },
+				"fullscreen": { "nome": "Tela Cheia", "caractere": "⛶", "unicode": "U+26F6", "funcao": "Outros" },
+				"exit fullscreen": { "nome": "Sair da Tela Cheia", "caractere": "⛶", "unicode": "U+26F6", "funcao": "Outros" },
+				"edit": { "nome": "Editar", "caractere": "🖋", "unicode": "??", "funcao": "Outros" }
+				
+			};
+			var pl = Dom.obj({tag:'span',class:'toolsBar button-category'
+				,style:'display: inline-flex;align-items: center;gap: 8px;'
+				,ev_click:(ev)=>{
+					//D(ev);
+					Dom.styleSet(ev.target,'transform','scale(0.95)');
+					setTimeout(() => {
+						Dom.styleSet(ev.target,'transform','translateY(-2px)');
+					}, 100);
+				}
+			});
+			aeval(op,(v,k)=>{
+				var tbk = tb[k];
+				if (!tbk) {
+					if (Lib.isObj(v) && v.fu) {
+						tbk = v;
+						v = tbk.fu;
+					} else {
+						alert('toolsBar: opcao '+k+' não possui campo fu (function)');
+						tbk = false;
+					}
+				}
+				tbk && Dom.obj({tag:'button',targ:pl,title:tbk.nome,'':tbk.caractere
+					,ev_click:(ev)=>{
+						//alert('vvv '+ev.target.outerHTML);
+						ev.stopImmediatePropagation();
+						v(ev);
+					}
+				});
+			});
+			return pl;
+		}
+		, fadeOut: (img,ms,fu)=>{
+			const nv=16;
+			var f = (n)=>{
+				//onsole.log(n,'out opacity',1/nv*n+0.005);
+				Dom.styleSet(img,'opacity',(1/nv*n+0.005));
+				if (n>0) {
+					setTimeout(()=>{f(n-1);},ms/nv);
+				} else if (fu) {
+					fu(img,ms,fu);
+				}
+			}
+			f(nv);
+		}
+		, fadeIn: (img,ms,fu)=>{
+			const nv=16;
+			var f = (n)=>{
+				//onsole.log(n,'in opacity',1/nv*n+0.005);
+				Dom.styleSet(img,'opacity',(1/nv*n+0.005));
+				if (n<nv) {
+					setTimeout(()=>{f(n+1);},ms/nv);
+				} else if (fu) {
+					fu(img,ms,fu);
+				}
+			}
+			f(0);
+		}
+		, espera: (destino)=> {
+			let r='<img src=imagens/espera.gif>';
+			if (destino) {
+				destino.appendChild(Dom.obj(r));
+			} else {
+				return r;
+			}
+		}
+		, getDPI: ()=>{
+			// 2023-09 retorna sempre 96x96 inclusive em celular.
+			//    no firefox e base chrome 
+			if (Dom.getDPI__) {
+				if (Lib.isObj(Dom.getDPI__)) {
+					let x = Dom.getDPI__.clientWidth+'x'+Dom.getDPI__.clientHeight;
+					Dom.getDPI__ = x;
+				}
+				return Dom.getDPI__;
+			}
+			Dom.getDPI__=Dom.obj('<div style="width:1in;border:2px solid;'
+				+'height: 1in;">teste </div>',document.body)
+			;
+			return Dom.getDPI();
+		}
+		, dialog: function(Op) {
+				var eu = this;
+				var rsz = []; //cancela onResize ao hide.
+				var visible = false;
+				if (typeof(Op)!='object'||Op.tagName) {
+					alert('parametro errado: passar objeto com:'
+						+'\nhtml or dom: conteúdo'
+						+'\nclick: envento on click'
+						+'\npMaxW or pMaxH: %/100 max w e h 0.8'
+						+'\ncontainer: add container'
+						+'\nclass: class container'
+					);
+					return;
+				}
+				var op = Lib.optionsMerge({pMaxW:0.8,pMaxH:0.8,camada:0,container:true,class:'pdr'},Op);
+				this.op = op;
+				
+				//style exists ?
+				var cl = '_contextDiv';
+				if (!document.getElementById(cl)) {
+					Dom.addStyleId('DIV.'+cl+' {'
+						+'position:fixed;' //xdisplay:none;xz-index:100;
+						+'z-index:100;'
+						+'background-color:var(--corFd);'//#f0f0f0;' //xborder:2px solid blue;'
+						+'overflow:auto;'
+						+'border-radius:7px;'
+						+'padding:5px 10px;'
+						+'top:0;left:-300%;'
+						+'border:5px solid dark;'
+						+'}'
+					,cl);
+				}
+				
+				var f = op.dom;
+				if (!f || op.container) {
+					//cria
+					f = document.querySelector('.'+cl+'.'+op.class);
+					f = document.createElement('div');
+					if (op.camada!=0) {
+						Dom.styleSet(f,'z-index',100+op.camada);
+					}
+					f.className = cl+(op.class?' '+op.class:'');
+					//add in document
+					document.body.appendChild(f);
+					if (op.dom) {
+						f.appendChild(op.dom);
+					} else if (op.html) {
+						f.innerHTML = op.html;
+					}
+				}
+				
+				this.dom = f;
+				if (op.click) {
+					f.addEventListener('click',op.click);
+				}
+				//*************************
+				function onResize(fu) {
+					rsz.push(fu);
+					window.addEventListener('resize',fu);
+				}
+				this.onResize = onResize;
+				//*************************
+				this.full = function() {
+					var resiz = ()=>{
+						var tw = window.innerWidth;//browse.getTX(document.body);
+						var two = browse.getTX(f);
+						Dom.styleSet(f,'width',tw+'px');
+						//limita algura
+						var th = window.innerHeight;//browse.getTY(window);
+						var tho = browse.getTY(f);
+						Dom.styleSet(f,'height',th+'px');
+						Dom.styleSet(f,'left','0');
+						Dom.styleSet(f,'top','0');
+					}
+					resiz();
+					onResize(resiz);
+					this.center();
+				}
+				//*************************
+				this.destroy = ()=>{
+					this.hide();
+					Dom.remove(this.dom);
+				}
+				//*************************
+				this.setDom = (domObj)=>{
+					f.innerHTML = '';
+					f.appendChild(domObj);
+					//f = domObj;
+				}
+				//*************************
+				this.text = text;
+				function text(html) {
+					if (html) f.innerHTML = html;
+					return f.innerHTML;
+				}
+				//*************************
+				this.visible = function() {
+					return visible;
+				}
+				//*************************
+				function limitWidthHeight() {
+					var tw = window.innerWidth;//browse.getTX(document.body);
+					var two = browse.getTX(f);
+					//limita Largura ?
+					two = (two<1?eu.two:two)*1.05; //para o scroll
+					if (two>tw*op.pMaxW) {
+						two = tw*op.pMaxW;
+					}
+					styleSet(f,'width',two+'px');
+					//limita algura
+					var th = window.innerHeight;//browse.getTY(window);
+					var tho = browse.getTY(f);
+					tho = (tho==0?eu.tho:tho);
+					if (tho>th*op.pMaxH) {
+						tho = th*op.pMaxH;
+						styleSet(f,'height',tho+'px');
+					}			
+				}
+				//*************************
+				this.reCenter = function() {
+					function rsz() {
+						var tw = window.innerWidth;//browse.getTX(document.body);
+						var two = browse.getTX(f);
+						//limita Largura ?
+						two = (two<1?eu.two:two)*1.05; //para o scroll
+						if (two>tw*op.pMaxW) {
+							two = tw*op.pMaxW;
+						}
+						Dom.styleSet(f,'width',two+'px');
+						//limita algura
+						var th = window.innerHeight;//browse.getTY(window);
+						var tho = browse.getTY(f);
+						tho = (tho==0?eu.tho:tho);
+						if (tho>th*op.pMaxH) {
+							tho = th*op.pMaxH;
+							Dom.styleSet(f,'height',tho+'px');
+						}
+						Dom.styleSet(f,'left',(tw-two)/2+'px');
+						Dom.styleSet(f,'top',(th-tho)/2+'px');
+					}
+					onResize(rsz);
+					rsz();
+				}
+				//*************************
+				this.center = function(ev,fClick) {
+					this.click = fClick;
+					if (visible) {
+						eu.hide();
+						return;
+					}
+					var two = browse.getTX(f);
+					if (two<1 && !eu.recalc) {
+						//precisa calc tamanho
+						//eb('recalc='+two);
+						eu.recalc = true;
+						browse.mostra(f);
+						setTimeout(eu.center,100);
+						return;
+					}
+					visible = true;
+					eu.recalc = false;
+					
+					eu.reCenter();
+					
+					browse.mostra(f);
+				}
+				//*************************
+				this.show = function(ev,fClick) {
+					if (fClick) this.click = fClick;
+					if (visible) {
+						eu.hide();
+						return;
+					}
+					var two = browse.getTX(f);
+					if (two<1 && !eu.recalc) {
+						//precisa calc tamanho
+						//eb('recalc='+two);
+						eu.recalc = true;
+						browse.mostra(f);
+						setTimeout(()=>{eu.show(ev)},100);
+						return;
+					}
+					visible = true;
+					eu.recalc = false;					
+					//
+					if (!ev) {
+						if (this.Ev) {
+							ev = this.Ev;
+						} else {
+							//lertDev('contextDiv.show(event): missing event, use .center()');
+							eu.center();
+							return;
+						}
+					} else {
+						this.Ev = ev;
+					}
+					//screenX: 2679 screenY: 292
+					let tx = f.clientWidth;
+					let ty = f.clientHeight;
+					var nx, ny;
+					if ( eu.queryAlign && (nx=ev.target.closest(eu.queryAlign)) ) {
+						//_c(nx);
+						ny = nx.offsetTop;//browse.getY(nx);//
+						nx = browse.getAbsX(nx); //browse.getX(nx)-browse.getTX(f);
+					} else {
+						//antes inicio tela
+						if (tx==0) alert(f.innerHTML);
+						nx = ev.x-tx; //ev.x ev.screenX
+						//eb(f);
+						//eb(' nx='+nx+' tx='+tx+' tw='+window.innerWidth);
+						if (nx<0) nx=ev.x;
+						//apos fim tela
+						if (nx+tx>window.innerWidth) {
+							nx = window.innerWidth-tx;
+							if (nx<0) nx=0;
+						}
+						//antes topo tela
+						ny = ev.y-ty;
+						//eb(' ny='+ny+' ty='+ty+' th='+window.innerHeight);
+						if (ny<0) ny=ev.y;
+						//apos fim tela
+						if (ny+ty>window.innerHeight) {
+							ny = window.innerHeight-ty;
+							if (ny<0) ny=0;
+						}
+					}
+					styleSet(f,'left',nx+'px');
+					styleSet(f,'top',ny+'px');
+					//_c(f);
+					setTimeout(limitWidthHeight,100);
+					browse.mostra(f);
+				}
+				//*************************
+				this.hide = function() {
+					aeval(rsz,(v)=>{
+						window.removeEventListener('resize',v);
+					});
+					rsz = [];
+					visible = false;
+					//guarda ultimo tamanho
+					eu.two = browse.getTX(f);
+					eu.tho = browse.getTY(f);
+					//zeras tamanhos
+					styleSet(f,'width');//lert('retirou width');
+					styleSet(f,'height');
+					//esconde
+					//eb('esconde '+f+' '+erro());
+					browse.esconde(f);
+				}
+				this.close = this.hide;
+			}
+		, evPercHoriz: (ev,oEl)=> {
+			if (!oEl) oEl = ev.target;
+			var bb = oEl.getBoundingClientRect();
+			return (ev.clientX - bb.left) / bb.width;
+		}
+		,	isInput: (o)=>{
+			if (o instanceof Event) o = o.target;
+			return o.tagName=='INPUT';
+		}
+		,	isEvent: (o)=>{
+			return o instanceof Event;
+		}
+		, addCssToStyle: (url,id,prefix)=>{
+			Lib.load(url,(tx,ok)=>{
+				if (!ok) {
+				}
+				//lert(ok+' '+tx);
+				Dom.addStyleId(tx,id,prefix);
+			});
+
+		}
+		, addCss: (url)=>{
+			Dom.obj({tag:'link'
+				,targ:document.querySelector('head')
+				,rel:'StyleSheet'
+				,href:url+'?ms='+(new Date()).getTime()
+			});
+		}
+		, clickCancelContext: (ev)=>{
+			return !Lib.vazio(window.getSelection().toString()) //seleção
+				|| ev.ctrlKey //cssEdit
+			;
+		}
+		, clickCancel: (ev)=>{
+			return !Lib.vazio(window.getSelection().toString()) //seleção
+				|| ev.ctrlKey //cssEdit
+				|| ev.button>1 //so 0 e 1 (central)
+			;
+		}
+		, scrollToVisible: (element)=>{
+			var e = element;
+			var t = element.ownerDocument.documentElement;
+			var p = element.offsetTop-element.offsetHeight*0.07;
+			if (t.scrollTop>p) {
+				t.scroll({
+					top: p
+					,behavior: "smooth"
+				});
+				return;
+			}
+			//? e.scrollHeight e.offsetParent
+			p =  element.offsetTop-t.clientHeight+element.offsetHeight*2;
+			//eb(e);
+			/*var d = t.scrollTop+' < '+p
+				+' et='+element.offsetTop
+				+' -ch='+t.clientHeight
+				+' +eoh*1.07='+element.offsetHeight*1.07
+			;*/
+			if (t.scrollTop<p) {
+				//eb('s '+d);
+				t.scroll({
+					top: p+element.offsetHeight
+					,behavior: "smooth"
+				});					
+			} else {
+				//eb('n '+d);
+			}
+		}
+		//***********************************************
+		, getElementIndex: (o)=>{
+			var op = o.parentNode.childNodes;
+			for (var i=0;i<op.length;i++) {
+				if (op[i]==o) {
+					return i;
+				}
+			}
+			return -1;
+		}
+		, dialogo_Dev: class {
+			open(ev) {
+				if (Dom.agent.mobile()) {
+					this.center(ev);
+				} else {
+					this.show(ev);
+				}
+			}
+			constructor(op) {
+				this.op = Lib.optionsDefault(op,{
+				});
+			}
+		}
+		, aguarde: (domDs,txOUfun)=>{ //mostra msg "carregando"
+			//não é uma idéia correta, dirigida a evento.
+			domDs.innerHTML = '<p class="domAguarde">'
+				+'aguarde...'
+				+(Lib.isStr(txOUfun)?'<br><br><b>'+txOUfun+'</b>':'')
+				+'</p>'
+			;
+			if (Lib.isFun(txOUfun)) {
+				let vl = txOUfun();
+				if (Lib.isStr(vl)) {
+					domDs = vl;
+				} else if (vl.tagName) {
+					domDs.innerHTML = '';
+					domDs.appendChild(vl);
+				}
+			}
+		}
+		, remove: (ob)=>{
+			ob.parentNode.removeChild(ob);
+		}
+		//***************************************************
+		, getParentByTagName: (o,nome,limit)=>{
+			if (Dom.isEvent(o)) o = o.target;
+			nome = nome.toUpperCase();
+			//while ((o=o.parentNode) && o.tagName.toUpperCase()!=nome);
+			while (o) {
+				if (o.tagName && o.tagName.toUpperCase()==nome) {
+					return o;
+				} else if (limit && limit==o) {
+					return null;
+				}
+				o = o.parentNode;
+			}
+			return o;
+		}
+		//***************************************************
+		// retorna o parent que possui o attributo setado
+		, getParentByAttr: (o,nomeAtr,limit)=>{
+			//obj é evento?
+			if (Dom.isEvent(o)) o = Dom.getTarget(o);
+			var oa = o;
+			while (o) {
+				if (o.getAttribute 
+					&& o.getAttribute(nomeAtr)
+					&& o.getAttribute(nomeAtr)!=null ) {
+					return o;
+				} else if (o[nomeAtr]) {
+					return o;
+				} else if (limit && o==limit) {
+					return null;
+				}
+				o = o.parentNode;
+			}
+			return o;
+		}
+		//***************************************************
+		// retorna o parent que possui o attributo setado
+		, getParentAttr: (O,nomeAtr,limit)=>{
+			var o = Dom.getParentByAttr(O,nomeAtr,limit);
+			if ( !o ) {
+			} else if (o.getAttribute && o.getAttribute(nomeAtr) && o.getAttribute(nomeAtr)!=null ) {
+				return o.getAttribute(nomeAtr);
+			} else if (o[nomeAtr]) {
+				return o[nomeAtr];
+			}
+			return;
+		}
+		//*********************************
+		, getTarget: (ev)=>{
+			if (ev.value && ev.tagName) {
+				return ev;
+			}
+			var v = Array('target','srcElement','originalTarget','currentTarget',
+			'explicitOriginalTarget','relatedTarget');
+			//localiza obj destino
+			for (var i=0;i<v.length;i++) {
+				try {
+					var o = ev[v[i]];
+					if (o!=null) {
+						return o;
+					}
+				} catch (e) {
+				}
+			}
+			return null;
+		}
+		, isEvent: (o)=>{
+			return (o && o.target && o.type);
+		}
+		, styleSet: (dom,key,value,debug)=>{
+			if (debug) console.log(dom.style.cssText);
+			var o = Obj.fromText(dom.style.cssText);
+			if (o[key] == value) return false;
+			o[key] = value;//(!value?'':value);
+			dom.style.cssText = Obj.toText(o,false,false,true);
+			if (debug) console.log(dom.style.cssText+'\n'+Obj.toText(o));
+			return true;
+		}
+		, stylePropOnOff: (dom,str)=>{
+			var r = false;
+			var t = dom.style.cssText;
+			if (t.indexOf(str)==-1) {
+				dom.style.cssText += str;
+				r = true;
+			} else {
+				dom.style.cssText = t.replace(str,'');
+			}
+			return r;
+		}
+		//***********************************************
+		// add style id prefixo classe
+		, addStyleId: (cssText,id,prefix)=>{
+			var v = document.querySelectorAll('style#'+id);
+			if (v.length!=0) return false;
+			//
+			if (prefix) {
+				let f = Dom.folhaEstilo(cssText);
+				cssText = f.txt(prefix.trim());
+			}
+			//
+			var ne = document.createElement('style');
+			ne.id = id;
+			ne.innerHTML = cssText;
+			var x = document.querySelector('head style');
+			if (!x) {
+				// procura link stylesheet
+				x = document.querySelector("link[rel='StyleSheet']");
+			}
+			if (x) {
+				//style exist, insert before
+				x.parentNode.insertBefore(ne,x);
+			} else {
+				//append to head
+				document.querySelector('head').appendChild(ne);
+			}
+			return true;
+		}
+		, folhaEstilo: (tx)=>{
+			let eu = this;
+			let hV = []; //estilos
+			init(tx);
+			var lf = '\n';
+			//**************************************************
+			// compact = 1 classe por linha
+			this.txt = (prefix)=>{
+				let r = '';
+				for (let i=0;i<hV.length;i++) {
+					let e = hV[i][0]
+						+' {'+Obj.toText(hV[i][1])+'}'
+					;
+					let prf = '';
+					if (prefix&&!e.equals(prefix)) {
+						prf = prefix+' ';
+					}
+					r += prf+e+lf+lf;
+				}
+				return r;			
+			}
+			//*********************************************
+			function init(tx) {
+				//usar dom mesmo.
+				var ne = document.createElement('style');
+				ne.innerHTML = tx;
+				document.body.appendChild(ne);
+				for (let i=0;i<ne.sheet.cssRules.length;i++) {
+					let s = ne.sheet.cssRules.item(i);
+					//alert('ss='+s.cssText);
+					hV.push([
+						s.cssText.leftAt('{').trim()
+						,Obj.fromText(s.cssText.substrAtAt('{','}'))
+					]);
+				}
+				Dom.remove(ne);
+				//lert('hv='+hV);
+			}
+			return this;
+		} //fim folhaEstilo
+		//***********************************************
+		/** x@constructor */
+		// param obj ou text+obj
+		, obj: (p,oo)=> {
+			var ret;
+			if (typeof(p)=='string') {
+				if (p.charAt(0)!='<') {
+					p = '<p>'+p+'</p>';
+				}
+				//eb.log(p,oo);
+				ret = Dom.obj({tag:p.equals('<tr')||p.equals('<td')?'table':'div','':p}).firstChild;
+				//eb.log(p,ret,oo);
+				if (oo) oo.appendChild(ret);
+				return ret;
+			}
+			p.doc=(p.doc?p.doc:document);
+			p.tag=(p.tag?p.tag:'p');
+			if (ret) {
+			} else if (p.svg) {
+				var uSvg = 'http://www.w3.org/2000/svg';
+				//uSvg = 'org.w3c.dom.svg';
+				ret=p.doc.createElementNS(uSvg,p.tag);
+			} else {
+				//tag é html ?
+				if (p.tag.charAt(0)=='<') {
+					ret = p.doc.createElement('div');
+					ret.innerHTML = p.tag.trimm();
+					ret = ret.firstChild;
+				} else {
+					ret=p.doc.createElement(p.tag);
+				}
+			}
+			//onsole.log(p);
+			for (var i in p) {
+				//onsole.log(i);
+				if (i=='innerHTML'||i=='') {
+					var oo = typeof(p[i])=='object';
+					//lert('oo='+oo);
+					if (oo && p[i].tagName) {
+						ret.appendChild(p[i]);
+					} else if (oo && typeof(p[i].length)=='number') {
+						try {
+							Lib.aeval(p[i],function(v){ret.appendChild(v);});
+						} catch (e) {
+							alert(Obj.toText(p[i])+'\n\n'+Lib.erro(e));
+						}
+					} else {
+						ret.innerHTML = ''+p[i];
+					}
+				} else if (i.equals('ev_')) {
+					var ev = i.substrAt('_');
+					//lert('domObj.evento '+ev+'\n'+p[i]);
+					ret.addEventListener(ev,p[i]);
+				} else if ('-doc-tag-targ-svg-'.indexOf('-'+i+'-')==-1) {
+					if (false && p.svg) {
+						ret.setAttributeNS(uSvg,i,p[i]);
+					} else {
+						ret.setAttribute(i,p[i]);
+					}
+				}
+				//lert('dfsf='+i+' '+ret.outerHTML);
+			}
+			if (p['targ']) {
+				p['targ'].appendChild(ret);
+			}
+			return ret;
+		}
+	};
+
 
 	var DB = {
 		ini:{}
@@ -2016,645 +2720,6 @@
 		}
 	};
 
-	const Dom = {
-		ini:{}
-		, fadeOut: (img,ms,fu)=>{
-			const nv=16;
-			var f = (n)=>{
-				//onsole.log(n,'out opacity',1/nv*n+0.005);
-				Dom.styleSet(img,'opacity',(1/nv*n+0.005));
-				if (n>0) {
-					setTimeout(()=>{f(n-1);},ms/nv);
-				} else if (fu) {
-					fu(img,ms,fu);
-				}
-			}
-			f(nv);
-		}
-		, fadeIn: (img,ms,fu)=>{
-			const nv=16;
-			var f = (n)=>{
-				//onsole.log(n,'in opacity',1/nv*n+0.005);
-				Dom.styleSet(img,'opacity',(1/nv*n+0.005));
-				if (n<nv) {
-					setTimeout(()=>{f(n+1);},ms/nv);
-				} else if (fu) {
-					fu(img,ms,fu);
-				}
-			}
-			f(0);
-		}
-		, espera: (destino)=> {
-			let r='<img src=imagens/espera.gif>';
-			if (destino) {
-				destino.appendChild(Dom.obj(r));
-			} else {
-				return r;
-			}
-		}
-		, getDPI: ()=>{
-			// 2023-09 retorna sempre 96x96 inclusive em celular.
-			//    no firefox e base chrome 
-			if (Dom.getDPI__) {
-				if (Lib.isObj(Dom.getDPI__)) {
-					let x = Dom.getDPI__.clientWidth+'x'+Dom.getDPI__.clientHeight;
-					Dom.getDPI__ = x;
-				}
-				return Dom.getDPI__;
-			}
-			Dom.getDPI__=Dom.obj('<div style="width:1in;border:2px solid;'
-				+'height: 1in;">teste </div>',document.body)
-			;
-			return Dom.getDPI();
-		}
-		, dialog: function(Op) {
-				var eu = this;
-				var rsz = []; //cancela onResize ao hide.
-				var visible = false;
-				if (typeof(Op)!='object'||Op.tagName) {
-					alert('parametro errado: passar objeto com:'
-						+'\nhtml or dom: conteúdo'
-						+'\nclick: envento on click'
-						+'\npMaxW or pMaxH: %/100 max w e h 0.8'
-						+'\ncontainer: add container'
-						+'\nclass: class container'
-					);
-					return;
-				}
-				var op = Lib.optionsMerge({pMaxW:0.8,pMaxH:0.8,camada:0,container:true,class:'pdr'},Op);
-				this.op = op;
-				
-				//style exists ?
-				var cl = '_contextDiv';
-				if (!document.getElementById(cl)) {
-					Dom.addStyleId('DIV.'+cl+' {'
-						+'position:fixed;' //xdisplay:none;xz-index:100;
-						+'z-index:100;'
-						+'background-color:var(--corFd);'//#f0f0f0;' //xborder:2px solid blue;'
-						+'overflow:auto;'
-						+'border-radius:7px;'
-						+'padding:5px 10px;'
-						+'top:0;left:-300%;'
-						+'border:5px solid dark;'
-						+'}'
-					,cl);
-				}
-				
-				var f = op.dom;
-				if (!f || op.container) {
-					//cria
-					f = document.querySelector('.'+cl+'.'+op.class);
-					f = document.createElement('div');
-					if (op.camada!=0) {
-						Dom.styleSet(f,'z-index',100+op.camada);
-					}
-					f.className = cl+(op.class?' '+op.class:'');
-					//add in document
-					document.body.appendChild(f);
-					if (op.dom) {
-						f.appendChild(op.dom);
-					} else if (op.html) {
-						f.innerHTML = op.html;
-					}
-				}
-				
-				this.dom = f;
-				if (op.click) {
-					f.addEventListener('click',op.click);
-				}
-				//*************************
-				function onResize(fu) {
-					rsz.push(fu);
-					window.addEventListener('resize',fu);
-				}
-				this.onResize = onResize;
-				//*************************
-				this.full = function() {
-					var resiz = ()=>{
-						var tw = window.innerWidth;//browse.getTX(document.body);
-						var two = browse.getTX(f);
-						Dom.styleSet(f,'width',tw+'px');
-						//limita algura
-						var th = window.innerHeight;//browse.getTY(window);
-						var tho = browse.getTY(f);
-						Dom.styleSet(f,'height',th+'px');
-						Dom.styleSet(f,'left','0');
-						Dom.styleSet(f,'top','0');
-					}
-					resiz();
-					onResize(resiz);
-					this.center();
-				}
-				//*************************
-				this.destroy = ()=>{
-					this.hide();
-					Dom.remove(this.dom);
-				}
-				//*************************
-				this.setDom = (domObj)=>{
-					f.innerHTML = '';
-					f.appendChild(domObj);
-					//f = domObj;
-				}
-				//*************************
-				this.text = text;
-				function text(html) {
-					if (html) f.innerHTML = html;
-					return f.innerHTML;
-				}
-				//*************************
-				this.visible = function() {
-					return visible;
-				}
-				//*************************
-				function limitWidthHeight() {
-					var tw = window.innerWidth;//browse.getTX(document.body);
-					var two = browse.getTX(f);
-					//limita Largura ?
-					two = (two<1?eu.two:two)*1.05; //para o scroll
-					if (two>tw*op.pMaxW) {
-						two = tw*op.pMaxW;
-					}
-					styleSet(f,'width',two+'px');
-					//limita algura
-					var th = window.innerHeight;//browse.getTY(window);
-					var tho = browse.getTY(f);
-					tho = (tho==0?eu.tho:tho);
-					if (tho>th*op.pMaxH) {
-						tho = th*op.pMaxH;
-						styleSet(f,'height',tho+'px');
-					}			
-				}
-				//*************************
-				this.reCenter = function() {
-					function rsz() {
-						var tw = window.innerWidth;//browse.getTX(document.body);
-						var two = browse.getTX(f);
-						//limita Largura ?
-						two = (two<1?eu.two:two)*1.05; //para o scroll
-						if (two>tw*op.pMaxW) {
-							two = tw*op.pMaxW;
-						}
-						Dom.styleSet(f,'width',two+'px');
-						//limita algura
-						var th = window.innerHeight;//browse.getTY(window);
-						var tho = browse.getTY(f);
-						tho = (tho==0?eu.tho:tho);
-						if (tho>th*op.pMaxH) {
-							tho = th*op.pMaxH;
-							Dom.styleSet(f,'height',tho+'px');
-						}
-						Dom.styleSet(f,'left',(tw-two)/2+'px');
-						Dom.styleSet(f,'top',(th-tho)/2+'px');
-					}
-					onResize(rsz);
-					rsz();
-				}
-				//*************************
-				this.center = function(ev,fClick) {
-					this.click = fClick;
-					if (visible) {
-						eu.hide();
-						return;
-					}
-					var two = browse.getTX(f);
-					if (two<1 && !eu.recalc) {
-						//precisa calc tamanho
-						//eb('recalc='+two);
-						eu.recalc = true;
-						browse.mostra(f);
-						setTimeout(eu.center,100);
-						return;
-					}
-					visible = true;
-					eu.recalc = false;
-					
-					eu.reCenter();
-					
-					browse.mostra(f);
-				}
-				//*************************
-				this.show = function(ev,fClick) {
-					if (fClick) this.click = fClick;
-					if (visible) {
-						eu.hide();
-						return;
-					}
-					var two = browse.getTX(f);
-					if (two<1 && !eu.recalc) {
-						//precisa calc tamanho
-						//eb('recalc='+two);
-						eu.recalc = true;
-						browse.mostra(f);
-						setTimeout(()=>{eu.show(ev)},100);
-						return;
-					}
-					visible = true;
-					eu.recalc = false;					
-					//
-					if (!ev) {
-						if (this.Ev) {
-							ev = this.Ev;
-						} else {
-							//lertDev('contextDiv.show(event): missing event, use .center()');
-							eu.center();
-							return;
-						}
-					} else {
-						this.Ev = ev;
-					}
-					//screenX: 2679 screenY: 292
-					let tx = f.clientWidth;
-					let ty = f.clientHeight;
-					var nx, ny;
-					if ( eu.queryAlign && (nx=ev.target.closest(eu.queryAlign)) ) {
-						//_c(nx);
-						ny = nx.offsetTop;//browse.getY(nx);//
-						nx = browse.getAbsX(nx); //browse.getX(nx)-browse.getTX(f);
-					} else {
-						//antes inicio tela
-						if (tx==0) alert(f.innerHTML);
-						nx = ev.x-tx; //ev.x ev.screenX
-						//eb(f);
-						//eb(' nx='+nx+' tx='+tx+' tw='+window.innerWidth);
-						if (nx<0) nx=ev.x;
-						//apos fim tela
-						if (nx+tx>window.innerWidth) {
-							nx = window.innerWidth-tx;
-							if (nx<0) nx=0;
-						}
-						//antes topo tela
-						ny = ev.y-ty;
-						//eb(' ny='+ny+' ty='+ty+' th='+window.innerHeight);
-						if (ny<0) ny=ev.y;
-						//apos fim tela
-						if (ny+ty>window.innerHeight) {
-							ny = window.innerHeight-ty;
-							if (ny<0) ny=0;
-						}
-					}
-					styleSet(f,'left',nx+'px');
-					styleSet(f,'top',ny+'px');
-					//_c(f);
-					setTimeout(limitWidthHeight,100);
-					browse.mostra(f);
-				}
-				//*************************
-				this.hide = function() {
-					aeval(rsz,(v)=>{
-						window.removeEventListener('resize',v);
-					});
-					rsz = [];
-					visible = false;
-					//guarda ultimo tamanho
-					eu.two = browse.getTX(f);
-					eu.tho = browse.getTY(f);
-					//zeras tamanhos
-					styleSet(f,'width');//lert('retirou width');
-					styleSet(f,'height');
-					//esconde
-					//eb('esconde '+f+' '+erro());
-					browse.esconde(f);
-				}
-				this.close = this.hide;
-			}
-		, evPercHoriz: (ev,oEl)=> {
-			if (!oEl) oEl = ev.target;
-			var bb = oEl.getBoundingClientRect();
-			return (ev.clientX - bb.left) / bb.width;
-		}
-		,	isInput: (o)=>{
-			if (o instanceof Event) o = o.target;
-			return o.tagName=='INPUT';
-		}
-		,	isEvent: (o)=>{
-			return o instanceof Event;
-		}
-		, addCssToStyle: (url,id,prefix)=>{
-			Lib.load(url,(tx,ok)=>{
-				if (!ok) {
-				}
-				//lert(ok+' '+tx);
-				Dom.addStyleId(tx,id,prefix);
-			});
-
-		}
-		, addCss: (url)=>{
-			Dom.obj({tag:'link'
-				,targ:document.querySelector('head')
-				,rel:'StyleSheet'
-				,href:url+'?ms='+(new Date()).getTime()
-			});
-		}
-		, clickCancelContext: (ev)=>{
-			return !Lib.vazio(window.getSelection().toString()) //seleção
-				|| ev.ctrlKey //cssEdit
-			;
-		}
-		, clickCancel: (ev)=>{
-			return !Lib.vazio(window.getSelection().toString()) //seleção
-				|| ev.ctrlKey //cssEdit
-				|| ev.button>1 //so 0 e 1 (central)
-			;
-		}
-		, scrollToVisible: (element)=>{
-			var e = element;
-			var t = element.ownerDocument.documentElement;
-			var p = element.offsetTop-element.offsetHeight*0.07;
-			if (t.scrollTop>p) {
-				t.scroll({
-					top: p
-					,behavior: "smooth"
-				});
-				return;
-			}
-			//? e.scrollHeight e.offsetParent
-			p =  element.offsetTop-t.clientHeight+element.offsetHeight*2;
-			//eb(e);
-			/*var d = t.scrollTop+' < '+p
-				+' et='+element.offsetTop
-				+' -ch='+t.clientHeight
-				+' +eoh*1.07='+element.offsetHeight*1.07
-			;*/
-			if (t.scrollTop<p) {
-				//eb('s '+d);
-				t.scroll({
-					top: p+element.offsetHeight
-					,behavior: "smooth"
-				});					
-			} else {
-				//eb('n '+d);
-			}
-		}
-		//***********************************************
-		, getElementIndex: (o)=>{
-			var op = o.parentNode.childNodes;
-			for (var i=0;i<op.length;i++) {
-				if (op[i]==o) {
-					return i;
-				}
-			}
-			return -1;
-		}
-		, dialogo_Dev: class {
-			open(ev) {
-				if (Dom.agent.mobile()) {
-					this.center(ev);
-				} else {
-					this.show(ev);
-				}
-			}
-			constructor(op) {
-				this.op = Lib.optionsDefault(op,{
-				});
-			}
-		}
-		, aguarde: (domDs,txOUfun)=>{ //mostra msg "carregando"
-			//não é uma idéia correta, dirigida a evento.
-			domDs.innerHTML = '<p class="domAguarde">'
-				+'aguarde...'
-				+(Lib.isStr(txOUfun)?'<br><br><b>'+txOUfun+'</b>':'')
-				+'</p>'
-			;
-			if (Lib.isFun(txOUfun)) {
-				let vl = txOUfun();
-				if (Lib.isStr(vl)) {
-					domDs = vl;
-				} else if (vl.tagName) {
-					domDs.innerHTML = '';
-					domDs.appendChild(vl);
-				}
-			}
-		}
-		, remove: (ob)=>{
-			ob.parentNode.removeChild(ob);
-		}
-		//***************************************************
-		, getParentByTagName: (o,nome,limit)=>{
-			if (Dom.isEvent(o)) o = o.target;
-			nome = nome.toUpperCase();
-			//while ((o=o.parentNode) && o.tagName.toUpperCase()!=nome);
-			while (o) {
-				if (o.tagName && o.tagName.toUpperCase()==nome) {
-					return o;
-				} else if (limit && limit==o) {
-					return null;
-				}
-				o = o.parentNode;
-			}
-			return o;
-		}
-		//***************************************************
-		// retorna o parent que possui o attributo setado
-		, getParentByAttr: (o,nomeAtr,limit)=>{
-			//obj é evento?
-			if (Dom.isEvent(o)) o = Dom.getTarget(o);
-			var oa = o;
-			while (o) {
-				if (o.getAttribute 
-					&& o.getAttribute(nomeAtr)
-					&& o.getAttribute(nomeAtr)!=null ) {
-					return o;
-				} else if (o[nomeAtr]) {
-					return o;
-				} else if (limit && o==limit) {
-					return null;
-				}
-				o = o.parentNode;
-			}
-			return o;
-		}
-		//***************************************************
-		// retorna o parent que possui o attributo setado
-		, getParentAttr: (O,nomeAtr,limit)=>{
-			var o = Dom.getParentByAttr(O,nomeAtr,limit);
-			if ( !o ) {
-			} else if (o.getAttribute && o.getAttribute(nomeAtr) && o.getAttribute(nomeAtr)!=null ) {
-				return o.getAttribute(nomeAtr);
-			} else if (o[nomeAtr]) {
-				return o[nomeAtr];
-			}
-			return;
-		}
-		//*********************************
-		, getTarget: (ev)=>{
-			if (ev.value && ev.tagName) {
-				return ev;
-			}
-			var v = Array('target','srcElement','originalTarget','currentTarget',
-			'explicitOriginalTarget','relatedTarget');
-			//localiza obj destino
-			for (var i=0;i<v.length;i++) {
-				try {
-					var o = ev[v[i]];
-					if (o!=null) {
-						return o;
-					}
-				} catch (e) {
-				}
-			}
-			return null;
-		}
-		, isEvent: (o)=>{
-			return (o && o.target && o.type);
-		}
-		, styleSet: (dom,key,value,debug)=>{
-			if (debug) console.log(dom.style.cssText);
-			var o = Obj.fromText(dom.style.cssText);
-			if (o[key] == value) return false;
-			o[key] = value;//(!value?'':value);
-			dom.style.cssText = Obj.toText(o,false,false,true);
-			if (debug) console.log(dom.style.cssText+'\n'+Obj.toText(o));
-			return true;
-		}
-		, stylePropOnOff: (dom,str)=>{
-			var r = false;
-			var t = dom.style.cssText;
-			if (t.indexOf(str)==-1) {
-				dom.style.cssText += str;
-				r = true;
-			} else {
-				dom.style.cssText = t.replace(str,'');
-			}
-			return r;
-		}
-		//***********************************************
-		// add style id prefixo classe
-		, addStyleId: (cssText,id,prefix)=>{
-			var v = document.querySelectorAll('style#'+id);
-			if (v.length!=0) return false;
-			//
-			if (prefix) {
-				let f = Dom.folhaEstilo(cssText);
-				cssText = f.txt(prefix.trim());
-			}
-			//
-			var ne = document.createElement('style');
-			ne.id = id;
-			ne.innerHTML = cssText;
-			var x = document.querySelector('head style');
-			if (!x) {
-				// procura link stylesheet
-				x = document.querySelector("link[rel='StyleSheet']");
-			}
-			if (x) {
-				//style exist, insert before
-				x.parentNode.insertBefore(ne,x);
-			} else {
-				//append to head
-				document.querySelector('head').appendChild(ne);
-			}
-			return true;
-		}
-		, folhaEstilo: (tx)=>{
-			let eu = this;
-			let hV = []; //estilos
-			init(tx);
-			var lf = '\n';
-			//**************************************************
-			// compact = 1 classe por linha
-			this.txt = (prefix)=>{
-				let r = '';
-				for (let i=0;i<hV.length;i++) {
-					let e = hV[i][0]
-						+' {'+Obj.toText(hV[i][1])+'}'
-					;
-					let prf = '';
-					if (prefix&&!e.equals(prefix)) {
-						prf = prefix+' ';
-					}
-					r += prf+e+lf+lf;
-				}
-				return r;			
-			}
-			//*********************************************
-			function init(tx) {
-				//usar dom mesmo.
-				var ne = document.createElement('style');
-				ne.innerHTML = tx;
-				document.body.appendChild(ne);
-				for (let i=0;i<ne.sheet.cssRules.length;i++) {
-					let s = ne.sheet.cssRules.item(i);
-					//alert('ss='+s.cssText);
-					hV.push([
-						s.cssText.leftAt('{').trim()
-						,Obj.fromText(s.cssText.substrAtAt('{','}'))
-					]);
-				}
-				Dom.remove(ne);
-				//lert('hv='+hV);
-			}
-			return this;
-		} //fim folhaEstilo
-		//***********************************************
-		/** x@constructor */
-		// param obj ou text+obj
-		, obj: (p,oo)=> {
-			var ret;
-			if (typeof(p)=='string') {
-				if (p.charAt(0)!='<') {
-					p = '<p>'+p+'</p>';
-				}
-				//eb.log(p,oo);
-				ret = Dom.obj({tag:p.equals('<tr')||p.equals('<td')?'table':'div','':p}).firstChild;
-				//eb.log(p,ret,oo);
-				if (oo) oo.appendChild(ret);
-				return ret;
-			}
-			p.doc=(p.doc?p.doc:document);
-			p.tag=(p.tag?p.tag:'p');
-			if (ret) {
-			} else if (p.svg) {
-				var uSvg = 'http://www.w3.org/2000/svg';
-				//uSvg = 'org.w3c.dom.svg';
-				ret=p.doc.createElementNS(uSvg,p.tag);
-			} else {
-				//tag é html ?
-				if (p.tag.charAt(0)=='<') {
-					ret = p.doc.createElement('div');
-					ret.innerHTML = p.tag.trimm();
-					ret = ret.firstChild;
-				} else {
-					ret=p.doc.createElement(p.tag);
-				}
-			}
-			//onsole.log(p);
-			for (var i in p) {
-				//onsole.log(i);
-				if (i=='innerHTML'||i=='') {
-					var oo = typeof(p[i])=='object';
-					//lert('oo='+oo);
-					if (oo && p[i].tagName) {
-						ret.appendChild(p[i]);
-					} else if (oo && typeof(p[i].length)=='number') {
-						try {
-							Lib.aeval(p[i],function(v){ret.appendChild(v);});
-						} catch (e) {
-							alert(Obj.toText(p[i])+'\n\n'+Lib.erro(e));
-						}
-					} else {
-						ret.innerHTML = ''+p[i];
-					}
-				} else if (i.equals('ev_')) {
-					var ev = i.substrAt('_');
-					//lert('domObj.evento '+ev+'\n'+p[i]);
-					ret.addEventListener(ev,p[i]);
-				} else if ('-doc-tag-targ-svg-'.indexOf('-'+i+'-')==-1) {
-					if (false && p.svg) {
-						ret.setAttributeNS(uSvg,i,p[i]);
-					} else {
-						ret.setAttribute(i,p[i]);
-					}
-				}
-				//lert('dfsf='+i+' '+ret.outerHTML);
-			}
-			if (p['targ']) {
-				p['targ'].appendChild(ret);
-			}
-			return ret;
-		}
-	};
-
 	var browse = {
 		
 	};
@@ -3130,6 +3195,17 @@
 			return '<img src="'+src+'"/>'
 		}
 	}
+
+
+/*import {
+  BlobReader,
+  BlobWriter,
+  TextReader,
+  TextWriter,
+  ZipReader,
+  ZipWriter,
+} from "https://deno.land/x/zipjs/index.js";
+*/
 
 
 

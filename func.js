@@ -2384,6 +2384,9 @@
 			return tx;
 		}
 		,htmlSanitize:class {
+			//
+			// substituir por https://github.com/cure53/dompurify ?
+			//
 			//tabela de Url key url
 			static oU = {};
 			//tabela de Url key cod
@@ -2529,9 +2532,10 @@
 				;
 			}
 			sanForce(s) {
-				return s.replaceAll('http://','ptth_//x')
-					.replaceAll('https://','sptth_//x')
-					.replaceAll('url(','lru(')
+				return s.replaceAll(/http:\/\//gi,'ptth_//x')
+					.replaceAll(/https:\/\//gi,'sptth_//x')
+					.replaceAll(/url\(/gi,'lru(')
+					.replaceAll(/javascript:/gi,'Xavascript:')
 				;
 			}
 			htmlSao() {
@@ -2540,6 +2544,7 @@
 				//	toDo -> embutir js com urls para usu ter acesso a links e imagens
 				function fu(eu,o) {
 					if (o.hasAttributes && o.hasAttributes()) {
+						var vrm = [];
 						for (const a of o.attributes) {
 							if (',innerHTML,outerHTML,textContent,'.indexOf(a.name)==-1) {
 								var t = ''+a.value;
@@ -2556,9 +2561,25 @@
 								} else if (p>-1&&a.name.toUpperCase()=='STYLE') {
 									Deb.log('STYLE:'+a.value);
 									a.value = eu.sanForce(a.value);
+									
 									Deb.log('STYLE san:'+eu.sanForce(a.value));
 								}
 							}
+							//attributo pode disparar script?
+							var n = a.name.toLowerCase();
+							if (n.equals('on')) {
+								vrm.push(a.name);
+							}
+						}
+						//renomeia os attr SCRIPT
+						vrm.forEach((at)=>{
+							var vl = o.getAttribute(at);
+							o.removeAttribute(at);
+							//guarda com outro Xnome
+							o.setAttribute('X'+at,vl);
+						})
+						if (vrm.length>0) {
+							alert('atributos SCRIPT renomeados - '+o.outerHTML);
 						}
 					} else {
 						//
@@ -2580,7 +2601,20 @@
 						o.innerHTML = eu.sanForce(s);
 					}
 				}
+				// exemplo ALLOWED_TAGS: ['p', 'b', 'i', 'a'],
+				// exemplo ALLOWED_ATTR: ['href', 'title']
+				//elimina refs urls nos attrib				
 				fu(this,this.d);
+				//elimina tags proibidas
+				['script','svg','iframe','link','meta','base'
+					,'form','object','embed','applet']
+				.forEach((tn)=>{
+					var tg;
+					while ((tg=this.d.querySelector(tn))) {
+						alert('removendo tag '+tn+'\n\n'+tg.outerHTML);
+						tg.parentNode.removeChild(tg);
+					}
+				})
 				//tem body, isola apenas este conteúdo
 				var b = this.d.documentElement.getElementsByTagName('body');
 				deb('B O D Y length='+b.length);

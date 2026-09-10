@@ -8,6 +8,115 @@
 
 //if (true) {
 
+	class Json {
+		static removerCampo(obj, campoParaRemover) {
+				if (Array.isArray(obj)) {
+						obj.forEach(item => removerCampo(item, campoParaRemover));
+				} 
+				else if (obj !== null && typeof obj === 'object') {
+						// Remove o campo do objeto atual
+						delete obj[campoParaRemover];
+						
+						// Processa recursivamente os valores restantes
+						for (let chave in obj) {
+								if (obj.hasOwnProperty(chave)) {
+										removerCampo(obj[chave], campoParaRemover);
+								}
+						}
+				}
+		}		
+		niv=0;
+		/* VER */
+		static ver(tb,json,defs) {
+			tb.classList.add('ver');
+			for (var c=0;c<defs.ver.length;c++) {
+				const prop = defs.ver[c];
+				const valor = json[prop];
+				//if (typeof valor !== 'object' && valor != null) {
+				if (valor != null) {
+					var tr = document.createElement('tr');tb.appendChild(tr);
+					var td = document.createElement('th');tr.appendChild(td);
+					td.innerHTML = prop;
+					var td = document.createElement('td');tr.appendChild(td);
+					if (typeof valor !== 'object') {
+						td.innerHTML = valor;
+					} else {
+						var t = document.createElement('table');
+						t.className = 'lista';
+						td.appendChild(t);
+						if (valor.length) {
+							if (typeof(valor[0])=='object') {
+								//onsole.log(prop,defs[':'+prop],valor);
+								this.lista(t,valor,defs[':'+prop]);
+							} else {
+								this.lista(t,valor,defs[':'+prop]);
+							}
+						} else if (typeof(valor)=='object') {
+							t.className = 'ver';
+							this.ver(t,valor,defs[':'+prop]);
+						}
+					}
+				}
+			}
+		}
+		static lista(tb,dad,defs) {
+			tb.classList.add('lista');
+			//console.log(tb);
+			//cabeçalho ?
+			var tr = document.createElement('tr');tb.appendChild(tr);
+			var td = document.createElement('th');tr.appendChild(td);
+			td.innerHTML = 'n';
+			for (var c=0;c<defs.list.length;c++) {
+				const valor = defs.list[c];
+				var td = document.createElement('th');tr.appendChild(td);
+				td.innerHTML = valor.replace(/([A-ZÀ-Ú])/g, "<br>$1");
+			}
+			var totMat = 0;
+			//console.log('oiuioiou='+dad.length);
+			for (var l=0;l<dad.length;l++) {
+				var json = dad[l];
+				if (!defs.cond(json)) continue;
+				totMat++;
+				var tr = document.createElement('tr');tb.appendChild(tr);
+				tr.setAttribute('json',JSON.stringify(json));
+				tr.addEventListener('click',(ev)=>{
+					var al = ev.target.closest('tr');
+					//lert('clicou '+al+' '+al.getAttribute('json'));
+					const x = Dom.obj('<div><p style="text-align:right;cursor:pointer;" title="fechar" action="close">💣</p><table class="ver"></table></div>');
+					var diag = new Dom.dialog({dom:x});
+					x.addEventListener('click',(ev)=>{
+							//alert('close');
+							if (ev.target.getAttribute('action')=='close') {
+								diag.delete();
+							}
+					});
+					this.ver(x.querySelector('table'),JSON.parse(al.getAttribute('json')),defs);
+					diag.center();
+				});
+				var td = document.createElement('td');tr.appendChild(td);
+				td.innerHTML = totMat;//+' / '+niv;
+				for (var c=0;c<defs.list.length;c++) {
+					const prop = defs.list[c];
+					const valor = json[prop];
+					//if (typeof valor !== 'object' && valor != null) {
+					var td = document.createElement('td');tr.appendChild(td);
+					if (valor == null) {
+						td.innerHTML = '';
+					} else if (typeof valor !== 'object') {
+						td.innerHTML = valor;
+					} else {
+						td.innerHTML = '...';
+						//td.addEventListener('click',(ev)=>{
+						//	alert('clicou '+JSON.stringify(ev.target.closest('tr').getAttribute('json'), null, 2));
+						//});
+					}
+				}
+			} 
+		}
+
+	}
+
+
 	const Dom = {
 		ini:{}
 		, toolsBar: (op)=>{
@@ -178,6 +287,12 @@
 				this.dom = f;
 				if (op.click) {
 					f.addEventListener('click',op.click);
+				}
+				//*************************
+				this.delete = (fu) => {
+					this.close();
+					f.remove();
+					f.innerHTML = '';
 				}
 				//*************************
 				function onResize(fu) {
@@ -705,8 +820,12 @@
 				}
 				//lert('dfsf='+i+' '+ret.outerHTML);
 			}
-			if (p['targ']) {
+			if (p.targ===false) {
+			} else if (p['targ']) {
 				p['targ'].appendChild(ret);
+			} else {
+				//lert('sem targ!'+Lib.erro('teste'));
+				//usado quando function precisa retornar dom
 			}
 			return ret;
 		}
@@ -1646,7 +1765,7 @@
 			}
 			//******************************	
 			get(ch,defaul) {
-				if (param[ch]) return param[ch];
+				if (this.param[ch]) return this.param[ch];
 				return defaul;
 			}
 			//******************************	
@@ -2611,7 +2730,7 @@
 				.forEach((tn)=>{
 					var tg;
 					while ((tg=this.d.querySelector(tn))) {
-						alert('removendo tag '+tn+'\n\n'+tg.outerHTML);
+						//lert('removendo tag '+tn+'\n\n'+tg.outerHTML);
 						tg.parentNode.removeChild(tg);
 					}
 				})
